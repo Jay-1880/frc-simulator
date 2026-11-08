@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="FRC 1880 HtH V2 robot simulator for REBUILT 2026">
+<meta name="description" content="Triple Threat: FRC 1880 robot simulator for REBUILT 2026. Quick matches against real teams by EPA, practice, competitions and a garage view of the robot.">
 <style>html{color-scheme:dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Triple Threat Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=Saira+Condensed:ital,wght@0,700;0,800;1,700;1,800&display=swap">
 <style>
 /* Layout: full-bleed 3D scene; driver-station HUD bars on the edges; showcase gets a side panel (bottom sheet on phones) */
 :root{
@@ -27,17 +27,17 @@ canvas#c{display:block;width:100%;height:100%;touch-action:none}
 .hud{position:fixed;pointer-events:none;font-variant-numeric:tabular-nums}
 /* broadcast-style score bar */
 .bcast{left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.bbar{display:grid;grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr);align-items:stretch;border-radius:10px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.45);min-width:min(560px,100%)}
+.bbar{display:grid;grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr);align-items:stretch;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 100%,0 100%);overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.45);min-width:min(560px,100%)}
 .bside{display:flex;align-items:center;gap:12px;padding:6px 16px}
 .bside.sred{background:linear-gradient(90deg,#8e1d22,#d8333a);justify-content:flex-end}
 .bside.sblue{background:linear-gradient(90deg,#2259d1,#173f9e);justify-content:flex-start}
-.bside .big{font-size:40px;color:#fff!important;text-shadow:0 2px 6px rgba(0,0,0,.35)}
+.bside .big{font-size:44px;font-family:var(--wm);font-style:italic;color:#fff!important;text-shadow:0 2px 6px rgba(0,0,0,.35)}
 .bside .tl{font-family:var(--display);font-weight:600;font-size:15px;color:rgba(255,255,255,.88);letter-spacing:.04em}
 .bside.mine{box-shadow:inset 0 -3px 0 var(--fuel)}
 .bmid{background:#0f1319;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 18px;min-width:110px}
-.bmid .big{font-size:32px}.bmid .lbl{color:var(--fuel)}
+.bmid .big{font-size:34px;font-family:var(--wm);font-style:italic}.bmid .lbl{color:var(--fuel)}
 .stat{top:calc(10px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;gap:6px}
-.meter{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 12px;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(8px)}
+.meter{background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--fuel);padding:6px 12px;display:flex;flex-direction:column;align-items:center;backdrop-filter:blur(8px)}
 .meter .big{font-size:26px}
 .bl{top:calc(84px + env(safe-area-inset-top,0px));bottom:auto!important}
 .chips{flex-direction:column;align-items:flex-start}
@@ -60,35 +60,17 @@ body.touching .stat{top:calc(70px + env(safe-area-inset-top,0px))}
 .fuelbar i{display:block;height:100%;background:var(--fuel);width:0}
 .bl{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:calc(100% - 32px)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
-.chip{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);color:var(--dim);display:flex;gap:6px;align-items:center}
+.chip{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;background:var(--panel);border:1px solid var(--line);color:var(--dim);display:flex;gap:6px;align-items:center}
 .chip b{color:var(--ink);font-weight:600}
 .chip.on{color:var(--ink);border-color:rgba(70,201,122,.5)}
 .chip.on::before,.chip.warnc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
 .chip.warnc::before{background:var(--warn)}
 .note{font-size:11px;color:var(--dim);background:var(--panel);padding:3px 8px;border-radius:5px;border:1px solid var(--line)}
 .tr{top:calc(10px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));pointer-events:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.btn{pointer-events:auto;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn{pointer-events:auto;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:2px;padding:7px 12px;cursor:pointer}
 .btn:hover{border-color:rgba(245,197,24,.6)}
 .btn[aria-pressed="true"]{background:#2a3442;border-color:rgba(245,197,24,.55)}
 button:focus-visible,input:focus-visible{outline:2px solid var(--fuel);outline-offset:2px}
-#menu{position:fixed;inset:0;display:grid;place-items:center;background:rgba(6,8,11,.55);backdrop-filter:blur(3px);z-index:5;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px;overflow:auto}
-.card{width:min(600px,100%);background:var(--solid);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:16px}
-.card h1{font-family:var(--display);font-size:38px;line-height:.95;margin:0;letter-spacing:.01em;text-wrap:balance}
-.card h1 em{font-style:normal;color:var(--fuel)}
-.sub{color:var(--dim);margin:4px 0 0;font-size:14px;line-height:1.45;max-width:62ch}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.seg button{font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:14px;background:transparent;color:var(--dim);border:0;padding:8px 14px;cursor:pointer}
-.seg button[aria-pressed="true"]{background:#1e2733;color:var(--ink)}
-.seg button.r[aria-pressed="true"]{background:var(--red);color:#fff}
-.seg button.b[aria-pressed="true"]{background:var(--blue);color:#fff}
-.go{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.go button{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:12px;border-radius:9px;border:1px solid var(--line);cursor:pointer;background:#1a222d;color:var(--ink);text-align:left}
-.go button small{display:block;font-family:var(--body);font-weight:400;font-size:12px;letter-spacing:0;text-transform:none;color:var(--dim);margin-top:2px}
-.go button.primary{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}
-.go button.primary small{color:#5a4a10}
-.go button:disabled{opacity:.5;cursor:default}
 details.keys summary{cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--dim)}
 .kgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 16px;font-size:13px;color:var(--dim);margin-top:8px}
 .kgrid div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
@@ -96,13 +78,11 @@ details.keys summary{cursor:pointer;font-family:var(--display);font-weight:600;l
 .kgrid h4{grid-column:1/-1;margin:8px 0 0;font-family:var(--display);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--fuel)}
 .fine{font-size:11px;color:var(--dim);line-height:1.5}
 .fine a{color:var(--dim)}
-#load{display:flex;flex-direction:column;gap:6px}
 .sliders{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:6px 10px;align-items:center}
 .sliders b{color:var(--ink);font-variant-numeric:tabular-nums}
 .sel{font:inherit;font-size:14px;color:var(--ink);background:#1a222d;border:1px solid var(--line);border-radius:7px;padding:6px 8px}
 @media (max-width:640px){.sliders{grid-template-columns:auto minmax(0,1fr)}}
-#load .fuelbar{width:100%;height:6px}
-#toast{position:fixed;left:50%;top:24%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:700;font-size:26px;background:rgba(10,13,18,.62);padding:6px 16px;border-radius:8px;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;width:max-content;max-width:90vw}
+#toast{position:fixed;left:50%;top:24%;transform:translate(-50%,-50%);font-family:var(--wm);font-style:italic;font-weight:800;font-size:30px;background:rgba(10,13,18,.62);padding:6px 18px;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;width:max-content;max-width:90vw}
 .touch{position:fixed;inset:0;pointer-events:none;display:none}
 .touch.show{display:block}
 .stick{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);pointer-events:auto;touch-action:none}
@@ -154,16 +134,15 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
   .hot span{display:none}
 }
 /* ---------- competition */
-.go button.wide{grid-column:1/-1}
 .tl{font-size:10px;color:var(--dim);letter-spacing:.02em;white-space:nowrap}
 #comp{position:fixed;inset:0;z-index:6;background:rgba(6,8,11,.72);backdrop-filter:blur(4px);overflow:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(16px + env(safe-area-inset-top,0px)) 16px}
-.compwrap{max-width:1100px;margin:0 auto;background:var(--solid);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;position:relative}
+.compwrap{max-width:1100px;margin:0 auto;background:rgba(15,20,27,.94);border:1px solid var(--line);border-top:3px solid var(--fuel);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);padding:18px 20px;display:flex;flex-direction:column;gap:12px;position:relative}
 #compBody{display:flex;flex-direction:column;gap:12px}
-#compBody h2{font-family:var(--display);font-size:32px;margin:2px 0;line-height:1}
+#compBody h2{font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:clamp(30px,4vw,46px);margin:2px 0;line-height:.95}
 #compBody h3{font-family:var(--display);font-size:18px;margin:8px 0 4px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
 .chead{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
-.mycard{display:flex;flex-direction:column;gap:2px;background:#1a222d;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:200px}
-.mycard b{font-family:var(--display);font-size:34px;line-height:1;color:var(--fuel)}
+.mycard{display:flex;flex-direction:column;gap:2px;background:linear-gradient(90deg,rgba(245,197,24,.12),var(--card2));border:1px solid rgba(245,197,24,.4);padding:10px 14px;min-width:200px}
+.mycard b{font-family:var(--wm);font-weight:800;font-style:italic;font-size:44px;line-height:1;color:var(--fuel)}
 .mycard span{font-size:13px;color:var(--dim)}
 .cacts .btn{font-size:14px}.btn.primary{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}
 .btn.mini{padding:3px 8px;font-size:12px}
@@ -181,8 +160,8 @@ td.red .tn{background:rgba(229,72,77,.18)}td.blue .tn{background:rgba(62,123,250
 .tn.me{outline:1.5px solid var(--fuel);color:var(--fuel)}
 td.sc b.w{color:var(--fuel)}
 .evgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
-.evcard{display:flex;flex-direction:column;gap:3px;text-align:left;background:#1a222d;border:1px solid var(--line);border-radius:10px;padding:14px;color:var(--ink);cursor:pointer;font:inherit}
-.evcard:hover{border-color:var(--fuel)}.evcard b{font-family:var(--display);font-size:24px}.evcard span{font-size:13px;color:var(--dim)}
+.evcard{display:flex;flex-direction:column;gap:3px;text-align:left;background:var(--card2);border:1px solid var(--line);border-left:3px solid var(--fuel);padding:14px;color:var(--ink);cursor:pointer;font:inherit}
+.evcard:hover{border-color:var(--fuel)}.evcard b{font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:30px}.evcard span{font-size:13px;color:var(--dim)}
 .alist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px}
 .alli-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:8px}
 .alli-row b{font-family:var(--display);font-size:18px;width:20px;color:var(--dim)}
@@ -199,6 +178,158 @@ td.sc b.w{color:var(--fuel)}
 @media (max-width:760px){.bside .big{font-size:30px}.bside .tl{display:none}.bbar{min-width:0}.bl .chips{display:none}}
 @media (max-width:640px){.board .cell{padding:5px 9px;min-width:52px}.big{font-size:23px}.card h1{font-size:30px}.kgrid{grid-template-columns:1fr}.bl .note{display:none}.go{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
+/* ---------- front end: title, builders, overlays. Cut corners, hazard yellow, broadcast type */
+:root{--wm:"Saira Condensed","Barlow Condensed","Arial Narrow",sans-serif;--bg0:#06080b;--card:#0f141b;--card2:#151c25;--cut:14px}
+#menu{position:fixed;inset:0;z-index:5;overflow:auto;overscroll-behavior:contain}
+.scrim{position:fixed;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(5,7,10,.95) 0%,rgba(5,7,10,.82) 30%,rgba(5,7,10,.2) 62%,rgba(5,7,10,.45) 100%),linear-gradient(0deg,rgba(5,7,10,.7),transparent 30%)}
+.screen{position:relative;min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;
+  padding-left:max(32px,env(safe-area-inset-left,0px));padding-right:max(32px,env(safe-area-inset-right,0px));padding-block:calc(28px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-bottom,0px))}
+.screen.sub{max-width:1180px;margin:0 auto}
+.screen.sub::before{content:"";position:fixed;inset:0;background:rgba(5,7,10,.62);backdrop-filter:blur(6px);z-index:-1}
+.kicker{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--fuel)}
+.wm{margin:6px 0 0;font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;line-height:.82;font-size:clamp(64px,10vw,124px);letter-spacing:-.01em;display:flex;flex-direction:column}
+.wm .w1{color:transparent;-webkit-text-stroke:2px rgba(233,237,242,.9)}
+.wm .w2{color:var(--fuel);text-shadow:0 0 40px rgba(245,197,24,.25)}
+.tag{display:flex;align-items:center;gap:12px;margin-top:12px;font-family:var(--display);font-weight:600;letter-spacing:.2em;text-transform:uppercase;font-size:14px;color:var(--dim)}
+.tag span:first-child{color:var(--ink);background:#e5484d;padding:2px 8px;letter-spacing:.14em;clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.tag i{width:40px;height:1px;background:var(--line)}
+.brand{max-width:640px}
+#load{max-width:420px;display:flex;flex-direction:column;gap:8px}
+.lbar{height:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.lbar i{display:block;height:100%;width:0;background:var(--fuel);transition:width .2s}
+.modes{display:flex;flex-direction:column;max-width:520px;margin-top:6px}
+.mode{position:relative;display:grid;grid-template-columns:52px minmax(0,1fr) 24px;align-items:center;gap:12px;padding:13px 16px 13px 14px;background:none;border:0;border-left:3px solid transparent;color:var(--ink);text-align:left;cursor:pointer;font:inherit;isolation:isolate}
+.mode+.mode{border-top:1px solid rgba(170,190,215,.09)}
+.mode::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(245,197,24,.18),rgba(245,197,24,.04) 70%,transparent);transform:scaleX(0);transform-origin:left;transition:transform .22s ease}
+.mode:hover:not(:disabled)::before,.mode:focus-visible::before,.mode.kb::before{transform:scaleX(1)}
+.mode:hover:not(:disabled),.mode:focus-visible,.mode.kb{border-left-color:var(--fuel);outline:none}
+.mode:disabled{opacity:.35;cursor:default}
+.mode .num{font-family:var(--wm);font-weight:700;font-style:italic;font-size:30px;color:rgba(233,237,242,.22);transition:color .2s}
+.mode:hover:not(:disabled) .num,.mode:focus-visible .num,.mode.kb .num{color:var(--fuel)}
+.mt{font-family:var(--wm);font-weight:700;font-size:32px;text-transform:uppercase;letter-spacing:.01em;line-height:1}
+.mt small{display:block;font-family:var(--body);font-size:13.5px;font-weight:400;color:var(--dim);text-transform:none;letter-spacing:0;margin-top:5px;line-height:1.35}
+.mode .arr{font-family:var(--wm);font-size:34px;color:var(--fuel);opacity:0;transform:translateX(-8px);transition:.2s}
+.mode:hover:not(:disabled) .arr,.mode:focus-visible .arr,.mode.kb .arr{opacity:1;transform:none}
+.title{justify-content:flex-start}
+.credits{margin-top:auto;padding-top:20px;font-size:11px;line-height:1.5;color:rgba(154,166,180,.75);max-width:640px}
+.credits a{color:inherit}
+.livecard{position:fixed;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(24px + env(safe-area-inset-bottom,0px));width:280px;background:rgba(10,13,18,.82);backdrop-filter:blur(10px);border:1px solid var(--line);clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%);font-variant-numeric:tabular-nums}
+.lc-top{display:flex;align-items:center;gap:8px;padding:9px 12px;font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
+.lc-ev{margin-left:auto;color:var(--ink);letter-spacing:.06em}
+.dot{width:8px;height:8px;border-radius:50%;background:#e5484d;box-shadow:0 0 0 0 rgba(229,72,77,.6);animation:pulse 1.6s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+.lc-row{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.04em}
+.lc-row b{font-family:var(--wm);font-size:26px;line-height:1}
+.lc-row.r{background:linear-gradient(90deg,rgba(229,72,77,.28),transparent)}.lc-row.b{background:linear-gradient(90deg,rgba(62,123,250,.3),transparent)}
+.lc-foot{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-family:var(--display);font-weight:600;letter-spacing:.08em;color:var(--dim)}
+.lc-btn{font-family:var(--display);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-size:13px;background:none;border:1px solid rgba(245,197,24,.6);color:var(--fuel);padding:5px 10px;cursor:pointer}
+.lc-btn:hover{background:rgba(245,197,24,.12)}
+/* sub screens */
+.shead{display:flex;align-items:flex-end;gap:18px}
+.shead h2,.pcard h2{margin:2px 0 0;font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:clamp(36px,5vw,56px);line-height:.9}
+.back{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.1em;text-transform:uppercase;background:none;border:1px solid var(--line);color:var(--ink);padding:8px 14px;cursor:pointer;margin-bottom:4px}
+.back:hover{border-color:var(--fuel)}
+.presets{display:flex;gap:8px;flex-wrap:wrap}
+.preset{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:8px 14px;background:var(--card);border:1px solid var(--line);color:var(--dim);cursor:pointer;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.preset:hover{color:var(--ink)}.preset[aria-pressed="true"]{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}
+.preset.boss{color:#ff8a8d}.preset.boss[aria-pressed="true"]{background:#e5484d;color:#fff;border-color:#e5484d}
+.versus{display:grid;grid-template-columns:minmax(0,1fr) 150px minmax(0,1fr);gap:14px;align-items:stretch}
+.ally{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ah{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:14px;padding:8px 12px;color:#fff}
+.ah b{font-family:var(--wm);font-size:20px;letter-spacing:.02em}
+.ar .ah{background:linear-gradient(90deg,#b8242b,rgba(184,36,43,.15))}.ab .ah{background:linear-gradient(90deg,#2259d1,rgba(34,89,209,.15))}
+.slots{display:flex;flex-direction:column;gap:8px}
+.slot{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;row-gap:4px;align-items:center;padding:11px 14px;background:var(--card);border:1px solid var(--line);color:var(--ink);text-align:left;cursor:pointer;font:inherit;position:relative;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.slot:hover{border-color:rgba(245,197,24,.55);background:var(--card2)}
+.slot .tnum{grid-row:1/3;font-family:var(--wm);font-weight:800;font-size:34px;line-height:1;min-width:76px}
+.ar .slot .tnum{color:#ff8a8d}.ab .slot .tnum{color:#8fb2ff}
+.slot .tname{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot .tmeta{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.slot .ebar{grid-column:2/4;height:3px;background:rgba(255,255,255,.07)}
+.slot .ebar i{display:block;height:100%;background:var(--fuel)}
+.slot.you{border-color:var(--fuel);background:linear-gradient(90deg,rgba(245,197,24,.12),var(--card) 60%)}
+.slot.you .tnum{color:var(--fuel)!important}
+.slot.you .tmeta{color:var(--fuel)}
+.seg{display:flex;border:1px solid var(--line);width:max-content;max-width:100%;flex-wrap:wrap}
+.seg button{font-family:var(--display);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:14px;background:transparent;color:var(--dim);border:0;padding:9px 14px;cursor:pointer}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:#243041;color:var(--ink);box-shadow:inset 0 -2px 0 var(--fuel)}
+.seg button.r[aria-pressed="true"]{background:var(--red);color:#fff;box-shadow:none}
+.seg button.b[aria-pressed="true"]{background:var(--blue);color:#fff;box-shadow:none}
+.sel{font:inherit;font-size:14px;color:var(--ink);background:var(--card2);border:1px solid var(--line);padding:8px 10px}
+.vsmid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+.vsx{font-family:var(--wm);font-weight:800;font-style:italic;font-size:64px;line-height:.9;color:rgba(233,237,242,.18)}
+.odds b{display:block;font-family:var(--wm);font-weight:800;font-size:40px;line-height:1;color:var(--fuel)}
+.odds small{font-family:var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-size:11px}
+.qopts{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end}
+.qopts .fine{flex:1 1 260px;margin:0}
+.field{display:flex;flex-direction:column;gap:6px}
+.qgo{display:flex;justify-content:flex-end}
+.cta{font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:26px;letter-spacing:.02em;padding:12px 30px 12px 26px;background:var(--fuel);color:#1a1405;border:0;cursor:pointer;clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%);display:inline-flex;gap:14px;align-items:center}
+.cta span{font-size:30px;line-height:.8}
+.cta:hover{filter:brightness(1.08)}.cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.panel{background:rgba(15,20,27,.88);border:1px solid var(--line);padding:18px;clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,0 100%)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:start}
+.pgrid .fine{grid-column:1/-1;margin:0}
+.pgrid .sliders{grid-column:1/-1}
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:8;display:grid;place-items:center;background:rgba(5,7,10,.66);backdrop-filter:blur(5px);overflow:auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(16px + env(safe-area-inset-top,0px)) 16px}
+.pcard,.rcard{width:min(560px,100%);background:var(--card);border:1px solid var(--line);border-top:3px solid var(--fuel);padding:24px;display:flex;flex-direction:column;gap:14px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%)}
+.plist{display:flex;flex-direction:column;gap:8px}
+.plist.row3{flex-direction:row;flex-wrap:wrap}
+.pbtn{font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.1em;text-transform:uppercase;background:var(--card2);border:1px solid var(--line);color:var(--ink);padding:11px 16px;text-align:left;cursor:pointer}
+.pbtn:hover,.pbtn:focus-visible{border-color:var(--fuel);outline:none}
+.plist .cta{justify-content:space-between}
+.intro{background:radial-gradient(ellipse at center,rgba(5,7,10,.55),rgba(5,7,10,.9));align-content:center;gap:26px}
+.ihead{text-align:center}
+.ititle{font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:clamp(36px,6vw,64px);line-height:1}
+.ivs{display:grid;grid-template-columns:minmax(0,1fr) 160px minmax(0,1fr);gap:18px;align-items:center;width:min(1080px,100%)}
+.icol{display:flex;flex-direction:column;gap:10px}
+.icard{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;align-items:center;padding:12px 16px;background:var(--card);border-left:4px solid;opacity:0;animation:slidein .5s cubic-bezier(.2,.8,.2,1) forwards}
+.ar .icard{border-color:#e5484d;transform:translateX(-40px)}.ab .icard{border-color:#3e7bfa;transform:translateX(40px)}
+.icard b{grid-row:1/3;font-family:var(--wm);font-weight:800;font-size:40px;line-height:1}
+.icard span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icard small{font-family:var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.icard.you{background:linear-gradient(90deg,rgba(245,197,24,.15),var(--card))}.icard.you b{color:var(--fuel)}
+@keyframes slidein{to{opacity:1;transform:none}}
+.icount{text-align:center;font-family:var(--wm);font-weight:800;font-style:italic;font-size:110px;line-height:1;color:var(--fuel);text-shadow:0 0 50px rgba(245,197,24,.35)}
+.icount.pop{animation:pop .9s ease-out}
+@keyframes pop{0%{transform:scale(1.6);opacity:0}25%{transform:scale(1);opacity:1}100%{opacity:1}}
+.iskip{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.verdict{margin:0;font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:clamp(48px,8vw,80px);line-height:.9}
+.verdict.win{color:var(--fuel)}.verdict.loss{color:#9aa6b4}
+.rscore{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:12px}
+.rs{display:flex;flex-direction:column;padding:10px 14px}
+.rs b{font-family:var(--wm);font-weight:800;font-size:56px;line-height:1}
+.rs span{font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:13px;color:rgba(255,255,255,.8)}
+.rs.ar{background:linear-gradient(90deg,#b8242b,rgba(184,36,43,.2))}.rs.ab{background:linear-gradient(270deg,#2259d1,rgba(34,89,209,.2));text-align:right}
+.rdash{font-family:var(--wm);font-size:40px;color:var(--dim)}
+.rtable{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;font-size:14px;font-variant-numeric:tabular-nums}
+.rtable div{display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.rtable .me{color:var(--fuel);font-weight:600}
+.adot{display:inline-block;width:9px;height:9px;margin-right:8px;background:#e5484d;vertical-align:1px}.adot.blue{background:#3e7bfa}
+.rtable .h{grid-column:1/-1;border:0;font-family:var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-size:12px;padding-top:6px}
+.pkcard{width:min(520px,100%);max-height:80vh;display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-top:3px solid var(--fuel)}
+.pkhead{display:flex;gap:8px;padding:12px}
+.pkhead input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--card2);border:1px solid var(--line);padding:8px 10px}
+.pklist{overflow:auto;padding:0 12px 12px;display:flex;flex-direction:column;gap:2px}
+.pkrow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 8px;background:none;border:0;color:var(--ink);text-align:left;cursor:pointer;font:inherit;border-bottom:1px solid rgba(170,190,215,.08)}
+.pkrow:hover,.pkrow:focus-visible{background:rgba(245,197,24,.1);outline:none}
+.pkrow b{font-family:var(--wm);font-size:22px}
+.pkrow span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.pkrow small{font-family:var(--display);letter-spacing:.08em;color:var(--dim)}
+@media (max-width:860px){
+  .versus{grid-template-columns:minmax(0,1fr)}
+  .vsmid{flex-direction:row;justify-content:space-between}
+  .vsx{font-size:40px}
+  .scrim{background:rgba(5,7,10,.78)}
+  .livecard{position:static;width:auto;max-width:420px}
+  .ivs{grid-template-columns:minmax(0,1fr)}
+  .icount{font-size:72px}
+}
+@media (max-width:520px){.mt{font-size:26px}.mode{grid-template-columns:40px minmax(0,1fr) 18px}.screen{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}.rtable{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.dot,.icard,.icount.pop{animation:none;opacity:1;transform:none}.mode::before{transition:none}}
 </style>
 
 <div id="app"><canvas id="c"></canvas></div>
@@ -267,76 +398,118 @@ td.sc b.w{color:var(--fuel)}
 <div id="comp" hidden><div class="compwrap"><div id="compBody"></div><div id="compResult" hidden></div></div></div>
 
 <div id="menu">
-  <div class="card">
-    <div>
-      <div class="lbl">FRC 1880 · Warriors · REBUILT 2026</div>
-      <h1>Triple <em>Threat</em> Simulator</h1>
-      <p class="sub">The HtH V2 robot from your Onshape assembly. The intake pivots out over the bumper, the HtH indexer feeds the injectors, and the three-lane shooter fires out the back with an adjustable hood.</p>
+  <div class="scrim"></div>
+  <!-- title -->
+  <section class="screen title" id="scrTitle">
+    <div class="brand">
+      <div class="kicker">FRC 1880 · Warriors of East Harlem</div>
+      <h1 class="wm"><span class="w1">Triple</span><span class="w2">Threat</span></h1>
+      <div class="tag"><span>REBUILT</span><i></i><span>2026 robot simulator</span></div>
     </div>
-    <div id="load"><div class="lbl" id="loadTxt">Loading robot CAD…</div><div class="fuelbar"><i id="loadBar"></i></div></div>
-    <div class="row">
-      <span class="lbl">Alliance</span>
-      <div class="seg"><button class="r" id="aRed" type="button" aria-pressed="false">Red</button><button class="b" id="aBlue" type="button" aria-pressed="true">Blue</button></div>
+    <div id="load"><div class="lbl" id="loadTxt">Loading robot CAD and field…</div><div class="lbar"><i id="loadBar"></i></div></div>
+    <nav class="modes" id="modes" aria-label="Game modes">
+      <button class="mode" type="button" data-go="quick" disabled><span class="num">01</span><span class="mt">Quick match<small>Real teams, real EPA. Pick your partners and who you face.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="practice" disabled><span class="num">02</span><span class="mt">Practice<small>Open field, no clock. Drill cycles, autos and shots.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="comp" disabled><span class="num">03</span><span class="mt">Competition<small>Long Island, Gotham or Daly. Quals, picks, playoffs.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="garage" disabled><span class="num">04</span><span class="mt">Garage<small>Take Triple Threat apart. Every mechanism moves.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="settings" disabled><span class="num">05</span><span class="mt">Settings<small>Graphics, drive feel, controls.</small></span><span class="arr" aria-hidden="true">›</span></button>
+    </nav>
+    <div class="livecard" id="liveCard" hidden>
+      <div class="lc-top"><span class="dot"></span>Live exhibition<span class="lc-ev" id="lcEv"></span></div>
+      <div class="lc-row r"><span id="lcR"></span><b id="lcRS">0</b></div>
+      <div class="lc-row b"><span id="lcB"></span><b id="lcBS">0</b></div>
+      <div class="lc-foot"><span id="lcT">–</span><button class="lc-btn" id="lcWatch" type="button">Watch it</button></div>
     </div>
-    <div class="row">
-      <span class="lbl">Opponents</span>
-      <div class="seg" id="oppSeg"><button type="button" data-opp="0" aria-pressed="false">None</button><button type="button" data-opp="1" aria-pressed="true">Scorer</button><button type="button" data-opp="2" aria-pressed="false">Scorer + defender</button></div>
+    <footer class="credits">Field, hub and fuel models: AdvantageScope by Littleton Robotics (FRC 6328), BSD-3-Clause, <a href="LICENSE-AdvantageScope.txt" target="_blank" rel="noopener">license</a>. Physics constants follow <a href="https://github.com/Codemaster145/frc-simulator" target="_blank" rel="noopener">frc-simulator</a>. Robot behavior from <a href="https://github.com/frc1880/pyrebuilt" target="_blank" rel="noopener">frc1880/pyrebuilt</a>. Team strength from Statbotics EPA. Other teams' robots are generic designs, not their CAD.</footer>
+  </section>
+
+  <!-- quick match builder -->
+  <section class="screen sub" id="scrQuick" hidden>
+    <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">01 · Quick match</div><h2>Match builder</h2></div></header>
+    <div class="presets" id="qmPresets" role="group" aria-label="Presets"></div>
+    <div class="versus">
+      <div class="ally ar"><div class="ah"><span>Red alliance</span><b id="qmRE"></b></div><div class="slots" id="qmRed"></div></div>
+      <div class="vsmid"><div class="vsx">VS</div><div class="odds"><b id="qmOdds">50%</b><small>your win chance</small></div><button class="btn" id="qmSwap" type="button">Swap sides</button></div>
+      <div class="ally ab"><div class="ah"><span>Blue alliance</span><b id="qmBE"></b></div><div class="slots" id="qmBlue"></div></div>
     </div>
-    <div class="row">
-      <label class="lbl" for="autoSel">Auto</label>
-      <select id="autoSel" class="sel">
+    <div class="qopts">
+      <label class="field"><span class="lbl">Your auto</span><select id="autoSel" class="sel">
         <option value="none">None (drive it yourself)</option>
         <option value="shoot">Shoot</option>
         <option value="sgR">Shoot + Gobbler - Right</option>
         <option value="sgL">Shoot + Gobbler - Left</option>
         <option value="gR">Gobbler only - Right</option>
         <option value="gL">Gobbler only - Left</option>
-      </select>
-      <span class="fine">From frc1880/pyrebuilt autonomous/routines.py. Runs in the match's auto period, or press P in practice.</span>
+      </select></label>
+      <div class="field"><span class="lbl">Play as</span><div class="seg" id="qmRole"><button type="button" data-role="drive" aria-pressed="true">Driver</button><button type="button" data-role="watch" aria-pressed="false">Spectator</button></div></div>
+      <p class="fine">Click any robot to swap in another team. Strength comes from 2026 Statbotics EPA: speed, hopper size, fire rate, accuracy and strategy all scale with it.</p>
     </div>
-    <div class="row sliders">
-      <label class="lbl" for="spdDrive">Drive speed <b id="spdDriveV">100%</b></label><input type="range" id="spdDrive" min="40" max="120" step="5" value="100">
-      <label class="lbl" for="spdTurn">Turn speed <b id="spdTurnV">100%</b></label><input type="range" id="spdTurn" min="40" max="140" step="5" value="100">
+    <div class="qgo"><button class="cta" id="qmStart" type="button">Start match <span>›</span></button></div>
+  </section>
+
+  <!-- practice -->
+  <section class="screen sub" id="scrPractice" hidden>
+    <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">02 · Practice</div><h2>Open field</h2></div></header>
+    <div class="panel pgrid">
+      <div class="field"><span class="lbl">Alliance</span><div class="seg"><button class="r" id="aRed" type="button" aria-pressed="false">Red</button><button class="b" id="aBlue" type="button" aria-pressed="true">Blue</button></div></div>
+      <div class="field"><span class="lbl">Other robots</span><div class="seg" id="oppSeg"><button type="button" data-opp="0" aria-pressed="false">None</button><button type="button" data-opp="1" aria-pressed="true">A scorer</button><button type="button" data-opp="2" aria-pressed="false">Scorer + defender</button></div></div>
+      <label class="field"><span class="lbl">Auto (press P to run)</span><select id="autoSel2" class="sel"></select></label>
+      <p class="fine">No clock and no hub shifts. Autos come from frc1880/pyrebuilt autonomous/routines.py. R resets the field.</p>
     </div>
-    <div class="go">
-      <button class="primary" id="goFree" type="button" disabled>Practice<small>Free drive, no clock</small></button>
-      <button id="goTimed" type="button" disabled>Full match<small>Auto + teleop, hub shifts · best <span id="best">none yet</span></small></button>
-      <button id="goShow" type="button" disabled>Explore robot<small>Parts, mechanisms, explode</small></button>
-      <button id="goComp" class="wide" type="button" disabled>Competition<small>Long Island, Gotham or Daly: quals, alliance selection, playoffs</small></button>
-      <button id="goBack" class="wide" type="button" hidden>Back to the event<small>Leave this match; it is simmed from EPA</small></button>
-    </div>
-    <details class="keys" open><summary>Controls</summary>
-      <div class="kgrid">
-        <h4>Xbox controller (same layout as your robot code)</h4>
-        <div><span>Drive / turn</span><kbd>Left stick / right stick</kbd></div>
-        <div><span>Intake (deploy + rollers)</span><kbd>LT hold</kbd></div>
-        <div><span>Shoot</span><kbd>RT hold</kbd></div>
-        <div><span>Carry intake</span><kbd>LB</kbd></div>
-        <div><span>Retract intake</span><kbd>D-pad down</kbd></div>
-        <div><span>Outtake</span><kbd>A hold</kbd></div>
-        <div><span>Spin flywheel on/off</span><kbd>B</kbd></div>
-        <div><span>Reset robot pose</span><kbd>X</kbd></div>
-        <div><span>Slow mode</span><kbd>RB hold</kbd></div>
-        <div><span>Field / robot-oriented</span><kbd>View (back)</kbd></div>
-        <div><span>Camera</span><kbd>Y</kbd></div>
-        <div><span>Auto-aim on/off</span><kbd>Left stick click</kbd></div>
-        <h4>Keyboard</h4>
-        <div><span>Drive / turn</span><kbd>WASD / Q E</kbd></div>
-        <div><span>Intake on/off</span><kbd>F</kbd></div>
-        <div><span>Shoot</span><kbd>Space hold</kbd></div>
-        <div><span>Carry / retract</span><kbd>C / Z</kbd></div>
-        <div><span>Outtake</span><kbd>X hold</kbd></div>
-        <div><span>Spin flywheel on/off</span><kbd>B</kbd></div>
-        <div><span>Field / robot-oriented</span><kbd>G</kbd></div>
-        <div><span>Auto-aim / camera (6 views, incl. 3rd person and orbit)</span><kbd>T / V</kbd></div>
-        <div><span>Slow mode</span><kbd>Shift hold</kbd></div>
-        <div><span>Agitate while shooting</span><kbd>H</kbd></div>
-        <div><span>Run selected auto (practice)</span><kbd>P</kbd></div>
-        <div><span>Follow next robot (spectating)</span><kbd>N</kbd></div>
-        <div><span>Reset field / menu</span><kbd>R / Esc</kbd></div>
+    <div class="qgo"><button class="cta" id="goFree" type="button">Drive <span>›</span></button></div>
+  </section>
+
+  <!-- settings -->
+  <section class="screen sub" id="scrSettings" hidden>
+    <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">05 · Settings</div><h2>Settings</h2></div></header>
+    <div class="panel pgrid">
+      <div class="field"><span class="lbl">Graphics</span><div class="seg" id="gfxSeg"><button type="button" data-gfx="low" aria-pressed="false">Performance</button><button type="button" data-gfx="mid" aria-pressed="true">Balanced</button><button type="button" data-gfx="high" aria-pressed="false">Ultra</button></div></div>
+      <div class="field"><span class="lbl">Live match behind the menus</span><div class="seg" id="attSeg"><button type="button" data-att="1" aria-pressed="true">On</button><button type="button" data-att="0" aria-pressed="false">Off</button></div></div>
+      <div class="sliders">
+        <label class="lbl" for="spdDrive">Drive speed <b id="spdDriveV">100%</b></label><input type="range" id="spdDrive" min="40" max="120" step="5" value="100">
+        <label class="lbl" for="spdTurn">Turn speed <b id="spdTurnV">100%</b></label><input type="range" id="spdTurn" min="40" max="140" step="5" value="100">
       </div>
-    </details>
-    <p class="fine">Field, hub and fuel models: AdvantageScope by Littleton Robotics (FRC 6328), BSD-3-Clause, <a href="LICENSE-AdvantageScope.txt" target="_blank" rel="noopener">license</a>. Field physics constants follow the open-source <a href="https://github.com/Codemaster145/frc-simulator" target="_blank" rel="noopener">frc-simulator</a>. Robot behavior follows <a href="https://github.com/frc1880/pyrebuilt" target="_blank" rel="noopener">frc1880/pyrebuilt</a>.</p>
+    </div>
+    <div class="panel"><div class="kgrid" id="kgrid"></div></div>
+  </section>
+</div>
+
+<!-- pause -->
+<div id="pause" class="overlay" hidden>
+  <div class="pcard">
+    <div class="kicker" id="pKick">Paused</div><h2 id="pTitle">Practice</h2>
+    <div class="plist">
+      <button class="cta" id="pResume" type="button">Resume <span>›</span></button>
+      <button class="pbtn" id="pRestart" type="button">Restart</button>
+      <button class="pbtn" id="pControls" type="button" aria-expanded="false">Controls</button>
+      <button class="pbtn" id="pLeave" type="button">Quit to title</button>
+    </div>
+    <div class="kgrid" id="kgrid2" hidden></div>
+  </div>
+</div>
+
+<!-- pre-match intro -->
+<div id="intro" class="overlay intro" hidden>
+  <div class="ihead"><div class="kicker" id="iKick">Daly Division</div><div class="ititle" id="iTitle">Qualification 12</div></div>
+  <div class="ivs"><div class="icol ar" id="iRed"></div><div class="icount" id="iCount">VS</div><div class="icol ab" id="iBlue"></div></div>
+  <button class="pbtn iskip" id="iSkip" type="button">Skip intro</button>
+</div>
+
+<!-- quick-match results -->
+<div id="results" class="overlay" hidden>
+  <div class="rcard">
+    <div class="kicker" id="rKick">Quick match · final</div>
+    <h2 class="verdict" id="rVerdict">Victory</h2>
+    <div class="rscore"><div class="rs ar"><b id="rR">0</b><span id="rRT"></span></div><div class="rdash">–</div><div class="rs ab"><b id="rB">0</b><span id="rBT"></span></div></div>
+    <div class="rtable" id="rTable"></div>
+    <div class="plist row3"><button class="cta" id="rAgain" type="button">Rematch <span>›</span></button><button class="pbtn" id="rEdit" type="button">Change teams</button><button class="pbtn" id="rTitle" type="button">Title</button></div>
+  </div>
+</div>
+
+<div id="picker" class="overlay" hidden>
+  <div class="pkcard" role="dialog" aria-label="Choose a team">
+    <div class="pkhead"><input id="pkSearch" type="search" placeholder="Team number or name" aria-label="Search teams"><button class="pbtn" id="pkClose" type="button">Close</button></div>
+    <div class="pklist" id="pkList"></div>
   </div>
 </div>
 
@@ -346,6 +519,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // ================================================================== constants
 const STEP = 1 / 120, G = 9.81, DEG = Math.PI / 180;
@@ -375,8 +549,8 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 const scene = new THREE.Scene();
-const BG_FIELD = new THREE.Color(0x0f141a), BG_SHOW = new THREE.Color(0x161b22);
-scene.background = BG_FIELD; scene.fog = new THREE.Fog(0x0f141a, 24, 60);
+const BG_FIELD = new THREE.Color(0x0a0d12), BG_SHOW = new THREE.Color(0x161b22);
+scene.background = BG_FIELD; scene.fog = new THREE.Fog(0x0a0d12, 30, 85);
 const camera = new THREE.PerspectiveCamera(50, 1, 0.03, 200);
 { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environmentIntensity = 0.55; }
 scene.add(new THREE.HemisphereLight(0xdfe8f5, 0x30353c, 0.7));
@@ -396,8 +570,6 @@ const fill2 = new THREE.DirectionalLight(0xcfe0ff, 1.1); fill2.position.set(-3, 
 const $ = (id) => document.getElementById(id);
 const ui = { score: $("ptsB"), time: $("time"), hop: $("hop"), hopbar: $("hopbar"), rate: $("rate"), rps: $("rps"), hood: $("hood"), dist: $("dist"),
   cIntake: $("cIntake"), cAim: $("cAim"), cShot: $("cShot"), cDist: $("cDist"), board: $("board"), toast: $("toast"), menu: $("menu") };
-let best = 0; try { best = +localStorage.getItem("tt-best") || 0; } catch {}
-if (best) $("best").textContent = best + " fuel";
 
 // ================================================================== loading
 async function fetchProgress(url, onp) {
@@ -697,7 +869,7 @@ async function loadField() {
   grid.sdf = sdfOf(grid.solid);
   const fb = b64(await fetchProgress("field.b64.txt", (p) => { pField = p; setLoad(); }));
   const gl = await new GLTFLoader().parseAsync(fb.buffer, "");
-  gl.scene.traverse((o) => { if (o.isMesh) { o.receiveShadow = true; o.castShadow = false; if (o.material && o.material.transparent) o.renderOrder = 2; } });
+  gl.scene.traverse((o) => { if (o.isMesh) { o.receiveShadow = true; o.castShadow = false; if (o.material && o.material.transparent) o.renderOrder = 2; patchCarpet(o.material); } });
   fieldScene = gl.scene; scene.add(fieldScene); pField = 1; setLoad();
 }
 function cellOf(x, z) { return [Math.floor((x - grid.x0) / grid.cell), Math.floor((z - grid.z0) / grid.cell)]; }
@@ -747,7 +919,7 @@ const S = {
   orb: { yaw: 2.4, pitch: 0.45, dist: 3.2 }, follow: 0, score: 0, total: 0, pts: { red: 0, blue: 0 }, autoPts: { red: 0, blue: 0 }, phase: "practice", timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
 };
 let redHub = 0, blueHub = 1;
-const SET = { opp: 1, drive: 1, turn: 1, auto: "sgR" };
+const SET = { opp: 1, drive: 1, turn: 1, auto: "sgR", gfx: "mid", attract: true };
 try { const j = JSON.parse(localStorage.getItem("tt-set") || "{}"); Object.assign(SET, j); } catch {}
 resize();
 const myHub = () => (S.alliance === "red" ? redHub : blueHub);
@@ -822,17 +994,12 @@ function readInput() {
     if (now.dd) { S.intakeLatch = false; M.armT = ARM.retract; }
     if (now.b && !padPrev.b) toggleSpin(); if (now.x && !padPrev.x) { startPose(); toast("Pose reset", "#e9edf2"); }
     if (now.y && !padPrev.y) cycleCam(); if (now.back && !padPrev.back) toggleField(); if (now.ls && !padPrev.ls) toggleAim();
-    if (now.start && !padPrev.start) setPaused(true);
+    if (now.start && !padPrev.start) { setPaused(true); menuPrev = { st: true, a: now.a, b: now.b }; }
     padPrev = now;
   }
   const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
   const k = slow ? 0.25 : 1;
   return { mx: mx * k, my: my * k, rot: THREE.MathUtils.clamp(rot, -1, 1) * k, shoot, intake, outtake };
-}
-function pollPadMenu() { // Start / A on a controller from the menu
-  const p = getPad(); if (!p) return; const st = !!(p.buttons[9] && p.buttons[9].pressed), a = !!(p.buttons[0] && p.buttons[0].pressed);
-  if (S.loaded && (S.view === "menu" || (S.view === "drive" && S.paused))) { if ((st && !padPrev.start) || (a && !padPrev.a)) { if (S.view === "drive") setPaused(false); else start("free"); } }
-  padPrev = { ...padPrev, start: st, a };
 }
 
 // ================================================================== shooting
@@ -933,106 +1100,113 @@ function driveToward(b, tx, tz, wt, dt, wacc) {
 
 // ================================================================== opponent robots (AI)
 const BOTS = [];
-// team colors and robot designs are picked from the team number so every robot looks the same each time
+// ---------- AI robot designs: original, procedurally built; geometry is merged per material so each robot is a handful of draw calls
 const hashN = (n) => { let h = Math.imul(n, 2654435761) >>> 0; h = (h ^ (h >>> 15)) >>> 0; return h; };
 const numTex = new Map();
 function bumperTexture(team, color) {
   const key = team + "|" + color; if (numTex.has(key)) return numTex.get(key);
-  const c = document.createElement("canvas"); c.width = 256; c.height = 64; const g = c.getContext("2d");
-  g.fillStyle = color; g.fillRect(0, 0, 256, 64); g.fillStyle = "#fff"; g.font = "bold 50px Barlow Condensed, Arial Narrow, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(team), 128, 35);
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; numTex.set(key, t); return t;
+  const c = document.createElement("canvas"); c.width = 512; c.height = 96; const g = c.getContext("2d");
+  const grd = g.createLinearGradient(0, 0, 0, 96); grd.addColorStop(0, color); grd.addColorStop(0.5, color); grd.addColorStop(1, "#00000055"); g.fillStyle = color; g.fillRect(0, 0, 512, 96); g.fillStyle = grd; g.fillRect(0, 0, 512, 96);
+  g.strokeStyle = "rgba(0,0,0,.25)"; g.lineWidth = 4; g.strokeRect(0, 2, 512, 92);
+  g.fillStyle = "#fff"; g.font = "bold 74px Barlow Condensed, Arial Narrow, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(team), 256, 52);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; numTex.set(key, t); return t;
 }
-let LOD = null;
-async function loadLod() {
-  const buf = b64(await fetchProgress("botlod.b64.txt", () => {})); const hl = new DataView(buf.buffer).getUint32(0, true);
-  const H = JSON.parse(new TextDecoder().decode(buf.subarray(4, 4 + hl))), data = buf.buffer.slice(4 + hl); LOD = { H, geo: {} };
-  for (const p of H.parts) { const q = new Uint16Array(data, p.vOff, p.vCount * 3), pos = new Float32Array(p.vCount * 3), piv = p.name === "arm" ? H.rig.armPivot : [0, 0, 0];
-    for (let i = 0; i < p.vCount * 3; i += 3) for (let k = 0; k < 3; k++) pos[i + k] = H.qmin[k] + q[i + k] * H.qscale[k] - piv[k];
-    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(new Uint32Array(data, H.idxBase + p.iOff, p.iCount), 1));
-    p.groups.forEach(([ci, st, n], k) => g.addGroup(st, n, k)); g.computeBoundingSphere(); LOD.geo[p.name] = { g, groups: p.groups }; }
+const MATS = {};
+function mat(key, opts) { if (!MATS[key]) MATS[key] = new THREE.MeshStandardMaterial(opts); return MATS[key]; }
+const TEAM_COLORS = [0x8d96a1, 0x2b2f36, 0xc9a227, 0x6c2bd9, 0x1f8a5b, 0xd96b2b, 0x2a6fb5, 0xb3262e, 0xe6e6e6, 0x0f7c86];
+const ACCENTS = [0xf5c518, 0xff5a1f, 0x29c4ff, 0xeeeeee, 0x8bdc3a, 0xff3d7f];
+// collects primitives per material, then merges them into one mesh per material
+class Kit {
+  constructor() { this.parts = {}; }
+  put(key, geo, x, y, z, rx = 0, ry = 0, rz = 0) { const m = new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(1, 1, 1)); geo.applyMatrix4(m); (this.parts[key] || (this.parts[key] = [])).push(geo); return this; }
+  box(key, w, h, d, x, y, z, rx, ry, rz) { return this.put(key, new THREE.BoxGeometry(w, h, d), x, y, z, rx, ry, rz); }
+  cyl(key, r, len, x, y, z, axis = "x", seg = 16, r2) { const g = new THREE.CylinderGeometry(r2 ?? r, r, len, seg); return this.put(key, g, x, y, z, axis === "z" ? Math.PI / 2 : 0, 0, axis === "x" ? Math.PI / 2 : 0); }
+  tube(key, w, len, x, y, z, along = "z") { return along === "z" ? this.box(key, w, w, len, x, y, z) : along === "x" ? this.box(key, len, w, w, x, y, z) : this.box(key, w, len, w, x, y, z); }
+  build(group, mats) { for (const [k, list] of Object.entries(this.parts)) { const geo = mergeGeometries(list.map((g) => g.index ? g.toNonIndexed() : g)); geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mats[k]); m.castShadow = true; m.receiveShadow = true; group.add(m); } return group; }
 }
-function lodMats(groups, frameCol) { // recolor the big dark plates in the team's color
-  return groups.map(([ci]) => { const [c, met] = LOD.H.palette[ci]; const lum = 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
-    const col = lum < 0.32 && lum > 0.12 ? new THREE.Color(frameCol) : new THREE.Color().setRGB(...c, THREE.SRGBColorSpace);
-    return new THREE.MeshStandardMaterial({ color: col, metalness: Math.min(met, 0.5), roughness: 0.55, flatShading: true }); });
+function teamMats(team, alliance) {
+  const h = hashN(team) >>> 0, frame = TEAM_COLORS[h % TEAM_COLORS.length], accent = ACCENTS[(h >>> 5) % ACCENTS.length];
+  return { frame: mat("f" + frame, { color: frame, roughness: 0.38, metalness: 0.65 }), dark: mat("dark", { color: 0x1d2025, roughness: 0.6, metalness: 0.3 }),
+    alu: mat("alu", { color: 0xb9c0c8, roughness: 0.32, metalness: 0.85 }), accent: mat("a" + accent, { color: accent, roughness: 0.45, metalness: 0.2 }),
+    wheel: mat("wheel", { color: 0x111214, roughness: 0.95 }), motor: mat("motor", { color: 0x2a2c30, roughness: 0.4, metalness: 0.7 }), kraken: mat("kraken", { color: 0xf07a1a, roughness: 0.5 }),
+    poly: mat("poly", { color: 0xcfe3f5, transparent: true, opacity: 0.16, roughness: 0.05, metalness: 0, depthWrite: false }),
+    roller: mat("roller", { color: 0x1d4f9a, roughness: 0.7 }), green: mat("grip", { color: 0x2f9e44, roughness: 0.9 }),
+    led: mat("led" + alliance, { color: alliance === "red" ? 0xff2a35 : 0x3a7bff, emissive: alliance === "red" ? 0xff2a35 : 0x3a7bff, emissiveIntensity: 1.6 }) };
 }
-function addSwerve(g, m, color) { for (const [x, z] of [[0.29, 0.27], [-0.29, 0.27], [0.29, -0.25], [-0.29, -0.25]]) {
-  const mod = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.11), m(0x2b2f35, 0.5, 0.6)); mod.position.set(x, 0.12, z); g.add(mod);
-  const w = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.035, 18), m(0x1a1a1a, 0.9)); w.rotation.z = Math.PI / 2; w.position.set(x, 0.05, z); g.add(w);
-  const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.08, 14), m(color, 0.4, 0.5)); motor.position.set(x, 0.19, z); g.add(motor); } }
-function makeBotMesh(team, alliance, style) {
-  if (LOD && hashN(team >> 1) % 5 < 2) return makeLodBot(team, alliance);
-  const g = new THREE.Group(); const m = (c, r = 0.7, met = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: met });
-  const add = (geo, mat, x, y, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o; };
-  const acol = alliance === "red" ? "#d8333a" : "#2f6df0", h = hashN(team);
-  const th = 0.085, hgt = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2;
-  const plain = m(acol, 0.85), num = new THREE.MeshStandardMaterial({ map: bumperTexture(team, acol), roughness: 0.85 });
-  const box = (w, d, x, z, face) => { const mats = [plain, plain, plain, plain, plain, plain]; if (face) mats[face] = num; const o = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), mats); o.position.set(x, yc, z); o.castShadow = true; g.add(o); };
-  box(2 * BOX.hx, th, 0, BOX.hz - th / 2 + BOX.cz, 4); box(2 * BOX.hx, th, 0, -BOX.hz + th / 2 + BOX.cz, 5);
-  box(th, 2 * BOX.hz - 2 * th, BOX.hx - th / 2, BOX.cz, 0); box(th, 2 * BOX.hz - 2 * th, -BOX.hx + th / 2, BOX.cz, 1);
-  const frameCol = [0x8d96a1, 0x3a3f47, 0xc9a227, 0x6c2bd9, 0x1f8a5b, 0xd96b2b, 0xb8c2cc][h % 7], frame = m(frameCol, 0.45, 0.4), dark = m(0x23272d), accent = m([0xd4a514, 0xe33, 0x2bd, 0xeee][(h >> 4) % 4], 0.5);
-  add(new THREE.BoxGeometry(0.72, 0.02, 0.7), dark, 0, 0.03, BOX.cz); addSwerve(g, m, frameCol);
-  const poly = new THREE.MeshStandardMaterial({ color: 0xbfd6ee, transparent: true, opacity: 0.18, roughness: 0.1, depthWrite: false });
-  for (const x of [-0.34, 0.34]) add(new THREE.BoxGeometry(0.006, 0.32, 0.5), poly, x, 0.36, 0.08);
-  const spin = []; g.userData.spin = spin;
-  if (style === 0) { // classic: open hopper, rear shooter
-    for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.36, 0.62), frame, x, 0.34, 0.02);
-    add(new THREE.BoxGeometry(0.62, 0.2, 0.22), dark, 0, 0.5, -0.24);
-    for (const x of [-0.18, 0.18]) { const f = add(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 14), accent, x, 0.5, -0.24); f.rotation.z = Math.PI / 2; spin.push(f); }
-  } else if (style === 1) { // turret on a tall hopper
-    for (const x of [-0.33, 0.33]) for (const z of [-0.28, 0.3]) add(new THREE.BoxGeometry(0.03, 0.6, 0.03), frame, x, 0.42, z);
-    add(new THREE.BoxGeometry(0.68, 0.03, 0.62), frame, 0, 0.72, 0.01);
-    const tur = add(new THREE.CylinderGeometry(0.16, 0.18, 0.12, 20), dark, 0, 0.8, -0.1); add(new THREE.BoxGeometry(0.14, 0.12, 0.3), accent, 0, 0.9, -0.2);
-    void tur;
-  } else if (style === 2) { // low bot with a wide flywheel bank
-    add(new THREE.BoxGeometry(0.66, 0.16, 0.5), frame, 0, 0.24, 0.05);
-    add(new THREE.BoxGeometry(0.7, 0.14, 0.18), dark, 0, 0.38, -0.25);
-    for (const x of [-0.24, -0.08, 0.08, 0.24]) { const f = add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 12), accent, x, 0.39, -0.25); f.rotation.z = Math.PI / 2; spin.push(f); }
-  } else { // tall tower with a hooded shooter on top
-    for (const x of [-0.3, 0.3]) add(new THREE.BoxGeometry(0.04, 0.85, 0.08), frame, x, 0.5, -0.22);
-    add(new THREE.BoxGeometry(0.64, 0.14, 0.28), dark, 0, 0.92, -0.2);
-    const hood = add(new THREE.CylinderGeometry(0.16, 0.16, 0.6, 18, 1, true, 0, Math.PI), accent, 0, 0.98, -0.2); hood.rotation.z = Math.PI / 2;
-    for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.3, 0.45), frame, x, 0.3, 0.1);
+function chassis(k, compact) { // frame rails, bellypan, swerve modules, electronics
+  const W = 0.36, L = 0.34, z0 = BOX.cz;
+  for (const x of [-W, W]) k.tube("frame", 0.026, 2 * L, x, 0.075, z0);
+  for (const z of [-L, L]) k.tube("frame", 0.026, 2 * W, 0, 0.075, z0 + z, "x");
+  k.box("dark", 0.68, 0.006, 0.64, 0, 0.045, z0);
+  for (const [x, z] of [[0.29, 0.27], [-0.29, 0.27], [0.29, -0.25], [-0.29, -0.25]]) {
+    k.box("alu", 0.12, 0.012, 0.12, x, 0.105, z + z0); k.cyl("wheel", 0.051, 0.038, x, 0.051, z + z0, "x", 22); k.cyl("alu", 0.03, 0.04, x, 0.051, z + z0, "x", 10);
+    k.cyl("motor", 0.03, 0.07, x + 0.025, 0.15, z + z0, "y", 14); k.cyl("kraken", 0.031, 0.012, x + 0.025, 0.188, z + z0, "y", 14); k.cyl("motor", 0.022, 0.05, x - 0.03, 0.14, z + z0, "y", 12);
   }
-  const arm = new THREE.Group(); arm.position.set(0, 0.2, BOX.hz - 0.08); g.add(arm); g.userData.arm = arm; g.userData.armSign = -1;
-  for (const x of [-0.31, 0.31]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.06, 0.3), frame); pl.position.set(x, 0, 0.15); pl.castShadow = true; arm.add(pl); }
-  const rl = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.62, 12), m(0x1e5aa8, 0.6)); rl.rotation.z = Math.PI / 2; rl.position.set(0, 0, 0.29); arm.add(rl);
-  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 18); balls.count = 0; g.add(balls);
-  const tmp = new THREE.Matrix4(); for (let k = 0; k < 18; k++) { tmp.makeTranslation(-0.2 + (k % 3) * 0.2, 0.26 + Math.floor(k / 6) * 0.13, 0.02 + (Math.floor(k / 3) % 2) * 0.15); balls.setMatrixAt(k, tmp); }
-  g.userData.balls = balls; scene.add(g); return g;
+  k.box("dark", 0.17, 0.09, 0.07, compact ? 0.12 : 0, 0.095, z0 - 0.22); k.box("accent", 0.16, 0.015, 0.06, compact ? 0.12 : 0, 0.145, z0 - 0.22);
+  k.box("dark", 0.2, 0.02, 0.12, -0.12, 0.06, z0 + 0.05);
 }
-// skill from EPA: faster, more accurate, quicker cycling robots for higher EPA
-function skillOf(epa) { const e = THREE.MathUtils.clamp((epa || 30) / 120, 0.05, 3.2);
-  return { vmax: 2.4 + 1.7 * Math.min(e, 1.4), period: 0.5 / (0.35 + e * 1.7), acc: 6 / (0.6 + e), sj: 0.05 / (0.6 + e), cap: Math.round(8 + 24 * Math.min(e, 1.8)), climb: e }; }
-function makeLodBot(team, alliance) { // your own robot's design, simplified and repainted in the team's colors
-  const g = new THREE.Group(), h = hashN(team), frameCol = [0x8d96a1, 0x3a3f47, 0xc9a227, 0x6c2bd9, 0x1f8a5b, 0xd96b2b, 0x2a6fb5][h % 7];
-  const st = new THREE.Mesh(LOD.geo.static.g, lodMats(LOD.geo.static.groups, frameCol)); st.castShadow = true; g.add(st);
-  const arm = new THREE.Group(); arm.position.fromArray(LOD.H.rig.armPivot); g.add(arm); const am = new THREE.Mesh(LOD.geo.arm.g, lodMats(LOD.geo.arm.groups, frameCol)); am.castShadow = true; arm.add(am);
-  g.userData.arm = arm; g.userData.armSign = 1; g.userData.armLod = true; g.userData.spin = [];
-  const acol = alliance === "red" ? "#d8333a" : "#2f6df0", th = 0.085, hgt = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2;
-  const plain = new THREE.MeshStandardMaterial({ color: acol, roughness: 0.85 }), num = new THREE.MeshStandardMaterial({ map: bumperTexture(team, acol), roughness: 0.85 });
-  const box = (w, d, x, z, face) => { const mats = Array(6).fill(plain); if (face != null) mats[face] = num; const o = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), mats); o.position.set(x, yc, z); o.castShadow = true; g.add(o); };
+function bumpers(g, team, alliance) {
+  const acol = alliance === "red" ? "#c92a31" : "#2a62de", th = 0.085, hgt = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2;
+  const plain = mat("bp" + alliance, { color: acol, roughness: 0.92 }), num = new THREE.MeshStandardMaterial({ map: bumperTexture(team, acol), roughness: 0.92 }), cap = mat("bcap", { color: 0x15171b, roughness: 0.7 });
+  const box = (w, d, x, z, face) => { const mats = Array(6).fill(plain); if (face != null) mats[face] = num; mats[2] = cap; const o = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), mats); o.position.set(x, yc, z); o.castShadow = true; g.add(o); };
   box(2 * BOX.hx, th, 0, BOX.hz - th / 2 + BOX.cz, 4); box(2 * BOX.hx, th, 0, -BOX.hz + th / 2 + BOX.cz, 5); box(th, 2 * BOX.hz - 2 * th, BOX.hx - th / 2, BOX.cz, 0); box(th, 2 * BOX.hz - 2 * th, -BOX.hx + th / 2, BOX.cz, 1);
-  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 18); balls.count = 0; g.add(balls);
-  const tmp = new THREE.Matrix4(); for (let k = 0; k < 18; k++) { tmp.makeTranslation(-0.2 + (k % 3) * 0.2, 0.32 + Math.floor(k / 6) * 0.13, 0.1 + (Math.floor(k / 3) % 2) * 0.14); balls.setMatrixAt(k, tmp); }
-  g.userData.balls = balls; scene.add(g); return g;
+}
+function flywheelPair(k, x, y, z, width, key = "alu") { // two stacked flywheels with Krakens on the side
+  k.cyl(key, 0.051, width, x, y, z, "x", 22); k.cyl("green", 0.052, width * 0.6, x, y, z, "x", 22);
+  k.cyl("motor", 0.032, 0.08, x + width / 2 + 0.045, y, z, "x", 14); k.cyl("kraken", 0.033, 0.012, x + width / 2 + 0.088, y, z, "x", 14);
+}
+function intakeArm(g, M, wide) { // over-bumper roller intake on a pivot
+  const arm = new THREE.Group(); arm.position.set(0, 0.24, BOX.cz + BOX.hz - 0.1); g.add(arm); const k = new Kit(), w = wide ? 0.34 : 0.3;
+  for (const x of [-w, w]) k.box("frame", 0.008, 0.07, 0.32, x, 0, 0.13);
+  k.cyl("roller", 0.03, 2 * w, 0, -0.01, 0.28, "x", 14); k.cyl("roller", 0.025, 2 * w, 0, 0.03, 0.14, "x", 12); k.cyl("motor", 0.03, 0.07, w + 0.04, -0.01, 0.28, "x", 12);
+  for (let i = -3; i <= 3; i++) k.cyl("green", 0.034, 0.03, i * w / 3.4, -0.01, 0.28, "x", 12);
+  k.build(arm, M); return arm;
+}
+// designs: "turret" | "drum" | "dual" | "tower" | "kit"
+function designFor(team, epa) { const h = hashN(team) >>> 3; if (epa >= 150) return ["turret", "drum", "turret", "drum", "dual"][h % 5]; if (epa >= 90) return ["dual", "turret", "tower", "dual", "drum"][h % 5]; if (epa >= 40) return ["dual", "tower", "kit", "dual"][h % 4]; return ["kit", "kit", "dual", "tower"][h % 4]; }
+function makeBotMesh(team, alliance, design) {
+  const g = new THREE.Group(), M = teamMats(team, alliance), k = new Kit(), u = g.userData; u.spin = []; u.design = design;
+  chassis(k, design === "kit"); bumpers(g, team, alliance);
+  const posts = (h, zs = [-0.28, 0.3], xs = [-0.34, 0.34]) => { for (const x of xs) for (const z of zs) k.tube("frame", 0.025, h, x, 0.09 + h / 2, z, "y"); };
+  if (design === "turret" || design === "drum") {
+    posts(0.42); for (const x of [-0.34, 0.34]) k.tube("frame", 0.025, 0.6, x, 0.51, 0.01); for (const z of [-0.28, 0.3]) k.tube("frame", 0.025, 0.7, 0, 0.51, z, "x");
+    for (const x of [-0.34, 0.34]) k.box("poly", 0.004, 0.38, 0.56, x, 0.31, 0.01); k.box("poly", 0.66, 0.38, 0.004, 0, 0.31, -0.29);
+    if (design === "drum") { // spinning drum indexer with slats, feeding a central turret
+      const drum = new THREE.Group(); drum.position.set(0, 0.11, 0.02); g.add(drum); const dk = new Kit();
+      dk.cyl("dark", 0.27, 0.012, 0, 0.01, 0, "y", 36); for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; dk.box("alu", 0.012, 0.22, 0.12, Math.cos(a) * 0.2, 0.12, Math.sin(a) * 0.2, 0, -a, 0); }
+      dk.cyl("alu", 0.04, 0.3, 0, 0.16, 0, "y", 14); dk.build(drum, M); u.drum = drum;
+    } else { for (let i = 0; i < 4; i++) k.cyl("roller", 0.02, 0.62, 0, 0.13, -0.18 + i * 0.12, "x", 10); }
+    // turret: ring + head that tracks the hub
+    k.cyl("dark", 0.17, 0.03, 0, 0.53, -0.05, "y", 32); k.cyl("accent", 0.175, 0.008, 0, 0.548, -0.05, "y", 32);
+    const tur = new THREE.Group(); tur.position.set(0, 0.56, -0.05); g.add(tur); const tk = new Kit();
+    for (const x of [-0.11, 0.11]) tk.box("frame", 0.008, 0.2, 0.3, x, 0.1, 0);
+    flywheelPair(tk, 0, 0.1, -0.08, 0.2); tk.cyl("alu", 0.025, 0.2, 0, 0.04, 0.06, "x", 12);
+    tk.put("dark", new THREE.CylinderGeometry(0.13, 0.13, 0.22, 20, 1, true, -0.4, 2.2), 0, 0.1, -0.08, 0, 0, Math.PI / 2); // hood
+    tk.box("led", 0.2, 0.01, 0.01, 0, 0.21, 0.15); tk.build(tur, M); u.turret = tur;
+  } else if (design === "dual") { // two fixed hooded shooters at the back, sloped polycarbonate hopper
+    posts(0.32, [0.3], [-0.34, 0.34]); for (const x of [-0.34, 0.34]) { k.tube("frame", 0.025, 0.5, x, 0.33, 0.02); k.box("poly", 0.004, 0.24, 0.5, x, 0.27, 0.05); }
+    k.box("poly", 0.66, 0.004, 0.42, 0, 0.2, 0.05, -0.18, 0, 0);
+    for (const x of [-0.17, 0.17]) { for (const s of [-0.12, 0.12]) k.box("frame", 0.008, 0.3, 0.22, x + s, 0.4, -0.24);
+      flywheelPair(k, x, 0.44, -0.27, 0.2); k.put("dark", new THREE.CylinderGeometry(0.12, 0.12, 0.22, 18, 1, true, 0.2, 2.0), x, 0.44, -0.27, 0, 0, Math.PI / 2); }
+    k.box("led", 0.62, 0.01, 0.01, 0, 0.56, -0.13);
+  } else if (design === "tower") { // two-stage elevator carrying a hooded shooter
+    for (const x of [-0.25, 0.25]) { k.tube("alu", 0.03, 0.82, x, 0.5, -0.2, "y"); k.tube("frame", 0.026, 0.7, x * 0.92, 0.62, -0.17, "y"); }
+    k.box("dark", 0.56, 0.14, 0.26, 0, 0.96, -0.2); flywheelPair(k, 0, 0.96, -0.26, 0.4); k.put("accent", new THREE.CylinderGeometry(0.15, 0.15, 0.5, 20, 1, true, 0, Math.PI), 0, 0.98, -0.22, 0, 0, Math.PI / 2);
+    posts(0.28, [0.05, 0.3]); for (const x of [-0.34, 0.34]) k.box("poly", 0.004, 0.26, 0.3, x, 0.24, 0.17);
+    k.box("led", 0.5, 0.01, 0.01, 0, 0.88, -0.07);
+  } else { // kitbot-style: open frame, simple shooter on a plate
+    k.box("alu", 0.6, 0.006, 0.4, 0, 0.21, 0.06); for (const x of [-0.3, 0.3]) k.box("alu", 0.006, 0.2, 0.4, x, 0.12, 0.06);
+    k.box("frame", 0.5, 0.18, 0.006, 0, 0.3, -0.18); flywheelPair(k, 0, 0.36, -0.22, 0.36); k.cyl("roller", 0.03, 0.56, 0, 0.22, 0.28, "x", 12);
+  }
+  k.build(g, M);
+  u.arm = intakeArm(g, M, design === "dual" || design === "drum");
+  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 24); balls.count = 0; g.add(balls); balls.castShadow = true;
+  const tmp = new THREE.Matrix4(), base = design === "tower" ? 0.2 : design === "kit" ? 0.29 : 0.2;
+  for (let n = 0; n < 24; n++) { tmp.makeTranslation(-0.22 + (n % 4) * 0.147, base + Math.floor(n / 8) * 0.13, -0.02 + (Math.floor(n / 4) % 2) * 0.16 + (design === "dual" ? 0.06 : 0)); balls.setMatrixAt(n, tmp); }
+  u.balls = balls; scene.add(g); return g;
 }
 function clearBots() { for (const b of BOTS) scene.remove(b.mesh); BOTS.length = 0; }
-// entries: [{ team, alliance, epa, role, x, z, yaw }]
-function setupMatchBots(entries) {
-  clearBots();
-  for (const e of entries) {
-    const b = Object.assign({ vx: 0, vz: 0, w: 0, store: [], state: "collect", tgt: -1, think: Math.random() * 0.3, shootT: 0, stuckT: 0, unstick: 0, role: "score", scored: 0 }, e, skillOf(e.epa));
-    b.mesh = makeBotMesh(e.team, e.alliance, hashN(e.team) % 4); BOTS.push(b);
-    for (let i = fuel.n - 1, k = 0; i >= 0 && k < 8; i--) if (fuel.st[i] === 0) { fuel.st[i] = 6; b.store.push(i); k++; }
-  }
-}
-function setupBots(n) { // practice / quick match: generic opponents
-  const s = -side(), opp = S.alliance === "red" ? "blue" : "red", yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2, list = [];
-  if (n >= 1) list.push({ team: 9999, alliance: opp, epa: 90, role: "score", x: s * 5.6, z: 1.6, yaw });
-  if (n >= 2) list.push({ team: 9998, alliance: opp, epa: 70, role: "defend", x: s * 5.6, z: -1.6, yaw });
-  setupMatchBots(list);
-}
+
 // ---------- A* navigation on a 10 cm grid built from the field's distance map (bumps cost more, tight spots cost more)
 const NAV = { cell: 0.1, x0: -8.45, z0: -4.2, nx: 169, nz: 84 };
 function buildNav() {
@@ -1063,70 +1237,164 @@ function navPath(sx, sz, gx, gz) {
   return out;
 }
 function navTarget(b, gx, gz) { // pure-pursuit point along an A* path, replanned when the goal moves
-  if (!b.path || Math.hypot(gx - b.pg[0], gz - b.pg[1]) > 0.4 || (b.pathT = (b.pathT || 0) + 1) > 90) { b.path = navPath(b.x, b.z, gx, gz); b.pg = [gx, gz]; b.pathT = 0; b.pi = 1; }
+  b.pathT = (b.pathT || 0) + 1;
+  if ((!b.path && b.pathT > 6) || (b.path && ((Math.hypot(gx - b.pg[0], gz - b.pg[1]) > 0.5 && b.pathT > 30) || b.pathT > 150))) { b.path = navPath(b.x, b.z, gx, gz); b.pg = [gx, gz]; b.pathT = 0; b.pi = 1; }
+  if (b.path && lineFree(b.x, b.z, gx, gz) && Math.hypot(gx - b.x, gz - b.z) < 2.5) return [gx, gz];
   if (!b.path || b.path.length < 2) return [gx, gz];
   while (b.pi < b.path.length - 1 && Math.hypot(b.path[b.pi][0] - b.x, b.path[b.pi][1] - b.z) < 0.45) b.pi++;
   const p = b.path[b.pi]; return [p[0], p[1]];
 }
-function routeAround(b, gx, gz) { // detour past either side of a hub instead of driving into it
-  for (const h of F.hubs) { const hx = h.center[0]; if (Math.sign(b.x - hx) === Math.sign(gx - hx)) continue;
-    const t = (hx - b.x) / ((gx - b.x) || 1e-6), zc = b.z + (gz - b.z) * t; if (Math.abs(zc) > 1.45) continue;
-    const zs = Math.abs(b.z) > 0.3 ? Math.sign(b.z) : (gz >= 0 ? 1 : -1); return [hx + Math.sign(b.x - hx) * 0.2, zs * 2.15]; }
-  return [gx, gz];
+// ---------- AI robots: skill from EPA, then a state machine (collect -> travel -> shoot, staging while the hub is inactive, defense, unstick)
+// e = EPA / 100. Everything that makes a real robot good scales with it: drive speed, intake width, hopper size, fire rate, accuracy,
+// whether it can shoot on the move (turrets), how smart its fuel targeting is, and whether it plays the hub shifts.
+function skillOf(epa, design) {
+  const e = THREE.MathUtils.clamp((epa || 20) / 100, 0.05, 4), turret = design === "turret" || design === "drum";
+  const q = 2 * Math.pow(e / 2, 1.3); // throughput skill: convex, so a 40 EPA robot is a fraction of a 120, not a third
+  return { e, vmax: 1.6 + 1.9 * Math.min(q, 1.6), cap: Math.round(3 + 14 * Math.min(q, 3)), rate: 0.5 + 4 * Math.min(q, 4.2), grabRate: 1.2 + 8 * Math.min(q, 2.8),
+    acc: 20 / (1 + 4 * e), sj: 0.14 / (1 + 5 * e), intakeW: 0.2 + 0.12 * Math.min(q, 2.4), sweep: 0.7 + 1.1 * Math.min(q, 2), react: 1.4 / (1 + 2 * e), rotMax: 1.5 + 3.5 * Math.min(e, 1),
+    jamP: 0.07 * Math.pow(Math.max(0, 1 - e), 1.5), turret, onMove: turret && e > 0.9, aimMove: e > 1.25, smart: e > 0.75, shifts: e > 0.6, feed: e > 1.6, autoCycles: e > 1.4 };
 }
-function botHub(b) { return b.alliance === "red" ? redHub : blueHub; }
-function defendTarget(b) { // the player if they're on the other alliance, else the opposing robot carrying the most fuel
-  if (!S.spectate && S.alliance !== b.alliance) return { x: S.x, z: S.z, hub: myHub() };
-  let best = null; for (const o of BOTS) if (o.alliance !== b.alliance && (!best || o.store.length > best.store.length)) best = o;
-  return best ? { x: best.x, z: best.z, hub: botHub(best) } : null;
-}
-function stepBots(dt) {
-  for (const b of BOTS) {
-    const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]); let tx = 0, tz = 0, wantYaw = b.yaw, vmax = b.vmax;
-    b.think -= dt;
-    if (b.role === "defend" && defendTarget(b)) { const T = defendTarget(b); const ph = F.hubs[T.hub].center; const dx = ph[0] - T.x, dz = ph[2] - T.z, d = Math.hypot(dx, dz) || 1;
-      const [gx, gz] = navTarget(b, T.x + dx / d * 1.0, T.z + dz / d * 1.0); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(T.x - b.x, T.z - b.z); vmax = b.vmax + 0.3;
-    } else if (b.state === "collect") {
-      const waiting = S.mode === "match" && !hubActive(b.alliance) && b.climb > 0.6;
-      if ((b.store.length >= b.cap && !waiting) || (b.store.length >= b.cap && waiting && shiftRemaining() < 4) || (b.think < 0 && b.tgt < 0 && b.store.length >= 1 && !waiting)) b.state = "score";
-      if (b.think < 0) { b.think = 0.4; let best = -1, bd = 1e9;
-        for (let k = 0; k < 120; k++) { const i = (Math.random() * fuel.n) | 0; if (fuel.st[i] !== 0 || (b.skip && b.skip.has(i))) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2 || !inField(fuel.pos[o], fuel.pos[o + 2]) || sdf(fuel.pos[o], fuel.pos[o + 2]) < 0.5) continue;
-          const d = Math.hypot(fuel.pos[o] - b.x, fuel.pos[o + 2] - b.z) + (Math.sign(fuel.pos[o]) === hs ? 0 : 1.5); if (d < bd) { bd = d; best = i; } }
-        if (best >= 0 && (b.tgt < 0 || b.tgtT === 0 || fuel.st[b.tgt] !== 0 || bd < Math.hypot(fuel.pos[b.tgt * 3] - b.x, fuel.pos[b.tgt * 3 + 2] - b.z) - 0.5)) b.tgt = best; }
-      if (b.tgt >= 0 && fuel.st[b.tgt] === 0) { const o = b.tgt * 3; const [gx, gz] = navTarget(b, fuel.pos[o], fuel.pos[o + 2]); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(tx, tz); const dd = Math.hypot(fuel.pos[o] - b.x, fuel.pos[o + 2] - b.z); vmax = Math.min(b.vmax, 1.2 + dd * (1.5 + b.climb)); } else b.tgt = -1;
-    } else {
-      if (!b.spot || b.spotT-- <= 0) { b.spot = [hb[0] + hs * (2.0 + Math.random() * 1.2), THREE.MathUtils.clamp(b.z + (Math.random() - 0.5), -2.2, 2.2)]; b.spotT = 600; }
-      const [gx, gz] = navTarget(b, b.spot[0], b.spot[1]); tx = gx - b.x; tz = gz - b.z;
-      const dh = Math.hypot(hb[0] - b.x, hb[2] - b.z); wantYaw = Math.atan2(hb[0] - b.x, hb[2] - b.z) + Math.PI;
-      if (Math.hypot(tx, tz) < 0.5 || (hs * b.x > HUB.cx + 1.4 && hs * b.x < HUB.cx + 3.4)) { tx = tz = 0;
-        // good teams hold fire while their hub is inactive
-        const hold = S.mode === "match" && !hubActive(b.alliance) && b.climb > 0.6;
-        if (hold && b.store.length < b.cap) { b.state = "collect"; b.think = 0; }
-        if (Math.abs(wrap(wantYaw - b.yaw)) < 0.08 && b.store.length && !hold) { b.shootT -= dt; if (b.shootT <= 0) { b.shootT = b.period; botShoot(b, dh); } } }
-      if (!b.store.length) { b.state = "collect"; b.think = 0; }
-    }
-    { const l0 = Math.hypot(tx, tz); if (l0 > 1e-3) { const v = Math.min(vmax, 0.6 + l0 * 3); tx = tx / l0 * v; tz = tz / l0 * v; } }
-    const dc = sdf(b.x, b.z); if (dc < 0.62) { const [gx, gz] = grad(b.x, b.z); tx += gx * (0.62 - dc) * 6; tz += gz * (0.62 - dc) * 6; }
-    for (const o of BOTS.concat(S.spectate ? [] : [S])) { if (o === b || (b.role === "defend" && o === S)) continue; const dx = b.x - o.x, dz = b.z - o.z, d = Math.hypot(dx, dz); if (d < 1.25 && d > 1e-3) { const k = (1.25 - d) * 2.2; tx += dx / d * k; tz += dz / d * k; } }
-    const l = Math.hypot(tx, tz); if (l > vmax) { tx = tx / l * vmax; tz = tz / l * vmax; }
-    if (b.unstick > 0) { b.unstick -= dt; tx = -Math.sin(b.yaw) * 1.5; tz = -Math.cos(b.yaw) * 1.5; }
-    if (l > 0.6 && Math.hypot(b.vx, b.vz) < 0.25) { b.stuckT += dt; if (b.stuckT > 1.2) { b.stuckT = 0; b.unstick = 0.7; if (b.tgt >= 0) (b.skip || (b.skip = new Set())).add(b.tgt); b.tgt = -1; } } else b.stuckT = 0;
-    if (b.tgt >= 0 && b.state === "collect") { b.tgtT = (b.tgtT || 0) + dt; if (b.tgtT > 4) { (b.skip || (b.skip = new Set())).add(b.tgt); b.tgt = -1; b.tgtT = 0; } } else b.tgtT = 0;
-    driveToward(b, tx, tz, THREE.MathUtils.clamp(wrap(wantYaw - b.yaw) * 6, -4.5, 4.5), dt, 20);
-    b.x += b.vx * dt; b.z += b.vz * dt; b.yaw = wrap(b.yaw + b.w * dt);
+function setupMatchBots(entries) {
+  clearBots();
+  for (const en of entries) {
+    const design = en.design || window.__forceDesign || designFor(en.team, en.epa);
+    const b = Object.assign({ vx: 0, vz: 0, w: 0, store: [], st: "shoot", tgt: -1, think: Math.random() * 0.3, shootT: 0, stuckT: 0, unstick: 0, role: "score", scored: 0, turretYaw: 0, armA: 0, stT: 0 }, en, skillOf(en.epa, design));
+    if (!b.turret) b.rate *= 1.3; // fixed shooters make up for not shooting on the move with a faster feed
+    b.design = design; b.slot = BOTS.filter(o => o.alliance === en.alliance).length; b.mesh = makeBotMesh(en.team, en.alliance, design); BOTS.push(b);
+    for (let i = fuel.n - 1, k = 0; i >= 0 && k < 8; i--) if (fuel.st[i] === 0) { fuel.st[i] = 6; b.store.push(i); k++; }
   }
 }
-function botShoot(b) {
-  const i = b.store.pop(); const th = 62 * DEG, back = b.yaw + Math.PI, px = b.x + Math.sin(back) * 0.3, pz = b.z + Math.cos(back) * 0.3;
-  const hb = F.hubs[botHub(b)].center, dd = Math.hypot(hb[0] - px, hb[2] - pz), sp = solveSpeed(dd, th, HUB.rim + 0.18 - 0.55) * (1 + (Math.random() - 0.5) * 2 * b.sj);
-  const yaw = Math.atan2(hb[0] - px, hb[2] - pz) + (Math.random() - 0.5) * 2 * b.acc * DEG;
-  fuel.pos.set([px, 0.55, pz], i * 3); fuel.vel.set([Math.sin(yaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(yaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4;
-  fuel.own[i] = 1 + BOTS.indexOf(b);
+function setupBots(n) { // practice: generic opponents
+  const s = -side(), opp = S.alliance === "red" ? "blue" : "red", yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2, list = [];
+  if (n >= 1) list.push({ team: 9999, alliance: opp, epa: 110, role: "score", x: s * 5.6, z: 1.6, yaw });
+  if (n >= 2) list.push({ team: 9998, alliance: opp, epa: 60, role: "defend", x: s * 5.6, z: -1.6, yaw });
+  setupMatchBots(list);
 }
-function drawBots(dt) { for (const b of BOTS) { const u = b.mesh.userData; b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; u.balls.count = Math.min(18, b.store.length);
-  const down = b.state === "collect" && b.role !== "defend"; b.armA = (b.armA ?? 0) + ((down ? 1 : 0) - (b.armA ?? 0)) * Math.min(1, (dt || 0.016) * 6);
-  if (u.arm) u.arm.rotation.x = u.armLod ? (RIG.armDeployDeg - (72 - 72 * b.armA)) * DEG : b.armA * 1.1;
-  if (u.spin) for (const f of u.spin) f.rotation.x += (b.state === "score" ? 30 : 3) * (dt || 0.016); } }
+function botHub(b) { return b.alliance === "red" ? redHub : blueHub; }
+function defendTarget(b) {
+  if (!S.spectate && S.alliance !== b.alliance) return { x: S.x, z: S.z, hub: myHub() };
+  let best = null; for (const o of BOTS) if (o.alliance !== b.alliance && (!best || o.store.length + o.e * 5 > best.store.length + best.e * 5)) best = o;
+  return best ? { x: best.x, z: best.z, hub: botHub(best) } : null;
+}
+// loose fuel density on a 1 m grid, refreshed a few times a second; strong robots go where the fuel is
+const DENS = { nx: 17, nz: 9, c: new Float32Array(17 * 9), t: 0 };
+function updateDensity(dt) { DENS.t -= dt; if (DENS.t > 0) return; DENS.t = 0.4; DENS.c.fill(0);
+  for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] !== 0) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2) continue; const x = fuel.pos[o], z = fuel.pos[o + 2]; if (!inField(x, z)) continue;
+    const ci = Math.floor(x + 8.5), ck = Math.floor(z + 4.5); if (ci >= 0 && ck >= 0 && ci < DENS.nx && ck < DENS.nz) DENS.c[ck * DENS.nx + ci]++; } }
+function pickCluster(b) {
+  let best = null, bs = -1; const hs = Math.sign(F.hubs[botHub(b)].center[0]);
+  for (let k = 0; k < DENS.nz; k++) for (let i = 0; i < DENS.nx; i++) { const n = DENS.c[k * DENS.nx + i]; if (n < 2) continue; const x = i - 8.5 + 0.5, z = k - 4.5 + 0.5; if (sdf(x, z) < 0.5) continue;
+    let claimed = 0; for (const o of BOTS) if (o !== b && o.alliance === b.alliance && o.cluster && Math.hypot(o.cluster[0] - x, o.cluster[1] - z) < 1.2) claimed = 1;
+    const sc = Math.pow(n, 1.25) / (Math.hypot(x - b.x, z - b.z) + 2.5) * (claimed ? 0.35 : 1) * (Math.sign(x) === hs || Math.abs(x) < 3 ? 1 : 0.6);
+    if (sc > bs) { bs = sc; best = [x, z]; } }
+  return best;
+}
+function nearestFuel(b, cx, cz, rad) { let best = -1, bd = 1e9;
+  for (let k = 0; k < 140; k++) { const i = (Math.random() * fuel.n) | 0; if (fuel.st[i] !== 0 || (b.skip && b.skip.has(i))) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2) continue;
+    const x = fuel.pos[o], z = fuel.pos[o + 2]; if (!inField(x, z) || sdf(x, z) < 0.5) continue; if (cx != null && Math.hypot(x - cx, z - cz) > rad) continue;
+    const d = Math.hypot(x - b.x, z - b.z); if (d < bd) { bd = d; best = i; } }
+  return best; }
+function inZone(b) { const hs = Math.sign(F.hubs[botHub(b)].center[0]); return hs * b.x >= ZONE_LINE - ZONE_BUMPER; }
+// every robot of an alliance gets its own lane around the hub, so they don't pile onto one spot
+const BOT_LANES = [-0.62, 0, 0.62];
+function laneSpot(b, r, jit) { const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]);
+  for (let k = 0; k < 8; k++) { const a = BOT_LANES[(b.slot || 0) % 3] + (Math.random() - 0.5) * jit, rr = r + (Math.random() - 0.5) * jit;
+    const x = hb[0] + hs * Math.cos(a) * rr, z = hb[2] + Math.sin(a) * rr; if (sdf(x, z) > 0.6 && inField(x, z)) return [x, z]; }
+  return [hb[0] + hs * r, hb[2]]; }
+function shotSpot(b) { return laneSpot(b, 2.5 + Math.random() * 0.7, 0.35); }
+function setSt(b, st) { if (b.st !== st) { b.st = st; b.stT = 0; b.tgt = -1; b.cluster = null; b.path = null;
+  if (st === "travel") b.spot = shotSpot(b); if (st === "stage") b.spot = laneSpot(b, 2.1, 0.15); if (st === "shoot") b.hold = [b.x, b.z]; } }
+function feedSpot(b) { const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]); return [hb[0] + hs * 2.3, hb[2] + BOT_LANES[(b.slot || 0) % 3] * 2.4]; }
+function stepBots(dt) {
+  updateDensity(dt);
+  const tele = S.mode === "match" && S.phase !== "auto";
+  for (const b of BOTS) {
+    const hb = F.hubs[botHub(b)].center, active = !tele || hubActive(b.alliance), dh = Math.hypot(hb[0] - b.x, hb[2] - b.z);
+    let tx = 0, tz = 0, wantYaw = b.yaw, vmax = b.vmax, fire = false, target = null; b.stT += dt; b.think -= dt;
+    b.grab = Math.min(3, (b.grab || 0) + dt * b.grabRate);
+    if (b.jam > 0) { b.jam -= dt; b.vx *= 0.9; b.vz *= 0.9; b.w *= 0.9; b.x += b.vx * dt; b.z += b.vz * dt; b.armA += (0 - b.armA) * Math.min(1, dt * 4); continue; }
+    if (S.running && Math.random() < b.jamP * dt) { b.jam = 2.5 + Math.random() * 4; continue; }
+    const waitShift = b.shifts && tele && !active, rem = shiftRemaining(), full = b.store.length >= b.cap;
+    const tToHub = dh / b.vmax + 1.2, tToEmpty = b.store.length / b.rate;
+    const face = () => b.turret ? Math.atan2(tx, tz) : Math.atan2(hb[0] - b.x, hb[2] - b.z) + Math.PI;
+    if (b.role === "defend" && S.phase !== "auto") { const T = defendTarget(b); if (T) { const ph = F.hubs[T.hub].center, dx = ph[0] - T.x, dz = ph[2] - T.z, d = Math.hypot(dx, dz) || 1;
+        const [gx, gz] = navTarget(b, T.x + dx / d * 0.9, T.z + dz / d * 0.9); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(T.x - b.x, T.z - b.z); vmax = b.vmax + 0.4; } }
+    else switch (b.st) {
+      case "collect": {
+        // when to stop collecting: hopper full, been out long enough with the hub live, or the live window is closing
+        if (full) { setSt(b, waitShift ? (b.feed && !inZone(b) && rem > 3 ? "feed" : "stage") : "travel"); break; }
+        if (!waitShift && b.store.length > 0 && (b.stT > 3.5 + 2.5 * Math.min(b.e, 2) || (tele && rem < tToHub + tToEmpty + 0.5 && rem > tToHub))) { setSt(b, "travel"); break; }
+        if (waitShift && b.store.length >= b.cap * 0.5 && rem < tToHub + 0.8) { setSt(b, "stage"); break; }
+        if (b.think < 0) { b.think = b.react + (b.smart ? 0.25 : 0.5);
+          if (b.smart) { if (!b.cluster || DENS.c[Math.floor(b.cluster[1] + 4.5) * DENS.nx + Math.floor(b.cluster[0] + 8.5)] < 2) b.cluster = pickCluster(b); }
+          const t = b.cluster ? nearestFuel(b, b.cluster[0], b.cluster[1], 1.3) : nearestFuel(b); if (t >= 0) b.tgt = t;
+          if (b.tgt < 0 && b.store.length > 0 && !waitShift) { setSt(b, "travel"); break; } }
+        let gx, gz; if (b.tgt >= 0 && fuel.st[b.tgt] === 0) { gx = fuel.pos[b.tgt * 3]; gz = fuel.pos[b.tgt * 3 + 2]; } else if (b.cluster) { [gx, gz] = b.cluster; } else { gx = 0; gz = 0; b.tgt = -1; }
+        const [px, pz] = navTarget(b, gx, gz); tx = px - b.x; tz = pz - b.z; wantYaw = Math.atan2(tx, tz);
+        vmax = Math.min(b.vmax, b.sweep + Math.hypot(gx - b.x, gz - b.z) * 2);
+        if (b.onMove && b.store.length && active && inZone(b) && dh < 4.6 && dh > 1.6) fire = true; // turrets keep shooting while they sweep the zone
+        break; }
+      case "feed": { // elite move while the hub is off: lob fuel from the neutral zone into your own alliance zone, then scoop it when the hub goes live
+        const fs = feedSpot(b); target = { x: fs[0] + (Math.random() - 0.5) * 1.2, z: fs[1] + (Math.random() - 0.5) * 1.2, y: 0.25, th: 50 * DEG };
+        wantYaw = b.turret ? b.yaw : Math.atan2(fs[0] - b.x, fs[1] - b.z) + Math.PI; fire = b.turret || Math.abs(wrap(wantYaw - b.yaw)) < 0.2;
+        if (!b.store.length || !waitShift) setSt(b, "collect"); else if (inZone(b) || rem < tToHub + 0.5) setSt(b, "stage"); break; }
+      case "stage": { if (!b.spot) b.spot = laneSpot(b, 2.1, 0.15); // loaded, hub inactive: wait in its lane, spun up, and go the moment it switches
+        const [px, pz] = navTarget(b, b.spot[0], b.spot[1]); tx = px - b.x; tz = pz - b.z; if (Math.hypot(tx, tz) < 0.3) tx = tz = 0;
+        wantYaw = Math.atan2(hb[0] - b.x, hb[2] - b.z) + (b.turret ? 0 : Math.PI);
+        if (!b.store.length) setSt(b, "collect"); else if (!waitShift) setSt(b, "shoot"); break; }
+      case "travel": {
+        if (!b.spot) b.spot = shotSpot(b);
+        const [px, pz] = navTarget(b, b.spot[0], b.spot[1]); tx = px - b.x; tz = pz - b.z; wantYaw = face();
+        if ((b.onMove || b.aimMove) && active && inZone(b) && dh < 4.6 && dh > 1.6 && (b.turret || Math.abs(wrap(wantYaw - b.yaw)) < 0.12)) fire = true;
+        if (Math.hypot(b.spot[0] - b.x, b.spot[1] - b.z) < 0.45 || (inZone(b) && dh < 3.8 && dh > 1.9 && sdf(b.x, b.z) > 0.55 && b.e > 0.5)) setSt(b, "shoot");
+        else if (waitShift && b.stT > 0.5) setSt(b, b.store.length >= b.cap * 0.5 && rem < tToHub + 1 ? "stage" : "collect");
+        if (!b.store.length) setSt(b, "collect"); break; }
+      case "shoot": {
+        if (!b.hold) b.hold = [b.x, b.z];
+        tx = (b.hold[0] - b.x) * 2; tz = (b.hold[1] - b.z) * 2; // hold the spot against bumps
+        wantYaw = b.turret ? b.yaw : Math.atan2(hb[0] - b.x, hb[2] - b.z) + Math.PI; fire = active || !b.shifts;
+        if (!b.turret && Math.abs(wrap(wantYaw - b.yaw)) > 0.06 + 0.1 * Math.min(b.e, 1)) fire = false;
+        if (!inZone(b) || dh > 4.8 || dh < 1.5) setSt(b, "travel");
+        else if (!b.store.length) setSt(b, "collect");
+        else if (waitShift) setSt(b, b.store.length < b.cap && rem > tToHub + 1.5 ? "collect" : "stage");
+        break; }
+    }
+    // shooting: real fuel, at the robot's fire rate
+    if (fire && b.store.length) { b.shootT -= dt; while (b.shootT <= 0 && b.store.length) { b.shootT += 1 / b.rate; botShoot(b, target); } } else b.shootT = Math.max(b.shootT, 0);
+    // steering: plan with A*, keep off walls, give other robots room
+    { const l0 = Math.hypot(tx, tz); if (l0 > 1e-3) { const v = Math.min(vmax, 0.5 + l0 * 3); tx = tx / l0 * v; tz = tz / l0 * v; } }
+    const dc = sdf(b.x, b.z); if (dc < 0.62) { const [gx, gz] = grad(b.x, b.z); tx += gx * (0.62 - dc) * 6; tz += gz * (0.62 - dc) * 6; }
+    for (const o of BOTS.concat(S.spectate ? [] : [S])) { if (o === b || (b.role === "defend")) continue; const dx = b.x - o.x, dz = b.z - o.z, d = Math.hypot(dx, dz); if (d < 1.2 && d > 1e-3) { const k = (1.2 - d) * 2; tx += dx / d * k; tz += dz / d * k; } }
+    const l = Math.hypot(tx, tz); if (l > vmax) { tx = tx / l * vmax; tz = tz / l * vmax; }
+    if (b.unstick > 0) { b.unstick -= dt; tx = -Math.sin(b.yaw) * 1.6 + (b.uz || 0); tz = -Math.cos(b.yaw) * 1.6; }
+    if (l > 0.6 && Math.hypot(b.vx, b.vz) < 0.22 && b.st !== "shoot") { b.stuckT += dt; if (b.stuckT > 1.0) { b.stuckT = 0; b.unstick = 0.6; b.uz = (Math.random() - 0.5) * 2; b.path = null; if (b.tgt >= 0) (b.skip || (b.skip = new Set())).add(b.tgt); b.tgt = -1; if (b.st === "travel" || b.st === "stage") b.spot = b.st === "travel" ? shotSpot(b) : laneSpot(b, 2.1, 0.6); } } else b.stuckT = Math.max(0, b.stuckT - dt);
+    driveToward(b, tx, tz, THREE.MathUtils.clamp(wrap(wantYaw - b.yaw) * 7, -b.rotMax, b.rotMax), dt, 22);
+    b.x += b.vx * dt; b.z += b.vz * dt; b.yaw = wrap(b.yaw + b.w * dt);
+    b.armA += ((b.st === "collect" && b.role !== "defend" ? 1 : 0) - b.armA) * Math.min(1, dt * 7);
+    if (b.turret) { const aim = target ? [target.x, target.z] : [hb[0], hb[2]]; b.turretYaw = wrap(Math.atan2(aim[0] - b.x, aim[1] - b.z) - b.yaw); }
+  }
+}
+// flattest launch angle that clears the near rim and comes down into the opening (what a hood table does on a real robot)
+function hubAngle(d, dy) { for (let a = 46; a <= 82; a += 2) { const th = a * DEG, sp = solveSpeed(d, th, dy), x1 = Math.max(0.1, d - HUB.half - 0.12);
+    if (heightAt(sp, th, x1) > dy + 0.2 && heightAt(sp, th, d - 0.1) - heightAt(sp, th, d) > 0.1 * 0.75) return th; } return 82 * DEG; }
+function botShoot(b, target) {
+  const i = b.store.pop(); let px, pz, py, aimYaw;
+  const hb = F.hubs[botHub(b)].center, T = target || { x: hb[0], z: hb[2], y: HUB.rim + 0.18 };
+  if (b.turret) { px = b.x + Math.sin(b.yaw) * -0.05; pz = b.z + Math.cos(b.yaw) * -0.05; py = 0.66; }
+  else { const back = b.yaw + Math.PI, off = b.design === "tower" ? 0.22 : 0.3; px = b.x + Math.sin(back) * off; pz = b.z + Math.cos(back) * off; py = b.design === "tower" ? 1.0 : b.design === "kit" ? 0.38 : 0.48; }
+  const dd = Math.hypot(T.x - px, T.z - pz), th = T.th || hubAngle(dd, T.y - py);
+  // aim where the robot's own motion will carry the ball (good robots compensate, weak ones don't)
+  const comp = Math.min(1, b.e); const sp0 = solveSpeed(dd, th, T.y - py);
+  const tof = dd / (sp0 * Math.cos(th)); const ax = T.x - b.vx * tof * comp - px, az = T.z - b.vz * tof * comp - pz;
+  const d2 = Math.hypot(ax, az), sp = solveSpeed(d2, th, T.y - py) * (1 + (Math.random() - 0.5) * 2 * b.sj);
+  aimYaw = Math.atan2(ax, az) + (Math.random() - 0.5) * 2 * b.acc * DEG;
+  fuel.pos.set([px, py, pz], i * 3); fuel.vel.set([Math.sin(aimYaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(aimYaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4;
+  fuel.own[i] = 1 + BOTS.indexOf(b); b.flash = 0.06;
+}
+function drawBots(dt) { for (const b of BOTS) { const u = b.mesh.userData; b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; u.balls.count = Math.min(24, b.store.length);
+  if (u.arm) u.arm.rotation.x = b.armA * 1.05 - 0.25;
+  if (u.turret) u.turret.rotation.y += wrap(b.turretYaw + Math.PI - u.turret.rotation.y) * Math.min(1, (dt || 0.016) * 10);
+  if (u.drum) u.drum.rotation.y += ((b.st === "shoot" || b.st === "travel") && b.store.length ? 9 : 1.5) * (dt || 0.016); } }
 
 // ================================================================== autonomous routines (ported from pyrebuilt autonomous/routines.py)
 // Paths are written in WPILib blue-alliance field coordinates (m, deg) like the robot code, then flipped for red and mirrored for "Left".
@@ -1283,7 +1551,7 @@ function stepFuel(dt) {
     for (const b of BOTS) { if (t[i] <= 0 || y > BOX.top + r) continue; const rx = x - b.x, rz = z - b.z; if (rx * rx + rz * rz > 0.7) continue;
       const cb = Math.cos(b.yaw), sb = Math.sin(b.yaw), lx = rx * cb - rz * sb, lz = rx * sb + rz * cb - BOX.cz;
       if (Math.abs(lx) > BOX.hx + r || Math.abs(lz) > BOX.hz + r) continue;
-      if (b.role === "score" && b.state === "collect" && lz > BOX.hz - 0.06 && Math.abs(lx) < 0.3 + 0.06 * Math.min(b.climb, 2) && b.store.length < b.cap) { st[i] = 6; b.store.push(i); break; }
+      if (b.role !== "defend" && b.armA > 0.5 && b.grab >= 1 && lz > BOX.hz - 0.06 && Math.abs(lx) < b.intakeW && b.store.length < b.cap) { st[i] = 6; b.store.push(i); b.grab -= 1; break; }
       const ox = BOX.hx + r - Math.abs(lx), oz = BOX.hz + r - Math.abs(lz); const nlx = ox < oz ? Math.sign(lx) : 0, nlz = ox < oz ? 0 : Math.sign(lz), pen = Math.min(ox, oz);
       const wx = nlx * cb + nlz * sb, wz = -nlx * sb + nlz * cb; x += wx * pen; z += wz * pen;
       const rel = (vx - (b.vx + b.w * rz)) * wx + (vz - (b.vz - b.w * rx)) * wz; if (rel < 0) { vx -= rel * wx * 1.35; vz -= rel * wz * 1.35; } }
@@ -1317,7 +1585,7 @@ function hubActive(a) { // pyrebuilt utilities/game.py shift schedule; the allia
 function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fuel.hub[i] = h; S.total++; if (!S.running) return;
   const a = h === redHub ? "red" : "blue"; if (!hubActive(a)) return; S.pts[a]++; if (S.phase === "auto") S.autoPts[a]++;
   if (fuel.own[i] === 0 && a === S.alliance) S.myFuel++; else if (fuel.own[i] > 0 && BOTS[fuel.own[i] - 1]) BOTS[fuel.own[i] - 1].scored++;
-  if (a === S.alliance) { S.score++; pulse(); } }
+  S.hype = (S.hype || 0) + 0.04; if (a === S.alliance) { S.score++; pulse(); } }
 function exitHub(i) { const h = fuel.hub[i]; const [cx, , cz] = F.hubs[h].center; const s = cx < 0 ? 1 : -1; const lane = [-0.45, -0.15, 0.15, 0.45][Math.floor(Math.random() * 4)];
   fuel.pos.set([cx + s * (HUB.half + FUEL_R + 0.03), 0.2, cz + lane], i * 3); fuel.vel.set([s * (1.6 + Math.random() * 1.2), 0, (Math.random() - 0.5) * 1.2], i * 3); fuel.st[i] = 0; fuel.t[i] = 0; }
 function tick(inp) {
@@ -1386,36 +1654,208 @@ function hud() {
 }
 
 // ================================================================== modes
+// ================================================================== modes and front end
 function setAlliance(a) { S.alliance = a; $("aRed").setAttribute("aria-pressed", a === "red"); $("aBlue").setAttribute("aria-pressed", a === "blue");
   ui.board.classList.toggle("blue", a === "blue"); if (robot.bumperMat) robot.bumperMat.color.set(a === "red" ? 0xd8333a : 0x2f6df0); try { localStorage.setItem("tt-alliance", a); } catch {} }
 function saveSet() { try { localStorage.setItem("tt-set", JSON.stringify(SET)); } catch {} }
-document.querySelectorAll("#oppSeg button").forEach((b) => { b.setAttribute("aria-pressed", +b.dataset.opp === SET.opp); b.onclick = () => { SET.opp = +b.dataset.opp; document.querySelectorAll("#oppSeg button").forEach((x) => x.setAttribute("aria-pressed", x === b)); saveSet(); }; });
-$("autoSel").value = SET.auto; $("autoSel").onchange = () => { SET.auto = $("autoSel").value; saveSet(); };
+function segBind(id, attr, get, set) { const bs = document.querySelectorAll(`#${id} button`);
+  bs.forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset[attr]) === String(get())); b.onclick = () => { set(b.dataset[attr]); bs.forEach((x) => x.setAttribute("aria-pressed", x === b)); saveSet(); }; }); }
+segBind("oppSeg", "opp", () => SET.opp, (v) => { SET.opp = +v; });
+segBind("gfxSeg", "gfx", () => SET.gfx, (v) => { SET.gfx = v; applyGfx(); });
+segBind("attSeg", "att", () => (SET.attract ? 1 : 0), (v) => { SET.attract = v === "1"; if (SET.attract) startAttract(); else stopAttract(); });
+$("autoSel2").innerHTML = $("autoSel").innerHTML;
+for (const id of ["autoSel", "autoSel2"]) { $(id).value = SET.auto; $(id).onchange = () => { SET.auto = $(id).value; $("autoSel").value = $("autoSel2").value = SET.auto; saveSet(); }; }
 for (const [id, key] of [["spdDrive", "drive"], ["spdTurn", "turn"]]) { const el = $(id); el.value = Math.round(SET[key] * 100); $(id + "V").textContent = el.value + "%"; el.oninput = () => { SET[key] = el.value / 100; $(id + "V").textContent = el.value + "%"; saveSet(); }; }
 $("aRed").onclick = () => setAlliance("red"); $("aBlue").onclick = () => setAlliance("blue");
 try { const a = localStorage.getItem("tt-alliance"); if (a === "red" || a === "blue") setAlliance(a); } catch {}
+const KEYS_HTML = `<h4>Xbox controller (same layout as the robot code)</h4>
+  <div><span>Drive / turn</span><kbd>Left stick / right stick</kbd></div><div><span>Intake (deploy + rollers)</span><kbd>LT hold</kbd></div>
+  <div><span>Shoot</span><kbd>RT hold</kbd></div><div><span>Carry intake</span><kbd>LB</kbd></div>
+  <div><span>Retract intake</span><kbd>D-pad down</kbd></div><div><span>Outtake</span><kbd>A hold</kbd></div>
+  <div><span>Spin flywheel on/off</span><kbd>B</kbd></div><div><span>Reset robot pose</span><kbd>X</kbd></div>
+  <div><span>Slow mode</span><kbd>RB hold</kbd></div><div><span>Field / robot-oriented</span><kbd>View (back)</kbd></div>
+  <div><span>Camera</span><kbd>Y</kbd></div><div><span>Auto-aim on/off</span><kbd>Left stick click</kbd></div>
+  <div><span>Pause</span><kbd>Start</kbd></div><div><span>Menus</span><kbd>D-pad, A, B</kbd></div>
+  <h4>Keyboard</h4>
+  <div><span>Drive / turn</span><kbd>WASD / Q E</kbd></div><div><span>Intake on/off</span><kbd>F</kbd></div>
+  <div><span>Shoot</span><kbd>Space hold</kbd></div><div><span>Carry / retract</span><kbd>C / Z</kbd></div>
+  <div><span>Outtake</span><kbd>X hold</kbd></div><div><span>Spin flywheel on/off</span><kbd>B</kbd></div>
+  <div><span>Field / robot-oriented</span><kbd>G</kbd></div><div><span>Auto-aim / camera</span><kbd>T / V</kbd></div>
+  <div><span>Slow mode</span><kbd>Shift hold</kbd></div><div><span>Agitate while shooting</span><kbd>H</kbd></div>
+  <div><span>Run selected auto (practice)</span><kbd>P</kbd></div><div><span>Follow next robot (spectating)</span><kbd>N</kbd></div>
+  <div><span>Reset field (practice)</span><kbd>R</kbd></div><div><span>Pause</span><kbd>Esc</kbd></div>`;
+$("kgrid").innerHTML = $("kgrid2").innerHTML = KEYS_HTML;
 function preload(n) { HS.n = 0; const ids = []; for (let i = fuel.n - 1; i >= 0 && ids.length < n; i--) if (fuel.st[i] === 0) { fuel.st[i] = 1; ids.push(i); } slotsInto(ids.length, ids); S.hopper = HS.n; }
-function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); if (!S.comp) setupBots(SET.opp); S.myFuel = 0; S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
+function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); if (!S.comp) setupBots(SET.opp); S.myFuel = 0; S.myShots = 0; S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
   Object.assign(M, { arm: ARM.carry, armT: ARM.carry, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, ext: 0 }); S.intakeLatch = false; S.spinOutside = false; }
 function setView(v) {
-  S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; ui.menu.hidden = !(v === "menu" || (v === "drive" && S.paused));
-  const show = v === "show"; for (const b of BOTS) b.mesh.visible = !show; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show;
-  scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0f141a);
+  S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; $("menu").hidden = v !== "menu"; if (v !== "comp") $("comp").hidden = true; updatePause();
+  const show = v === "show"; for (const b of BOTS) b.mesh.visible = !show; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show; arena.visible = !show;
+  scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0a0d12);
   controls.enabled = show; fill2.visible = show; resize(); if (robot.parts.length) applyMaterials();
 }
-function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); AU = null; if (mode === "match" && SET.auto !== "none") autoBegin(SET.auto);
-  toast(mode === "match" ? "Auto · " + (SET.auto !== "none" ? autoName(SET.auto) : "drive it yourself") : "Practice", mode === "match" ? "var(--fuel)" : "#e9edf2"); }
-$("goComp").onclick = () => { COMP = COMP || null; openComp(); };
-$("goBack").onclick = () => { abandonLive(true); };
-$("specSkip").onclick = () => abandonLive(true);
-$("specSpeed").onclick = () => { S.timeScale = { 1: 2, 2: 4, 4: 1 }[S.timeScale || 1]; $("specSpeed").textContent = "Speed " + S.timeScale + "×"; };
-$("goFree").onclick = () => { S.comp = false; LIVE = null; start("free"); }; $("goTimed").onclick = () => { S.comp = false; LIVE = null; start("match"); }; $("goShow").onclick = () => enterShow();
-function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; $("goBack").hidden = !S.comp; if (p) keys.clear(); }
-function enterMenu() { S.paused = true; setView("menu"); }
-function endRun() { S.running = false; if (S.comp) { finishLive(); return; } const sc = S.pts[S.alliance], op = S.pts[S.alliance === "red" ? "blue" : "red"];
-  const res = sc > op ? "You win " : sc < op ? "You lose " : "Tie "; toast(res + sc + "–" + op, sc >= op ? "var(--fuel)" : "#e9edf2");
-  if (sc > best) { best = sc; try { localStorage.setItem("tt-best", String(best)); } catch {} $("best").textContent = best + " pts"; }
-  setTimeout(() => setPaused(true), 2600); }
+function updatePause() { $("pause").hidden = !(S.view === "drive" && S.paused && !S.intro && !S.over); }
+
+// ---------- menus
+const SCREENS = { title: "scrTitle", quick: "scrQuick", practice: "scrPractice", settings: "scrSettings" };
+let screen = "title";
+function menuScreen(n) { screen = n; for (const [k, id] of Object.entries(SCREENS)) $(id).hidden = k !== n; $("menu").scrollTop = 0; if (n === "quick") renderQM();
+  const f = $(SCREENS[n]).querySelector(n === "title" ? ".mode:not(:disabled)" : ".cta"); if (f) f.focus({ preventScroll: true }); }
+document.querySelectorAll("[data-back]").forEach((b) => { b.onclick = () => menuScreen("title"); });
+$("modes").onclick = (e) => { const b = e.target.closest(".mode"); if (!b || b.disabled) return; const g = b.dataset.go;
+  if (g === "garage") { stopAttract(); enterShow(); } else if (g === "comp") openComp(); else menuScreen(g); };
+$("goFree").onclick = () => start("free");
+function start(mode) { stopAttract(); LIVE = null; S.comp = false; S.spectate = false; S.over = false; robot.root.visible = true; S.mode = mode; resetShowcase(); resetRound();
+  S.paused = false; setView("drive"); AU = null; S.cam = "driver"; $("camBtn").textContent = "View: Driver"; setShadowBox(false); toast("Practice", "#e9edf2"); }
+function setPaused(p) { if (!S.loaded || S.view !== "drive" || S.intro || S.over) return; S.paused = p; if (p) keys.clear();
+  const comp = LIVE && (LIVE.kind === "qual" || LIVE.kind === "playoff");
+  $("pTitle").textContent = LIVE ? LIVE.title : "Practice"; $("pKick").textContent = "Paused" + (LIVE && LIVE.kicker ? " · " + LIVE.kicker : "");
+  $("pRestart").hidden = !!comp; $("pLeave").textContent = comp ? "Leave match (sim the result)" : "Quit to title"; updatePause(); if (p) $("pResume").focus(); }
+$("pResume").onclick = () => setPaused(false);
+$("pRestart").onclick = () => { if (LIVE && LIVE.kind === "exh") startQuick(); else { S.paused = false; resetRound(); updatePause(); } };
+$("pControls").onclick = () => { const k = $("kgrid2"); k.hidden = !k.hidden; $("pControls").setAttribute("aria-expanded", String(!k.hidden)); };
+$("pLeave").onclick = () => { if (LIVE && (LIVE.kind === "qual" || LIVE.kind === "playoff")) { S.paused = false; updatePause(); abandonLive(true); return; } quitToTitle(); };
+function quitToTitle() { S.running = false; S.over = false; LIVE = null; S.comp = false; S.spectate = false; clearBots(); robot.root.visible = true; $("results").hidden = true; enterMenu(); }
+function enterMenu() { ui.toast.style.opacity = 0; toastT = 0; S.paused = true; S.intro = false; $("intro").hidden = true; setView("menu"); menuScreen("title"); startAttract(); }
+function endRun() { S.running = false; if (S.comp) finishLive(); }
+
+// ---------- team pool (every team at the three events, best EPA) and the quick-match builder
+const POOL = {};
+const DESIGN_NAMES = { turret: "Turret", drum: "Drum + turret", dual: "Dual shooter", tower: "Tall shooter", kit: "Kit bot" };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function buildPool() { for (const ev of Object.values(EVENTS)) for (const [n, name, epa] of ev.teams) if (!POOL[n] || epa > POOL[n].epa) POOL[n] = { n, name, epa: Math.max(4, epa) }; }
+const poolEPA = (n) => (POOL[n] ? POOL[n].epa : 40);
+const QM = { red: [], blue: [], role: "drive", preset: "even", label: "Even match" };
+function shuffled(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function pickFrom(list, k, ex) { return shuffled(list.filter((n) => !ex.includes(n))).slice(0, k); }
+const evTeams = (k) => EVENTS[k].teams.map((t) => t[0]).filter((n) => n !== ME);
+const PRESETS = [
+  ["even", "Even match", () => { const me = poolEPA(ME), near = Object.values(POOL).filter((t) => t.n !== ME && Math.abs(t.epa - me) < me * 0.35).map((t) => t.n); const p = pickFrom(near, 5, []); return [[ME, p[0], p[1]], [p[2], p[3], p[4]]]; }],
+  ["nyli2", "Long Island", () => { const p = pickFrom(evTeams("nyli2"), 5, []); return [[ME, p[0], p[1]], [p[2], p[3], p[4]]]; }],
+  ["nyn2", "Gotham", () => { const p = pickFrom(evTeams("nyn2"), 5, []); return [[ME, p[0], p[1]], [p[2], p[3], p[4]]]; }],
+  ["dal", "Daly (Champs)", () => { const p = pickFrom(evTeams("dal"), 5, []); return [[ME, p[0], p[1]], [p[2], p[3], p[4]]]; }],
+  ["scrim", "Rookie scrim", () => { const weak = Object.values(POOL).filter((t) => t.epa < 40 && t.n !== ME).map((t) => t.n), mid = Object.values(POOL).filter((t) => t.epa >= 40 && t.epa < 90 && t.n !== ME).map((t) => t.n); const a = pickFrom(mid, 2, []), b = pickFrom(weak, 3, a); return [[ME, ...a], b]; }],
+  ["boss", "Boss: HighTide", () => { const opp = [4414, 1323, 1325], mid = Object.values(POOL).filter((t) => t.epa >= 60 && t.epa < 130 && !opp.includes(t.n) && t.n !== ME).map((t) => t.n); return [[ME, ...pickFrom(mid, 2, [])], opp]; }],
+];
+function applyPreset(key) { const p = PRESETS.find((x) => x[0] === key) || PRESETS[0]; const [mine, opp] = p[2](); QM.preset = p[0]; QM.label = p[1];
+  const meRed = S.alliance === "red"; QM.red = meRed ? mine : opp; QM.blue = meRed ? opp : mine; renderQM(); }
+$("qmPresets").innerHTML = PRESETS.map(([k, label]) => `<button class="preset${k === "boss" ? " boss" : ""}" type="button" data-p="${k}" aria-pressed="false">${label}</button>`).join("");
+$("qmPresets").onclick = (e) => { const b = e.target.closest("[data-p]"); if (b) applyPreset(b.dataset.p); };
+segBind("qmRole", "role", () => QM.role, (v) => { QM.role = v; renderQM(); });
+$("qmSwap").onclick = () => { [QM.red, QM.blue] = [QM.blue, QM.red]; renderQM(); };
+const allySum = (a) => a.reduce((s, n) => s + poolEPA(n), 0);
+function winChance(mine, opp) { const s = 0.18 * (mine + opp) / 2 + 15; return 1 / (1 + Math.exp(-(mine - opp) / s)); }
+function slotHTML(n, al, i) { const t = POOL[n] || { name: "Team " + n, epa: 40 }, me = n === ME && QM.role === "drive";
+  const meta = n === ME ? (me ? "Triple Threat · you drive" : "Triple Threat · AI") : DESIGN_NAMES[designFor(n, t.epa)];
+  return `<button class="slot${me ? " you" : ""}" type="button" data-al="${al}" data-i="${i}"><span class="tnum">${n}</span><span class="tname">${esc(t.name)}</span><span class="tmeta">${meta} · EPA ${Math.round(t.epa)}</span><i class="ebar"><i style="width:${Math.min(100, t.epa / 3.8).toFixed(0)}%"></i></i></button>`; }
+function renderQM() { if (!QM.red.length) { applyPreset(QM.preset); return; }
+  $("qmRed").innerHTML = QM.red.map((n, i) => slotHTML(n, "red", i)).join(""); $("qmBlue").innerHTML = QM.blue.map((n, i) => slotHTML(n, "blue", i)).join("");
+  const r = allySum(QM.red), b = allySum(QM.blue); $("qmRE").textContent = "EPA " + Math.round(r); $("qmBE").textContent = "EPA " + Math.round(b);
+  const myRed = QM.red.includes(ME), mine = QM.blue.includes(ME) || myRed;
+  $("qmOdds").textContent = mine ? Math.round(100 * winChance(myRed ? r : b, myRed ? b : r)) + "%" : Math.round(100 * winChance(r, b)) + "%";
+  $("qmOdds").nextElementSibling.textContent = mine ? "your win chance" : "red win chance";
+  document.querySelectorAll("#qmPresets .preset").forEach((x) => x.setAttribute("aria-pressed", x.dataset.p === QM.preset)); }
+let pickSlot = null;
+function onSlot(e) { const b = e.target.closest(".slot"); if (!b) return; const al = b.dataset.al, i = +b.dataset.i; if (QM[al][i] === ME && QM.role === "drive") { toast("That's you", "#e9edf2"); return; }
+  pickSlot = { al, i }; $("picker").hidden = false; $("pkSearch").value = ""; renderPicker(); $("pkSearch").focus(); }
+$("qmRed").onclick = onSlot; $("qmBlue").onclick = onSlot;
+function renderPicker() { const q = $("pkSearch").value.trim().toLowerCase(), used = QM.red.concat(QM.blue);
+  const list = Object.values(POOL).filter((t) => !used.includes(t.n) && (!q || String(t.n).startsWith(q) || t.name.toLowerCase().includes(q))).sort((a, b) => b.epa - a.epa).slice(0, 80);
+  $("pkList").innerHTML = list.map((t) => `<button class="pkrow" type="button" data-n="${t.n}"><b>${t.n}</b><span>${esc(t.name)}</span><small>EPA ${Math.round(t.epa)}</small></button>`).join("") || `<p class="fine">No team matches.</p>`; }
+$("pkSearch").oninput = renderPicker; $("pkClose").onclick = () => { $("picker").hidden = true; };
+$("pkList").onclick = (e) => { const b = e.target.closest(".pkrow"); if (!b || !pickSlot) return; QM[pickSlot.al][pickSlot.i] = +b.dataset.n; QM.preset = "custom"; QM.label = "Custom match"; $("picker").hidden = true; renderQM(); };
+$("qmStart").onclick = () => startQuick();
+function startQuick() { $("results").hidden = true; S.over = false;
+  beginLive({ kind: "exh", id: "QM", red: QM.red, blue: QM.blue, spectate: QM.role === "watch" || !(QM.red.includes(ME) || QM.blue.includes(ME)), val: poolEPA, title: "Quick match", kicker: QM.label }); }
+
+// ---------- live matches with real teams (competition, quick match, and the exhibition behind the menus)
+function beginLive(o) {
+  if (S.attract && o.kind !== "attract") stopAttract();
+  LIVE = { kind: o.kind, id: o.id, red: o.red.slice(0, 3), blue: o.blue.slice(0, 3), spectate: !!o.spectate, val: o.val, title: o.title, kicker: o.kicker };
+  S.spectate = LIVE.spectate; S.comp = true; S.attract = o.kind === "attract"; S.over = false;
+  if (!LIVE.spectate) setAlliance(LIVE.red.includes(ME) ? "red" : "blue");
+  S.mode = "match"; resetShowcase(); resetRound(); AU = null;
+  const entries = [], pos = [-2.1, 0, 2.1];
+  for (const [al, nums] of [["red", LIVE.red], ["blue", LIVE.blue]]) { const s = Math.sign(F.hubs[al === "red" ? redHub : blueHub].center[0]); let k = 0;
+    for (const n of nums) { if (n === ME && !LIVE.spectate) continue; const z = pos[k++ % 3]; entries.push({ team: n, alliance: al, epa: LIVE.val(n), role: "score", x: s * (HUB.cx + 1.6 + (k === 2 ? 0.8 : 0)), z, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 }); } }
+  for (const al of ["red", "blue"]) { const mine = entries.filter((e) => e.alliance === al); if (mine.length >= 2) { const w = mine.reduce((a, b) => (a.epa < b.epa ? a : b)); if (w.epa < 35 && Math.random() < 0.5) w.role = "defend"; } }
+  if (!LIVE.spectate) { HS.n = 0; preload(8); if (SET.auto !== "none") autoBegin(SET.auto); else startPose(); } else { HS.n = 0; S.x = 0; S.z = -30; }
+  setupMatchBots(entries); robot.root.visible = !LIVE.spectate; S.timeScale = 1; camState.init = false; drawBoards(true);
+  if (S.attract) { S.paused = true; setShadowBox(true); AC.t = 0; AC.shot = 0; $("liveCard").hidden = S.view !== "menu"; for (const b of BOTS) b.mesh.visible = true; return; }
+  $("teamsR").textContent = LIVE.red.join(" · "); $("teamsB").textContent = LIVE.blue.join(" · ");
+  S.cam = LIVE.spectate ? "stands" : "driver"; $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; setShadowBox(LIVE.spectate);
+  S.paused = true; setView("drive"); showIntro();
+}
+// pre-match intro: alliances slide in, then 3-2-1
+let introTok = 0;
+function showIntro() { const tok = ++introTok; S.intro = true; updatePause();
+  const card = (n, al, i) => { const t = POOL[n] || { name: "", epa: LIVE.val(n) }, me = n === ME && !LIVE.spectate;
+    return `<div class="icard${me ? " you" : ""}" style="animation-delay:${0.1 + i * 0.14}s"><b>${n}</b><span>${esc(t.name)}</span><small>${n === ME ? "Triple Threat" : DESIGN_NAMES[designFor(n, LIVE.val(n))]} · EPA ${Math.round(LIVE.val(n))}</small></div>`; };
+  $("iKick").textContent = LIVE.kicker || ""; $("iTitle").textContent = LIVE.title; $("iRed").innerHTML = LIVE.red.map((n, i) => card(n, "red", i)).join(""); $("iBlue").innerHTML = LIVE.blue.map((n, i) => card(n, "blue", i)).join("");
+  const c = $("iCount"); c.textContent = "VS"; c.className = "icount"; $("intro").hidden = false; $("iSkip").focus({ preventScroll: true });
+  const steps = [[1900, "3"], [2600, "2"], [3300, "1"], [4000, "GO"]];
+  for (const [t, txt] of steps) setTimeout(() => { if (tok !== introTok || !S.intro) return; c.textContent = txt; c.className = "icount"; void c.offsetWidth; c.className = "icount pop"; }, t);
+  setTimeout(() => { if (tok === introTok && !window.__holdIntro) endIntro(); }, 4500); }
+function endIntro() { if (!S.intro) return; introTok++; S.intro = false; $("intro").hidden = true; S.paused = false; updatePause(); toast(LIVE ? (LIVE.spectate ? "Spectating · N follows a robot" : "Auto") : "Go", "var(--fuel)"); }
+$("iSkip").onclick = endIntro;
+$("specSkip").onclick = () => { if (LIVE && (LIVE.kind === "qual" || LIVE.kind === "playoff")) abandonLive(true); else { S.timeScale = 16; $("specSpeed").textContent = "Speed 16×"; } };
+$("specSpeed").onclick = () => { S.timeScale = { 1: 2, 2: 4, 4: 8, 8: 1, 16: 1 }[S.timeScale || 1]; $("specSpeed").textContent = "Speed " + S.timeScale + "×"; };
+// results for quick matches
+function showQuickResult(L) { S.over = true; S.paused = true; updatePause();
+  const climb = (al) => BOTS.filter((b) => b.alliance === al).reduce((s, b) => s + climbPts(b.epa), 0), rc = climb("red"), bc = climb("blue");
+  const rs = S.pts.red + rc, bs = S.pts.blue + bc, mine = L.spectate ? null : (L.red.includes(ME) ? "red" : "blue");
+  const won = mine ? (mine === "red" ? rs > bs : bs > rs) : null, tie = rs === bs;
+  const v = $("rVerdict"); v.textContent = tie ? "Tie" : mine ? (won ? "Victory" : "Defeat") : (rs > bs ? "Red wins" : "Blue wins"); v.className = "verdict " + (tie ? "" : mine ? (won ? "win" : "loss") : "win");
+  $("rKick").textContent = (L.kicker || "Quick match") + " · final"; $("rR").textContent = rs; $("rB").textContent = bs;
+  $("rRT").textContent = `${S.pts.red} fuel + ${rc} tower`; $("rBT").textContent = `${S.pts.blue} fuel + ${bc} tower`;
+  const row = (n, al) => { const b = BOTS.find((x) => x.team === n), me = n === ME && !L.spectate, f = me ? S.myFuel : b ? b.scored : 0;
+    return `<div class="${me ? "me" : ""}"><span><i class="adot ${al}"></i>${n}${me ? " (you)" : b ? " · " + DESIGN_NAMES[b.design] : ""}</span><b>${f} fuel</b></div>`; };
+  $("rTable").innerHTML = `<div class="h">Fuel scored by robot</div>` + L.red.map((n) => row(n, "red")).join("") + L.blue.map((n) => row(n, "blue")).join("");
+  QM.red = L.red.slice(); QM.blue = L.blue.slice();
+  setTimeout(() => { $("results").hidden = false; $("rAgain").focus({ preventScroll: true }); }, 1200); }
+$("rAgain").onclick = () => startQuick();
+$("rEdit").onclick = () => { $("results").hidden = true; S.over = false; S.running = false; LIVE = null; S.comp = false; S.spectate = false; clearBots(); robot.root.visible = true; S.paused = true; setView("menu"); menuScreen("quick"); startAttract(); };
+$("rTitle").onclick = () => quitToTitle();
+
+// ---------- the exhibition match that plays behind the menus
+const AC = { t: 0, shot: 0, bot: 0 };
+function startAttract(force) { if (!SET.attract || !S.loaded || (S.view !== "menu" && S.view !== "comp") || (S.attract && !force)) return;
+  const ev = ["dal", "dal", "nyn2", "nyli2"][(Math.random() * 4) | 0], top = EVENTS[ev].teams.filter((t) => t[0] !== ME).sort((a, b) => b[2] - a[2]).slice(0, 16).map((t) => t[0]), p = pickFrom(top, 6, []);
+  beginLive({ kind: "attract", id: "EX", red: p.slice(0, 3), blue: p.slice(3), spectate: true, val: poolEPA, title: "Exhibition", kicker: EVENTS[ev].short }); }
+function stopAttract() { if (!S.attract) return; S.attract = false; if (LIVE && LIVE.kind === "attract") LIVE = null; S.running = false; S.comp = false; S.spectate = false; clearBots(); robot.root.visible = true; $("liveCard").hidden = true; }
+$("lcWatch").onclick = () => { if (!S.attract || !LIVE) return; S.attract = false; LIVE.kind = "exh"; LIVE.title = "Exhibition"; QM.role = "watch"; QM.red = LIVE.red.slice(); QM.blue = LIVE.blue.slice(); QM.label = LIVE.kicker;
+  $("liveCard").hidden = true; $("teamsR").textContent = LIVE.red.join(" · "); $("teamsB").textContent = LIVE.blue.join(" · "); S.cam = "stands"; $("camBtn").textContent = "View: Stands"; S.paused = false; setView("drive"); toast("Spectating · N follows a robot", "var(--fuel)"); };
+let lcT = 0;
+function updateLiveCard(dt) { lcT -= dt; if (lcT > 0 || !LIVE) return; lcT = 0.25; $("liveCard").hidden = S.view !== "menu" || screen !== "title";
+  $("lcEv").textContent = LIVE.kicker; $("lcR").textContent = LIVE.red.join(" · "); $("lcB").textContent = LIVE.blue.join(" · "); $("lcRS").textContent = S.pts.red; $("lcBS").textContent = S.pts.blue;
+  const t = Math.ceil(Math.max(0, S.timeLeft)); $("lcT").textContent = (S.phase === "auto" ? "Auto " : "Teleop ") + Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+function attractCam(dt) { AC.t += dt; if (AC.t > 9) { AC.t = 0; AC.shot = (AC.shot + 1) % 4; AC.bot = (Math.random() * BOTS.length) | 0; camState.init = false; }
+  const T = AC.t; let p, l;
+  if (AC.shot === 0) { const a = 0.9 + T * 0.035; p = V3(Math.sin(a) * 12.5, 6.2, Math.cos(a) * 9.5); l = V3(0, 0.2, 0); }
+  else if (AC.shot === 2) { const h = F.hubs[T % 18 < 9 ? redHub : blueHub].center, s = Math.sign(h[0]); p = V3(h[0] - s * 4.2, 1.1, -2.6 + T * 0.45); l = V3(h[0], 1.5, h[2]); }
+  else { const b = BOTS[AC.bot % Math.max(1, BOTS.length)] || { x: 0, z: 0, yaw: 0 }, a = b.yaw + 2.4 + T * 0.06; p = V3(b.x + Math.sin(a) * 2.7, 1.25, b.z + Math.cos(a) * 2.7); l = V3(b.x, 0.35, b.z); }
+  const k = 1 - Math.exp(-dt * (AC.shot === 1 || AC.shot === 3 ? 4 : 2)); if (!camState.init) { camState.pos.copy(p); camState.look.copy(l); camState.init = true; }
+  camState.pos.lerp(p, k); camState.look.lerp(l, k); camera.position.copy(camState.pos); camera.up.set(0, 1, 0); camera.lookAt(camState.look); sun.position.set(3, 12, 2); sun.target.position.set(0, 0, 0); }
+
+// ---------- controller navigation in menus
+let menuPrev = {};
+function pollPadMenu() { const p = getPad(); if (!p) return; const btn = (i) => !!(p.buttons[i] && p.buttons[i].pressed);
+  const now = { st: btn(9), a: btn(0), b: btn(1), up: btn(12) || p.axes[1] < -0.6, dn: btn(13) || p.axes[1] > 0.6 }, e = (k) => now[k] && !menuPrev[k];
+  if (S.loaded) {
+    if (!$("picker").hidden) { if (e("b")) $("picker").hidden = true; else navFocus($("picker"), e("up"), e("dn"), e("a")); }
+    else if (S.intro) { if (e("a") || e("st")) endIntro(); }
+    else if (S.over) navFocus($("results"), e("up"), e("dn"), e("a"));
+    else if (S.view === "drive" && S.paused) { if (e("st") || e("b")) setPaused(false); else navFocus($("pause"), e("up"), e("dn"), e("a")); }
+    else if (S.view === "menu") { if (e("b") && screen !== "title") menuScreen("title"); else navFocus($(SCREENS[screen]), e("up"), e("dn"), e("a")); }
+    else if (S.view === "comp") navFocus($("comp"), e("up"), e("dn"), e("a"));
+  }
+  menuPrev = now; }
+function navFocus(root, up, dn, a) { if (!(up || dn || a)) return; const els = [...root.querySelectorAll("button:not(:disabled), select, input")].filter((x) => x.offsetParent !== null); if (!els.length) return;
+  let i = els.indexOf(document.activeElement); if (a) { if (i >= 0) els[i].click(); else els[0].focus(); return; }
+  i = i < 0 ? 0 : (i + (dn ? 1 : -1) + els.length) % els.length; els[i].focus(); els[i].scrollIntoView({ block: "nearest" }); }
+addEventListener("keydown", (e) => { // Esc backs out of menus and the picker
+  if (e.code !== "Escape") return; if (!$("picker").hidden) { $("picker").hidden = true; return; }
+  if (S.intro) { endIntro(); return; } if (S.view === "menu" && screen !== "title") menuScreen("title"); });
 
 // ================================================================== showcase
 const studio = new THREE.Group(); studio.visible = false; scene.add(studio);
@@ -1592,7 +2032,7 @@ const cmpSave = () => { try { localStorage.setItem("tt-comp", JSON.stringify(COM
 const cmpLoad = () => { try { return JSON.parse(localStorage.getItem("tt-comp") || "null"); } catch { return null; } };
 const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
 const tinfo = (n) => COMP.teams[n];
-const LIVE_K = 0.62; // live-sim fuel per EPA point (measured), so simmed and played matches line up
+const LIVE_K = 1.0; // live-sim fuel per EPA point (measured), so simmed and played matches line up
 function myValue() { const t = tinfo(ME); return t.simPlayed ? t.simPts / t.simPlayed / LIVE_K : t.epa; } // what you've shown in your live matches
 function teamValue(n) { return n === ME ? myValue() : tinfo(n).epa; }
 function newComp(evKey, perTeam = 8) {
@@ -1617,7 +2057,7 @@ function genSchedule(nums, per) { // every team plays `per` matches, spread out,
 function climbPts(epa) { const e = epa / 120, r = Math.random(); if (r < Math.min(0.85, 0.15 + e * 0.35)) return e > 1.3 && Math.random() < 0.6 ? 30 : e > 0.6 && Math.random() < 0.6 ? 20 : 10; return 0; }
 function simAlliance(nums) { let fuel = 0, climb = 0; for (const n of nums) { const v = teamValue(n); fuel += Math.max(0, v * LIVE_K * (1 + 0.25 * gauss())); climb += n === ME ? 0 : climbPts(v); } return { fuel: Math.round(fuel), climb }; }
 // ranking points (approximation of REBUILT): win 3, tie 1, +1 for 100 alliance fuel, +1 for 50 tower points
-function rpOf(fuel, climb, mine, theirs) { return (mine > theirs ? 3 : mine === theirs ? 1 : 0) + (fuel >= 100 ? 1 : 0) + (climb >= 50 ? 1 : 0); }
+function rpOf(fuel, climb, mine, theirs) { return (mine > theirs ? 3 : mine === theirs ? 1 : 0) + (fuel >= 100 ? 1 : 0) + (fuel >= 360 ? 1 : 0) + (climb >= 50 ? 1 : 0); } // win, Energized (100 fuel), Supercharged (360), Traversal (50 tower)
 function recordQual(q, r, b) { // r, b: { fuel, climb, my? }
   const rs = r.fuel + r.climb, bs = b.fuel + b.climb; q.res = { r: rs, b: bs, rRP: rpOf(r.fuel, r.climb, rs, bs), bRP: rpOf(b.fuel, b.climb, bs, rs), rf: r.fuel, bf: b.fuel, live: !!r.live };
   for (const [nums, me, them, rp] of [[q.red, rs, bs, q.res.rRP], [q.blue, bs, rs, q.res.bRP]]) for (const n of nums) { const t = tinfo(n); t.played++; t.rp += rp; t.pts += me; if (me > them) t.w++; else if (me < them) t.l++; else t.t++; }
@@ -1667,24 +2107,13 @@ const myAlliance = () => COMP.alliances ? COMP.alliances.findIndex((a) => a.incl
 let LIVE = null; // { kind: "qual"|"playoff", m, spectate }
 function startLive(kind, m, spectate) {
   const red = kind === "qual" ? m.red : allianceTeams(resolveSrc(m.rs)), blue = kind === "qual" ? m.blue : allianceTeams(resolveSrc(m.bs));
-  LIVE = { kind, id: m.id, red: red.slice(0, 3), blue: blue.slice(0, 3), spectate };
-  S.spectate = !!spectate; S.comp = true;
-  if (!spectate) setAlliance(red.includes(ME) ? "red" : "blue");
-  S.mode = "match"; resetShowcase(); resetRound(); AU = null;
-  const entries = []; const pos = [-2.1, 0, 2.1];
-  for (const [al, nums] of [["red", LIVE.red], ["blue", LIVE.blue]]) { const s = Math.sign(F.hubs[al === "red" ? redHub : blueHub].center[0]); let k = 0;
-    for (const n of nums) { if (n === ME && !spectate) continue; const z = pos[k++ % 3]; entries.push({ team: n, alliance: al, epa: teamValue(n), role: "score", x: s * (HUB.cx + 1.6 + (k === 2 ? 0.8 : 0)), z, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 }); } }
-  // the weakest robot on an alliance sometimes plays defense, like at a real event
-  for (const al of ["red", "blue"]) { const mine = entries.filter((e) => e.alliance === al); if (mine.length >= 2) { const w = mine.reduce((a, b) => (a.epa < b.epa ? a : b)); if (w.epa < 35 && Math.random() < 0.5) w.role = "defend"; } }
-  if (!spectate) { HS.n = 0; preload(8); if (SET.auto !== "none") autoBegin(SET.auto); else startPose(); }
-  else { HS.n = 0; S.x = 0; S.z = -30; }
-  setupMatchBots(entries);
-  robot.root.visible = !spectate; S.paused = false; setView("drive"); $("comp").hidden = true; $("teamsR").textContent = LIVE.red.join(" · "); $("teamsB").textContent = LIVE.blue.join(" · ");
-  S.cam = spectate ? "stands" : "driver"; $("camBtn").textContent = "View: " + (spectate ? "Stands" : "Driver"); camState.init = false; S.timeScale = 1;
-  toast(m.id + (spectate ? " · spectating" : " · auto"), "var(--fuel)");
+  beginLive({ kind, id: m.id, red, blue, spectate, val: teamValue, title: kind === "qual" ? "Qualification " + m.id.replace(/^Q/, "") : "Playoffs · " + m.id, kicker: EVENTS[COMP.ev].short });
 }
 function finishLive() { // called when a live match ends
-  if (!LIVE) return; const L = LIVE; LIVE = null;
+  if (!LIVE) return; const L = LIVE;
+  if (L.kind === "attract") { LIVE = null; startAttract(true); return; }
+  if (L.kind === "exh") { showQuickResult(L); return; }
+  LIVE = null;
   const tally = (al) => { let climb = 0; for (const b of BOTS) if (b.alliance === al) climb += climbPts(b.epa); return { fuel: S.pts[al], climb, live: true }; };
   const r = tally("red"), b = tally("blue");
   if (!L.spectate) { const t = tinfo(ME); t.simPts += S.myFuel; t.simPlayed++; }
@@ -1698,7 +2127,7 @@ function abandonLive(simIt) { if (!LIVE) return; const L = LIVE; LIVE = null; S.
 
 // ---------- competition screens
 const CT = { tab: "matches" };
-function openComp() { S.paused = true; setView("comp"); $("comp").hidden = false; renderComp(); }
+function openComp() { S.paused = true; S.over = false; S.intro = false; setView("comp"); $("comp").hidden = false; renderComp(); startAttract(); }
 function compButtons() { // the big "what's next" actions
   if (!COMP) return "";
   if (COMP.phase === "quals") { const q = nextQual(); if (!q) return `<button class="btn primary" data-act="startsel" type="button">Start alliance selection</button>`;
@@ -1716,7 +2145,7 @@ function renderComp() {
   const root = $("compBody");
   if (!COMP) { // event picker
     const saved = cmpLoad();
-    root.innerHTML = `<h2>Choose a competition</h2><p class="sub">Team lists and robot strength come from each event's 2026 Statbotics EPA. Higher-EPA robots drive faster, shoot more accurately and cycle quicker.</p>
+    root.innerHTML = `<div><button class="back" data-act="exit" type="button">‹ Title</button></div><div class="kicker">03 · Competition</div><h2>Choose a competition</h2><p class="sub">Team lists and robot strength come from each event's 2026 Statbotics EPA. Higher-EPA robots drive faster, shoot more accurately and cycle quicker.</p>
       <div class="evgrid">${Object.entries(EVENTS).map(([k, e]) => { const me = e.teams.find((t) => t[0] === ME); const rank = e.teams.slice().sort((a, b) => b[2] - a[2]).findIndex((t) => t[0] === ME) + 1;
         return `<button class="evcard" data-ev="${k}" type="button"><b>${e.short}</b><span>${e.name}</span><span>${e.dates}</span><span>${e.teams.length} teams · 1880 EPA ${me ? me[2] : "-"} (#${rank} of ${e.teams.length})</span></button>`; }).join("")}</div>
       ${saved ? `<div class="row"><button class="btn primary" data-act="resume" type="button">Continue ${EVENTS[saved.ev].short} (${saved.phase})</button></div>` : ""}
@@ -1724,7 +2153,7 @@ function renderComp() {
     return; }
   const ev = EVENTS[COMP.ev], me = tinfo(ME), rk = rankings(), myRank = rk.findIndex((t) => t.num === ME) + 1, done = COMP.quals.filter((q) => q.res).length;
   const status = COMP.phase === "quals" ? `Qualifications · ${done} of ${COMP.quals.length} played` : COMP.phase === "selection" ? "Alliance selection" : COMP.phase === "playoffs" ? "Playoffs" : `Event winner: Alliance ${COMP.playoffs.champion} (${allianceTeams(COMP.playoffs.champion).join(", ")})`;
-  root.innerHTML = `<div class="chead"><div><div class="lbl">${ev.dates}</div><h2>${ev.name}</h2><div class="sub">${status}</div></div>
+  root.innerHTML = `<div><button class="back" data-act="exit" type="button">‹ Title</button></div><div class="chead"><div><div class="kicker">${ev.dates}</div><h2>${ev.name}</h2><div class="sub">${status}</div></div>
     <div class="mycard"><div class="lbl">Team 1880</div><b>#${myRank}</b><span>${me.w}-${me.l}-${me.t} · ${me.played ? (me.rp / me.played).toFixed(2) : "0.00"} RP/match</span><span>Your sim EPA ${me.simPlayed ? myValue().toFixed(1) : "–"} (real ${me.epa})</span></div></div>
     <div class="row cacts">${compButtons()}</div>
     <nav class="tabs">${["matches", "rankings", "alliances", "playoffs"].map((t) => `<button type="button" data-tab="${t}" aria-pressed="${CT.tab === t}">${{ matches: "Matches", rankings: "Rankings", alliances: "Alliance selection", playoffs: "Playoffs" }[t]}</button>`).join("")}</nav>
@@ -1738,7 +2167,7 @@ function renderTab() {
       const sim = r ? "" : `<button class="btn mini" data-act="sim" data-id="${q.id}" type="button">Sim</button>`;
       return `<tr class="${mine ? "mine" : ""}${r ? "" : " todo"}"><td>${q.id}</td><td class="red">${q.red.map((n) => teamChip(n)).join("")}</td><td class="blue">${q.blue.map((n) => teamChip(n)).join("")}</td>
         <td class="sc">${r ? `<b class="${r.r > r.b ? "w" : ""}">${r.r}</b>–<b class="${r.b > r.r ? "w" : ""}">${r.b}</b>${r.live ? " ●" : ""}` : "–"}</td><td class="rp">${r ? r.rRP + " / " + r.bRP : ""}</td><td>${act}${sim}</td></tr>`; }).join("");
-    return `<label class="fine"><input type="checkbox" id="onlyMine" ${CT.onlyMine ? "checked" : ""}> Only my matches</label><div class="tablewrap"><table class="ct${CT.onlyMine ? " onlymine" : ""}"><thead><tr><th>Match</th><th>Red</th><th>Blue</th><th>Score</th><th>RP</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><p class="fine">● played live. Ranking points: win 3, tie 1, +1 for 100 alliance fuel, +1 for 50 tower points (an approximation of the REBUILT rules).</p>`;
+    return `<label class="fine"><input type="checkbox" id="onlyMine" ${CT.onlyMine ? "checked" : ""}> Only my matches</label><div class="tablewrap"><table class="ct${CT.onlyMine ? " onlymine" : ""}"><thead><tr><th>Match</th><th>Red</th><th>Blue</th><th>Score</th><th>RP</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><p class="fine">● played live. Ranking points: win 3, tie 1, +1 at 100 alliance fuel, +1 more at 360, +1 for 50 tower points (an approximation of the REBUILT rules).</p>`;
   }
   if (CT.tab === "rankings") return `<div class="tablewrap"><table class="ct"><thead><tr><th>#</th><th>Team</th><th>RP avg</th><th>W-L-T</th><th>Avg score</th><th>EPA</th></tr></thead><tbody>${rankings().map((t, i) => `<tr class="${t.num === ME ? "mine" : ""}"><td>${i + 1}</td><td>${teamChip(t.num)} <span class="fine">${t.name}</span></td><td>${t.played ? (t.rp / t.played).toFixed(2) : "–"}</td><td>${t.w}-${t.l}-${t.t}</td><td>${t.played ? (t.pts / t.played).toFixed(1) : "–"}</td><td>${t.num === ME && t.simPlayed ? myValue().toFixed(1) + "*" : t.epa}</td></tr>`).join("")}</tbody></table></div><p class="fine">* your EPA from the matches you've played in the sim.</p>`;
   if (CT.tab === "alliances") {
@@ -1785,22 +2214,116 @@ $("comp").addEventListener("click", (e) => {
 });
 $("comp").addEventListener("change", (e) => { if (e.target.id === "onlyMine") { CT.onlyMine = e.target.checked; renderComp(); } });
 
+// ================================================================== arena: carpet, stands and crowd, truss and lights, video boards, graphics levels
+const arena = new THREE.Group(); scene.add(arena);
+function canvasTex(w, h, draw, rep) { const c = document.createElement("canvas"); c.width = w; c.height = h; draw(c.getContext("2d"), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); } return t; }
+function rng(seed) { let s = seed >>> 0; return () => ((s = Math.imul(s ^ (s >>> 15), 2246822507) + 0x9e3779b9 >>> 0) / 4294967296); }
+// carpet: short-pile fibers, a faint pile direction, and slow mottling so the floor doesn't read as flat plastic
+const carpetTex = canvasTex(512, 512, (g, w, h) => { const r = rng(7); g.fillStyle = "#c9ccd2"; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 26000; i++) { const v = 150 + r() * 95 | 0; g.fillStyle = `rgba(${v},${v + 2},${v + 6},${0.25 + r() * 0.35})`; g.fillRect(r() * w, r() * h, 1 + r() * 1.6, 1 + r() * 2.4); }
+  g.globalAlpha = 0.05; for (let y = 0; y < h; y += 4) { g.fillStyle = y % 8 ? "#000" : "#fff"; g.fillRect(0, y, w, 2); } g.globalAlpha = 1; });
+carpetTex.wrapS = carpetTex.wrapT = THREE.RepeatWrapping; carpetTex.colorSpace = THREE.NoColorSpace;
+function patchCarpet(mat) { // floor-level, upward-facing fragments of the field's grey materials pick up the carpet texture in world space
+  if (!mat || mat.transparent || mat.userData.carpet) return; const c = mat.color; if (!c || Math.abs(c.r - c.g) > 0.02 || c.r < 0.3 || c.r > 0.9) return;
+  mat.userData.carpet = true; mat.customProgramCacheKey = () => "carpet";
+  mat.onBeforeCompile = (sh) => { sh.uniforms.carpetMap = { value: carpetTex };
+    sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vCW; varying vec3 vCN;").replace("#include <project_vertex>", "#include <project_vertex>\nvCW = (modelMatrix * vec4(transformed, 1.0)).xyz; vCN = normalize(mat3(modelMatrix) * objectNormal);");
+    sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vCW; varying vec3 vCN; uniform sampler2D carpetMap;").replace("#include <color_fragment>", `#include <color_fragment>
+      if (vCN.y > 0.9 && vCW.y < 0.03 && abs(vCW.x) < 8.3 && abs(vCW.z) < 4.06) { float f = texture2D(carpetMap, vCW.xz * 0.9).r; float m = texture2D(carpetMap, vCW.xz * 0.061 + 0.31).r; diffuseColor.rgb *= vec3(0.62, 0.64, 0.67) * (0.55 + 0.6 * f) * (0.85 + 0.3 * m); }`);
+    sh.fragmentShader = sh.fragmentShader.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (vCN.y > 0.9 && vCW.y < 0.03) roughnessFactor = 0.97;"); };
+  mat.needsUpdate = true; }
+const AR = { crowd: null, crowdN: 0, boards: [], t: 0, ribbons: [] };
+function buildArena() {
+  const L = F.carpet.length / 2, W = F.carpet.width / 2;
+  const std = (color, rough = 0.85, metal = 0) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  // arena floor and the grey border carpet around the field
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 70), std(0x14171c, 0.95)); floor.rotation.x = -Math.PI / 2; floor.position.y = -0.012; floor.receiveShadow = true; arena.add(floor);
+  const border = new THREE.Mesh(new THREE.PlaneGeometry(L * 2 + 7, W * 2 + 5), new THREE.MeshStandardMaterial({ color: 0x3a3f47, roughness: 0.98, map: carpetTex })); border.material.map.repeat.set(20, 10); border.rotation.x = -Math.PI / 2; border.position.y = -0.006; border.receiveShadow = true; arena.add(border);
+  // bleachers on both long sides: tiers, a ribbon board on the front rail, and the crowd
+  const tiers = 12, depth = 0.85, rise = 0.42, len = 34, z0 = W + 4.2;
+  const tierGeo = [], crowdSpots = [];
+  for (const sz of [-1, 1]) for (let t = 0; t < tiers; t++) { const g = new THREE.BoxGeometry(len, rise * (t + 1), depth); g.translate(0, rise * (t + 1) / 2 + 1.1, sz * (z0 + t * depth + depth / 2)); tierGeo.push(g);
+    for (let i = 0; i < 64; i++) crowdSpots.push([-len / 2 + 0.6 + i * (len - 1.2) / 63 + (Math.random() - 0.5) * 0.18, 1.1 + rise * (t + 1), sz * (z0 + t * depth + depth * 0.45), sz]); }
+  const stands = new THREE.Mesh(mergeGeometries(tierGeo), std(0x262b33, 0.9)); stands.receiveShadow = true; arena.add(stands);
+  for (const sz of [-1, 1]) { const wall = new THREE.Mesh(new THREE.BoxGeometry(len, 1.1, 0.12), std(0x101318, 0.6)); wall.position.set(0, 0.55, sz * (z0 - 0.06)); arena.add(wall);
+    const rib = new THREE.Mesh(new THREE.PlaneGeometry(len, 0.55), new THREE.MeshBasicMaterial({ map: ribbonTex(), toneMapped: false })); rib.position.set(0, 0.62, sz * (z0 - 0.13)); rib.rotation.y = sz > 0 ? Math.PI : 0; arena.add(rib); AR.ribbons.push(rib); }
+  // people: a body and a head, instanced, in team-shirt colors
+  const body = new THREE.CylinderGeometry(0.17, 0.2, 0.62, 7); body.translate(0, 0.31, 0); const head = new THREE.SphereGeometry(0.11, 8, 6); head.translate(0, 0.74, 0);
+  const person = mergeGeometries([body.toNonIndexed(), head.toNonIndexed()]);
+  const shirts = [0xd8333a, 0x2f6df0, 0xf5c518, 0xffffff, 0x2a9d58, 0xff7a1a, 0x7b4cd6, 0x1c1c1c, 0x18a7b5, 0xe8e8e8, 0x902020, 0x223a7a];
+  for (let i = crowdSpots.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [crowdSpots[i], crowdSpots[j]] = [crowdSpots[j], crowdSpots[i]]; }
+  const crowd = new THREE.InstancedMesh(person, new THREE.MeshStandardMaterial({ roughness: 0.9 }), crowdSpots.length); const m = new THREE.Matrix4(), q = new THREE.Quaternion(), col = new THREE.Color();
+  let n = 0; for (const [x, y, z, sz] of crowdSpots) { if (Math.random() < 0.22) continue; const s = 0.9 + Math.random() * 0.2; q.setFromEuler(new THREE.Euler(0, (sz > 0 ? Math.PI : 0) + (Math.random() - 0.5) * 0.6, 0));
+    m.compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(s, s * (0.9 + Math.random() * 0.25), s)); crowd.setMatrixAt(n, m); crowd.setColorAt(n, col.setHex(shirts[(Math.random() * shirts.length) | 0])); n++; }
+  crowd.count = n; AR.crowdN = n; crowd.userData.base = []; for (let i = 0; i < n; i++) { crowd.getMatrixAt(i, m); crowd.userData.base.push(m.clone()); } arena.add(crowd); AR.crowd = crowd;
+  // overhead truss with light cans
+  const trussMat = std(0x2a2f37, 0.5, 0.6), lampMat = new THREE.MeshBasicMaterial({ color: 0xfff6e0, toneMapped: false }), tg = [], lg = [];
+  for (const z of [-W - 1.2, W + 1.2]) { for (const dy of [0, 0.5]) for (const dz of [-0.25, 0.25]) { const g = new THREE.BoxGeometry(L * 2 + 8, 0.05, 0.05); g.translate(0, 10.5 + dy, z + dz); tg.push(g); }
+    for (let i = 0; i <= 14; i++) { const x = -L - 4 + i * (L * 2 + 8) / 14; const g = new THREE.BoxGeometry(0.04, 0.5, 0.5); g.translate(x, 10.75, z); tg.push(g);
+      if (i % 2 === 0) { const c = new THREE.CylinderGeometry(0.16, 0.2, 0.3, 10); c.translate(x, 10.3, z); tg.push(c); const d = new THREE.CircleGeometry(0.15, 12); d.rotateX(Math.PI / 2); d.translate(x, 10.14, z); lg.push(d); } } }
+  for (let i = 0; i <= 6; i++) { const x = -L - 2 + i * (L * 2 + 4) / 6; const g = new THREE.BoxGeometry(0.06, 0.06, W * 2 + 2.4); g.translate(x, 10.5, 0); tg.push(g); }
+  arena.add(new THREE.Mesh(mergeGeometries(tg), trussMat)); arena.add(new THREE.Mesh(mergeGeometries(lg), lampMat));
+  // video boards over each driver station
+  for (const sx of [-1, 1]) { const tex = canvasTex(1024, 512, () => {}); const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(8, 4), mat); scr.position.set(sx * (L + 5.5), 6.2, 0); scr.rotation.y = sx > 0 ? -Math.PI / 2 : Math.PI / 2; arena.add(scr);
+    const frame = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.4, 8.4), std(0x0b0d10, 0.5, 0.4)); frame.position.set(sx * (L + 5.68), 6.2, 0); arena.add(frame);
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.3, 4.2, 0.3), trussMat); post.position.set(sx * (L + 5.7), 2.0, 0); arena.add(post); AR.boards.push(tex); }
+  drawBoards(true); applyGfx();
+}
+function ribbonTex() { return canvasTex(2048, 64, (g, w, h) => { g.fillStyle = "#07090c"; g.fillRect(0, 0, w, h); g.font = "800 italic 40px 'Saira Condensed', 'Arial Narrow', sans-serif"; g.textBaseline = "middle";
+  const words = ["REBUILT", "TRIPLE THREAT", "FRC 1880", "FUEL UP", "2026"]; let x = 10, i = 0; while (x < w) { const s = words[i++ % words.length]; g.fillStyle = i % 2 ? "#f5c518" : "#e9edf2"; g.fillText(s, x, h / 2 + 2); x += g.measureText(s).width + 26; g.fillStyle = i % 3 ? "#e5484d" : "#3e7bfa"; g.fillRect(x, 22, 14, 20); x += 40; } }); }
+function drawBoards(force) {
+  AR.t -= 1; if (!force && AR.t > 0) return; AR.t = 15;
+  const live = S.view === "drive" || S.attract, ev = LIVE && LIVE.kicker ? LIVE.kicker : "Triple Threat";
+  for (const tex of AR.boards) { const g = tex.image.getContext("2d"), w = 1024, h = 512;
+    const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, "#0d1118"); bg.addColorStop(1, "#05070a"); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#f5c518"; g.fillRect(0, 0, w, 10);
+    g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#9aa6b4"; g.font = "600 34px 'Barlow Condensed', sans-serif"; g.fillText(String(ev).toUpperCase() + (LIVE ? "  ·  " + String(LIVE.title || "").toUpperCase() : ""), w / 2, 52);
+    if (live) { const t = Math.ceil(Math.max(0, S.timeLeft)), ph = S.mode !== "match" ? "PRACTICE" : S.phase === "auto" ? "AUTO" : S.timeLeft <= 30 ? "ENDGAME" : "TELEOP";
+      g.fillStyle = "#b8242b"; g.fillRect(40, 110, 400, 260); g.fillStyle = "#2259d1"; g.fillRect(w - 440, 110, 400, 260);
+      g.fillStyle = "#fff"; g.font = "800 italic 190px 'Saira Condensed', sans-serif"; g.fillText(S.pts.red, 240, 250); g.fillText(S.pts.blue, w - 240, 250);
+      g.font = "600 30px 'Barlow Condensed', sans-serif"; g.fillStyle = "rgba(255,255,255,.85)"; if (LIVE) { g.fillText(LIVE.red.join("  "), 240, 400); g.fillText(LIVE.blue.join("  "), w - 240, 400); }
+      g.fillStyle = "#f5c518"; g.font = "700 40px 'Barlow Condensed', sans-serif"; g.fillText(ph, w / 2, 160);
+      g.fillStyle = "#e9edf2"; g.font = "800 italic 120px 'Saira Condensed', sans-serif"; g.fillText(S.mode === "match" ? Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0") : "--", w / 2, 250);
+      if (S.mode === "match" && S.phase === "teleop") { const ra = hubActive("red"), ba = hubActive("blue"); g.font = "700 28px 'Barlow Condensed', sans-serif"; g.fillStyle = ra ? "#ff8a8d" : "#555c66"; g.fillText(ra ? "RED HUB LIVE" : "RED HUB OFF", w / 2, 340); g.fillStyle = ba ? "#8fb2ff" : "#555c66"; g.fillText(ba ? "BLUE HUB LIVE" : "BLUE HUB OFF", w / 2, 380); } }
+    else { g.fillStyle = "#f5c518"; g.font = "800 italic 150px 'Saira Condensed', sans-serif"; g.fillText("TRIPLE THREAT", w / 2, 270); g.fillStyle = "#9aa6b4"; g.font = "600 40px 'Barlow Condensed', sans-serif"; g.fillText("FRC 1880 · REBUILT 2026", w / 2, 380); }
+    tex.needsUpdate = true; }
+}
+let crowdT = 0;
+function animateArena(dt) { // ribbon boards scroll; the crowd bounces when fuel goes in
+  for (const r of AR.ribbons) r.material.map.offset.x = (r.material.map.offset.x + dt * 0.03) % 1;
+  if (AR.crowd && AR.crowd.visible && SET.gfx === "high") { crowdT += dt; if (crowdT > 0.08) { crowdT = 0; const m = new THREE.Matrix4(), base = AR.crowd.userData.base, hype = Math.min(1, (S.hype || 0));
+      for (let k = 0; k < 60; k++) { const i = (Math.random() * AR.crowdN) | 0; m.copy(base[i]); m.elements[13] += Math.random() < 0.15 + hype * 0.5 ? 0.06 + Math.random() * 0.14 * (1 + hype) : 0; AR.crowd.setMatrixAt(i, m); } AR.crowd.instanceMatrix.needsUpdate = true; } }
+  S.hype = Math.max(0, (S.hype || 0) - dt * 0.4);
+  drawBoards(false);
+}
+let shadowWide = null;
+function setShadowBox(wide) { if (shadowWide === wide) return; shadowWide = wide; const c = sun.shadow.camera, e = wide ? [-9.5, 9.5, 5.5, -5.5] : [-4, 4, 4, -4];
+  c.left = e[0]; c.right = e[1]; c.top = e[2]; c.bottom = e[3]; c.far = wide ? 40 : 30; c.updateProjectionMatrix(); }
+function applyGfx() { const g = SET.gfx || "mid";
+  renderer.setPixelRatio(Math.min(devicePixelRatio, g === "low" ? 1 : g === "mid" ? 1.5 : 2));
+  sun.castShadow = g !== "low"; const ms = g === "high" ? 4096 : 2048; if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
+  if (AR.crowd) { AR.crowd.visible = g !== "low"; AR.crowd.count = g === "high" ? AR.crowdN : Math.floor(AR.crowdN * 0.6); }
+  resize(); }
+
 // ================================================================== main loop
-let last = performance.now(), acc = 0;
+let last = performance.now(), acc = 0; const NOINP = { mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false };
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (S.loaded) {
     let vxl = 0, vzl = 0, w = 0, mdt = dt;
-    if (S.view === "drive") {
-      if (!S.paused) { const inp = readInput(); acc += dt * (S.spectate ? (S.timeScale || 1) : 1); let steps = 0; while (acc >= STEP && steps++ < 40) { acc -= STEP; if (!tick(inp)) break; } if (steps >= 40) acc = 0; } else { pollPadMenu(); mdt = 0; }
+    const att = S.attract && (S.view === "menu" || S.view === "comp");
+    if (S.view === "drive" || att) {
+      if (!S.paused || att) { const inp = att ? NOINP : readInput(); acc += dt * (S.spectate ? (S.timeScale || 1) : 1); let steps = 0; while (acc >= STEP && steps++ < 40) { acc -= STEP; if (!tick(inp)) break; } if (steps >= 40) acc = 0; if (att) { pollPadMenu(); updateLiveCard(dt); } } else { pollPadMenu(); mdt = 0; }
       robot.root.position.set(S.x, S.y, S.z); robot.root.rotation.set(S.pitch, S.yaw, S.roll, "YXZ");
       const c = Math.cos(S.yaw), s = Math.sin(S.yaw); vxl = S.vx * c - S.vz * s; vzl = S.vx * s + S.vz * c; w = S.w;
       const Mx = new THREE.Matrix4(), hide = new THREE.Matrix4().makeScale(0, 0, 0);
       const dec = Math.exp(-dt * 14);
       for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3, a = fuel.sq[i] * FUEL_R; fuel.sq[i] *= dec; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], fuel.sqa[o] * a, fuel.sqa[o + 1] * a, fuel.sqa[o + 2] * a, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
       fuel.mesh.instanceMatrix.needsUpdate = true;
-      updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } hud(); drawInner(); drawBots(dt); drawLeds(now);
+      if (att) attractCam(dt); else updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } if (!att) hud(); drawInner(); drawBots(dt); drawLeds(now); animateArena(dt);
     } else if (S.view === "show") {
       if (SV.chortle && !SV.cycle) { SV.chT = (SV.chT + dt) % 1.2; M.armT = SV.chT > 0.7 ? ARM.retract : ARM.carry; }
       stepCycle(dt); stepMech(dt);
@@ -1821,12 +2344,13 @@ requestAnimationFrame(frame);
 
 (async () => {
   try {
-    await Promise.all([loadRobot(), loadField(), loadLod().catch(() => {})]);
+    await Promise.all([loadRobot(), loadField()]);
     redHub = F.hubs[0].center[0] < 0 ? 0 : 1; blueHub = 1 - redHub; HUB.cx = Math.abs(F.hubs[0].center[0]); // red is the -x side in this field model
     buildNav(); initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
-    S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow", "goComp"].forEach((id) => $(id).disabled = false); $("goFree").focus();
-    window.__sim = { comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    buildPool(); buildArena();
+    S.loaded = true; $("load").hidden = true; document.querySelectorAll(".mode").forEach((b) => { b.disabled = false; }); document.querySelector(".mode").focus({ preventScroll: true }); startAttract();
+    window.__sim = { beginLive, startQuick, QM, POOL, applyPreset, menuScreen, startAttract, stopAttract, LIVE: () => LIVE, botShoot, stepFuel, stepBots, skillOf, designFor, F, comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();
