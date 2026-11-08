@@ -11,7 +11,6 @@ A browser simulator for FRC 1880's HtH V2 robot in the 2026 game, REBUILT.
 - **Robots scale with EPA:** speed, hopper size, intake rate, fire rate, accuracy and strategy all come from each team's 2026 Statbotics EPA. Elite teams feed fuel into their zone while their hub is off, stage in their own lanes before it switches, and shoot on the move; weak robots miss more, cycle slowly and sometimes break down. A 377-EPA HighTide alliance is not beatable by a 90-EPA robot.
 - **Other teams' robots are generic designs** (turret, drum + turret, dual shooter, tall shooter, kit bot), never 1880's CAD. Turrets and drums go to high-EPA teams.
 - **Competitions:** the 2026 FIRST Long Island Regional, Gotham Regional or Championship Daly Division with their real team lists. Qualification schedule, match list, rankings by ranking points, serpentine alliance selection (captains pick by EPA; your value comes from how you score in the sim), and a double-elimination bracket with best-of-3 finals. Play your own matches live, watch others (1× to 8×), sim them, or skip to your next match. Progress is saved in your browser.
-- **LEDs from pyrebuilt `leds.py`:** green in range, red out of range, flashing near shift changes, pulsing in transition if you lost auto, rainbow when disabled.
 - **Matches:** 20 s auto, then 2:20 teleop with REBUILT hub shifts (timing from pyrebuilt's `game.py`; the auto winner's hub goes inactive first). Fuel in an inactive hub doesn't count.
 - **Autos from pyrebuilt:** Shoot, Shoot + Gobbler (left / right) and Gobbler only (left / right), with the waypoints, headings and state machines from `autonomous/routines.py`.
 - **Auto Lab:** build your own autos on a top-down field.
@@ -23,6 +22,15 @@ A browser simulator for FRC 1880's HtH V2 robot in the 2026 game, REBUILT.
   - **Preview and test:** preview the auto with the real robot model, or test run it in the full physics sim and see the fuel scored, time taken and how closely the robot kept to the plan.
   - **Share:** codes a teammate can import, and a Python export in the style of pyrebuilt's `routines.py`. Mirror flips an auto left/right, and red-alliance flips are automatic.
   - **Use as my auto:** your auto runs in practice (P), quick match and competitions.
+- **Realistic mode** (Settings → Simulation):
+  - **Battery:** an FRC battery with internal resistance. Voltage sags when you accelerate, spin up or intake, and drains over a match. Below 6.8 V the robot browns out and its outputs cut briefly.
+  - **Motors:** Kraken X60 torque-speed curves and current limits. Top speed drops as the voltage sags.
+  - **Shooting:** the flywheels lose speed with every ball, and a wheel that hasn't recovered throws short. Each ball varies slightly.
+  - **Graphics:** smooth CAD shading with real metal and anodized finishes, arena reflections, overhead truss lights, ambient occlusion, bloom and a filmic tone curve.
+  - **Driver station camera:** an eye-level view from behind the alliance wall.
+- **Bump physics:** the robot is a rigid body resting on its wheels, belly pan and bumpers.
+  - It tilts up the 15° ramps, can scrape its belly (41 mm clearance from the CAD) on the crest and goes light if it crests fast.
+  - It slows climbing and speeds up coming down. Fuel rolls off the ramps, and balls in the hopper slosh and bounce with the tilt.
 - **Practice:** drive on the 2026 field with no clock. Fuel inside the robot is soft foam that collides with the CAD and squashes. Robots are 63 kg rigid bodies with traction-limited pushing; AI robots plan with A*.
 - **Garage:** orbit the CAD, click parts, show, hide or isolate subsystems, explode the model, and run the intake, hood, indexer, flywheels and swerve by hand or with the full shot cycle.
 - **Robot behavior follows [frc1880/pyrebuilt](https://github.com/frc1880/pyrebuilt):** Xbox layout, field-oriented drive with stick shaping, 4.0 m/s and 0.75 rot/s limits, the hood and flywheel table, intake positions, and the "chortle" agitation.

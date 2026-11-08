@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Triple Threat: FRC 1880 robot simulator for REBUILT 2026. Quick matches against real teams by EPA, practice, competitions, an Auto Lab for drawing or recording your own autos, and a garage view of the robot.">
+<meta name="description" content="Triple Threat: FRC 1880 robot simulator for REBUILT 2026. Arcade or Realistic simulation, quick matches against real teams by EPA, competitions, an Auto Lab for drawing or recording autos, and a garage view of the robot.">
 <style>html{color-scheme:dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Triple Threat Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -449,6 +449,7 @@ body.touching .recbar{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px))}
   .lplay{grid-area:play}.ltrack{grid-area:track}.ltimer{grid-area:timer;min-width:0;font-size:20px}.lgo{grid-area:go;justify-self:stretch;justify-content:center}
   .llegend{display:none}.lname{font-size:22px}
 }
+.field.wide{grid-column:1/-1}.field.wide .fine{margin:2px 0 0;max-width:70ch}
 </style>
 
 <div id="app"><canvas id="c"></canvas></div>
@@ -469,6 +470,7 @@ body.touching .recbar{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px))}
   <div class="hud bl" id="chipsBox">
     <div class="chips">
       <div class="chip" id="cHub" hidden>Hub</div>
+      <div class="chip" id="cBat" hidden>Battery <b id="bat">12.6</b> V</div>
       <div class="chip" id="cIntake">Intake</div>
       <div class="chip" id="cAim">Auto-aim</div>
       <div class="chip" id="cShot">Flywheel <b id="rps">0</b> rps</div>
@@ -636,6 +638,7 @@ body.touching .recbar{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px))}
     <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">06 · Settings</div><h2>Settings</h2></div></header>
     <div class="panel pgrid">
       <div class="field"><span class="lbl">Graphics</span><div class="seg" id="gfxSeg"><button type="button" data-gfx="low" aria-pressed="false">Performance</button><button type="button" data-gfx="mid" aria-pressed="true">Balanced</button><button type="button" data-gfx="high" aria-pressed="false">Ultra</button></div></div>
+      <div class="field wide"><span class="lbl">Simulation</span><div class="seg" id="realSeg"><button type="button" data-real="0" aria-pressed="true">Arcade</button><button type="button" data-real="1" aria-pressed="false">Realistic</button></div><p class="fine">Realistic models the battery (voltage sag, brownouts), motor torque curves, flywheel droop between shots, ball variance and the robot tilting on the bump, and renders with real lighting, reflections, ambient occlusion and a filmic camera response. It is heavier on your graphics card.</p></div>
       <div class="field"><span class="lbl">Live match behind the menus</span><div class="seg" id="attSeg"><button type="button" data-att="1" aria-pressed="true">On</button><button type="button" data-att="0" aria-pressed="false">Off</button></div></div>
       <div class="sliders">
         <label class="lbl" for="spdDrive">Drive speed <b id="spdDriveV">100%</b></label><input type="range" id="spdDrive" min="40" max="120" step="5" value="100">
@@ -691,7 +694,13 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries, toCreasedNormals } from "three/addons/utils/BufferGeometryUtils.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 
 // ================================================================== constants
 const STEP = 1 / 120, G = 9.81, DEG = Math.PI / 180;
@@ -764,7 +773,7 @@ const SUBS = {
   shooter: { name: "Triple Threat shooter", color: "#ff6a3d", desc: "Three lanes on one shaft: 4 in brass flywheels with 3 in Stealth wheels, Kraken X60 leader and follower. 2 in injector wheels push fuel up the ramps. Fires out the back at 53 to 95 rps." },
   hopper: { name: "Hopper", color: "#d8c97a", desc: "Hopper walls between the intake and the shooter. While shooting, the intake agitates (\"chortle\") between carry and retract to keep fuel moving." },
   drivetrain: { name: "Swerve drive", color: "#b0b8c4", desc: "Four SDS MK5n modules, Kraken X60 drive and X44 steer, 6.03:1 drive ratio, 2 in wheel radius, 4.0 m/s free speed, 60 kg robot mass in path planning." },
-  electrical: { name: "Electrical", color: "#9b8cff", desc: "Battery, PDH, CANdle LEDs and the two vision cameras on the bellypan." },
+  electrical: { name: "Electrical", color: "#9b8cff", desc: "Battery, PDH, CANdle and the two vision cameras on the bellypan." },
 };
 const robot = { root: new THREE.Group(), parts: [], modules: [], hopperBalls: null };
 scene.add(robot.root);
@@ -842,7 +851,6 @@ async function loadRobot() {
   add(2 * fx, th, 0, fz - th / 2); add(2 * fx, th, 0, -fz + th / 2); add(th, 2 * fz - 2 * th, fx - th / 2, 0); add(th, 2 * fz - 2 * th, -fx + th / 2, 0);
   robot.bumperMat = bm;
   // fuel inside the robot (physics particles) and fuel moving through the shooter
-  buildLeds(vis);
   robot.inner = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 16, 12), fuelMat, 96); robot.inner.castShadow = true; robot.inner.count = 0; robot.inner.frustumCulled = false; vis.add(robot.inner);
   const roller = robot.parts.find((p) => p.h.name === "Roller") || robot.parts.find((p) => p.h.group === "arm" && /Sushi/.test(p.h.name));
   robot.rollerLocal = roller ? roller.base.clone() : new THREE.Vector3(0, 0.3, 0.3);
@@ -856,7 +864,7 @@ function stepMech(dt) {
   if (M.arm < 0) { M.arm = 0; M.armV = Math.max(0, M.armV); } // hard stop at deployed
   if (Math.abs(M.armT - M.arm) < 0.05 && Math.abs(M.armV) < 5) { M.arm = M.armT; M.armV = 0; }
   const hv = THREE.MathUtils.clamp((M.hoodT - M.hood) * 12, -140, 140); M.hoodV = hv; M.hood += hv * dt;
-  M.fly += (M.flyT - M.fly) * (1 - Math.exp(-dt / 0.32));
+  if (REAL.on && S.view === "drive") realFlywheel(dt); else M.fly += (M.flyT - M.fly) * (1 - Math.exp(-dt / 0.32));
   // the intake pushes the hopper extension out; it stays out until the robot is reset to its start configuration
   const et = RIG.ext[Math.round(THREE.MathUtils.clamp(M.arm, 0, RIG.ext.length - 1))];
   M.ext = M.armT >= RIG.armDeployDeg - 1 ? Math.min(M.ext, et) : Math.max(M.ext, et);
@@ -946,7 +954,7 @@ function hsStep(dt, C) {
         V[o] = 0; V[o + 1] = ty / tl * sp; V[o + 2] = tz / tl * sp;
         if (HS.cv[i] >= 1) { HS.cv[i] = -1; V[o + 2] -= 0.3; } else if (HS.cv[i] <= 0) { HS.cv[i] = -1; V[o + 2] = 2.2; V[o + 1] = 0.2; }
         continue; }
-      V[o] -= C.ax * h; V[o + 1] -= G * h; V[o + 2] -= C.az * h;
+      V[o] -= C.ax * h; V[o + 1] -= (G + (C.ay || 0)) * h; V[o + 2] -= C.az * h;
       // rollers and belts drag fuel along by friction
       if (C.roll < -0.2 && (HS.arm[i] || P[o + 2] > 0.25)) { const dy = 0.22 - P[o + 1], dz = reach + 0.35 - P[o + 2], l = Math.hypot(dy, dz) || 1, k = Math.min(1, 12 * h);
         V[o + 1] += (dy / l * 2.4 - V[o + 1]) * k; V[o + 2] += (dz / l * 2.4 - V[o + 2]) * k; }
@@ -1065,7 +1073,11 @@ function sdf(x, z) {
   return (s[o] * (1 - tx) + s[o + 1] * tx) * (1 - tz) + (s[o + grid.nx] * (1 - tx) + s[o + grid.nx + 1] * tx) * tz;
 }
 function grad(x, z) { const e = 0.03; const gx = sdf(x + e, z) - sdf(x - e, z), gz = sdf(x, z + e) - sdf(x, z - e); const l = Math.hypot(gx, gz) || 1; return [gx / l, gz / l]; }
-function floorH(x, z) { const [i, k] = cellOf(x, z); if (i < 0 || k < 0 || i >= grid.nx || k >= grid.nz) return 0; const o = k * grid.nx + i; return grid.solid[o] ? 0 : grid.h[o]; }
+function floorCell(i, k) { if (i < 0 || k < 0 || i >= grid.nx || k >= grid.nz) return 0; const o = k * grid.nx + i; return grid.solid[o] ? 0 : grid.h[o]; }
+function floorH(x, z) { // bilinear between cell centres, so ramps are smooth instead of 5 cm stairs
+  const fx = (x - grid.x0) / grid.cell - 0.5, fz = (z - grid.z0) / grid.cell - 0.5, i = Math.floor(fx), k = Math.floor(fz), tx = fx - i, tz = fz - k;
+  return (floorCell(i, k) * (1 - tx) + floorCell(i + 1, k) * tx) * (1 - tz) + (floorCell(i, k + 1) * (1 - tx) + floorCell(i + 1, k + 1) * tx) * tz; }
+function floorSlope(x, z) { const e = 0.04; return [(floorH(x + e, z) - floorH(x - e, z)) / (2 * e), (floorH(x, z + e) - floorH(x, z - e)) / (2 * e)]; }
 const inField = (x, z) => Math.abs(x) < F.carpet.length / 2 - 0.02 && Math.abs(z) < F.carpet.width / 2 - 0.02;
 
 // ================================================================== fuel
@@ -1091,12 +1103,12 @@ const S = {
   orb: { yaw: 2.4, pitch: 0.45, dist: 3.2 }, follow: 0, score: 0, total: 0, pts: { red: 0, blue: 0 }, autoPts: { red: 0, blue: 0 }, phase: "practice", timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
 };
 let redHub = 0, blueHub = 1;
-const SET = { opp: 1, drive: 1, turn: 1, auto: "sgR", gfx: "mid", attract: true };
+const SET = { opp: 1, drive: 1, turn: 1, auto: "sgR", gfx: "mid", attract: true, real: false };
 try { const j = JSON.parse(localStorage.getItem("tt-set") || "{}"); Object.assign(SET, j); } catch {}
 resize();
 const myHub = () => (S.alliance === "red" ? redHub : blueHub);
 const side = () => Math.sign(F.hubs[myHub()].center[0]);
-function startPose() { const s = side(); S.x = s * (HUB.cx + 1.9); S.z = 0; S.yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2; S.vx = S.vz = S.w = 0; }
+function startPose() { const s = side(); S.x = s * (HUB.cx + 1.9); S.z = 0; S.yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2; S.vx = S.vz = S.w = 0; resetChassis(); }
 
 // ================================================================== input
 const keys = new Set();
@@ -1127,8 +1139,8 @@ addEventListener("blur", () => keys.clear());
 function toggleSpin() { S.spinOutside = !S.spinOutside; toast(S.spinOutside ? "Flywheel on" : "Flywheel off", "#e9edf2"); }
 function toggleField() { S.field = !S.field; $("fieldBtn").textContent = S.field ? "Field-oriented" : "Robot-oriented"; $("fieldBtn").setAttribute("aria-pressed", S.field); toast(S.field ? "Field-oriented drive" : "Robot-oriented drive", "#e9edf2"); }
 function toggleAim() { S.aim = !S.aim; toast(S.aim ? "Auto-aim on" : "Auto-aim off", "#e9edf2"); }
-const CAM_NAMES = { driver: "Driver", chase: "3rd person", close: "3rd person close", orbit: "Orbit", top: "Top", stands: "Stands" };
-function cycleCam() { S.cam = S.spectate ? ({ stands: "top", top: "orbit", orbit: "stands" }[S.cam] || "stands") : ({ driver: "chase", chase: "close", close: "orbit", orbit: "top", top: "stands", stands: "driver" }[S.cam] || "driver"); $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; }
+const CAM_NAMES = { eye: "Driver station", driver: "Driver", chase: "3rd person", close: "3rd person close", orbit: "Orbit", top: "Top", stands: "Stands" };
+function cycleCam() { S.cam = S.spectate ? ({ stands: "top", top: "orbit", orbit: "stands" }[S.cam] || "stands") : ({ eye: "driver", driver: "chase", chase: "close", close: "orbit", orbit: "top", top: "stands", stands: "eye" }[S.cam] || "driver"); $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; }
 function toggleAgitate() { S.agitate = !S.agitate; $("agiBtn").textContent = "Agitate: " + (S.agitate ? "on" : "off"); $("agiBtn").setAttribute("aria-pressed", S.agitate); if (!S.agitate && M.armT === ARM.retract) M.armT = ARM.carry; toast(S.agitate ? "Intake agitates while shooting" : "Agitate off", "#e9edf2"); }
 function runAutoPractice() { if (S.mode === "match") return; if (SET.auto === "none") { toast("Pick an auto in the menu first", "#e9edf2"); return; }
   autoBegin(SET.auto); preload(8); M.arm = M.armT = ARM.carry; camState.init = false; toast("Auto: " + autoName(SET.auto)); }
@@ -1204,7 +1216,9 @@ function launch(fid, lane) { // fuel leaves the hood toward the target
   const sp = solveSpeed(d, S.th, S.dh); const ch = Math.cos(S.th) * sp;
   const L = [ch * dx / d - S.vx, sp * Math.sin(S.th), ch * dz / d - S.vz];
   const jit = () => (Math.random() + Math.random() + Math.random() - 1.5) * 0.8;
-  const lh = Math.hypot(L[0], L[2]), back = S.yaw + Math.PI + 0.6 * DEG * jit(), k = 1 + 0.012 * jit(), pitch = Math.atan2(L[1], lh) + 0.6 * DEG * jit(), mag = Math.hypot(lh, L[1]) * k;
+  const real = REAL.on && S.view === "drive", kfly = real ? THREE.MathUtils.clamp(M.fly / Math.max(1, S.sol.rps), 0.8, 1.06) : 1; // an under-speed wheel throws short
+  const lh = Math.hypot(L[0], L[2]), back = S.yaw + Math.PI + (real ? 0.9 : 0.6) * DEG * jit(), k = (1 + (real ? 0.025 : 0.012) * jit()) * kfly, pitch = Math.atan2(L[1], lh) + (real ? 1.3 : 0.6) * DEG * jit() + (S.pitch || 0), mag = Math.hypot(lh, L[1]) * k;
+  if (real) M.fly -= M.fly * 0.045; // each ball takes energy out of the flywheels
   fuel.pos.set([px, S.y + ex.p.y, pz], fid * 3);
   fuel.vel.set([Math.sin(back) * Math.cos(pitch) * mag + S.vx, Math.sin(pitch) * mag, Math.cos(back) * Math.cos(pitch) * mag + S.vz], fid * 3);
   fuel.st[fid] = 0; fuel.t[fid] = -0.35; fuel.own[fid] = 0; fuel.sq[fid] = 0.2; fuel.sqa.set([0, 1, 0], fid * 3); S.shots.push(performance.now());
@@ -1267,7 +1281,7 @@ function collideBots(A, B) { // A's bumper points against B's bumper box
 }
 // wheels push toward the commanded velocity, limited by traction (so pushing matches and hits feel heavy)
 function driveToward(b, tx, tz, wt, dt, wacc) {
-  const ax = tx - b.vx, az = tz - b.vz, al = Math.hypot(ax, az), amax = BODY.traction * dt;
+  const ax = tx - b.vx, az = tz - b.vz, al = Math.hypot(ax, az), amax = Math.min(BODY.traction * (b.tractK ?? 1), b.amot ?? Infinity) * dt;
   if (al > amax) { b.vx += ax / al * amax; b.vz += az / al * amax; } else { b.vx = tx; b.vz = tz; }
   const dw = wt - b.w, wm = wacc * dt; b.w += Math.abs(dw) > wm ? Math.sign(dw) * wm : dw;
 }
@@ -1356,18 +1370,16 @@ function makeBotMesh(team, alliance, design) {
     for (const x of [-0.11, 0.11]) tk.box("frame", 0.008, 0.2, 0.3, x, 0.1, 0);
     flywheelPair(tk, 0, 0.1, -0.08, 0.2); tk.cyl("alu", 0.025, 0.2, 0, 0.04, 0.06, "x", 12);
     tk.put("dark", new THREE.CylinderGeometry(0.13, 0.13, 0.22, 20, 1, true, -0.4, 2.2), 0, 0.1, -0.08, 0, 0, Math.PI / 2); // hood
-    tk.box("led", 0.2, 0.01, 0.01, 0, 0.21, 0.15); tk.build(tur, M); u.turret = tur;
+    tk.build(tur, M); u.turret = tur;
   } else if (design === "dual") { // two fixed hooded shooters at the back, sloped polycarbonate hopper
     posts(0.32, [0.3], [-0.34, 0.34]); for (const x of [-0.34, 0.34]) { k.tube("frame", 0.025, 0.5, x, 0.33, 0.02); k.box("poly", 0.004, 0.24, 0.5, x, 0.27, 0.05); }
     k.box("poly", 0.66, 0.004, 0.42, 0, 0.2, 0.05, -0.18, 0, 0);
     for (const x of [-0.17, 0.17]) { for (const s of [-0.12, 0.12]) k.box("frame", 0.008, 0.3, 0.22, x + s, 0.4, -0.24);
       flywheelPair(k, x, 0.44, -0.27, 0.2); k.put("dark", new THREE.CylinderGeometry(0.12, 0.12, 0.22, 18, 1, true, 0.2, 2.0), x, 0.44, -0.27, 0, 0, Math.PI / 2); }
-    k.box("led", 0.62, 0.01, 0.01, 0, 0.56, -0.13);
   } else if (design === "tower") { // two-stage elevator carrying a hooded shooter
     for (const x of [-0.25, 0.25]) { k.tube("alu", 0.03, 0.82, x, 0.5, -0.2, "y"); k.tube("frame", 0.026, 0.7, x * 0.92, 0.62, -0.17, "y"); }
     k.box("dark", 0.56, 0.14, 0.26, 0, 0.96, -0.2); flywheelPair(k, 0, 0.96, -0.26, 0.4); k.put("accent", new THREE.CylinderGeometry(0.15, 0.15, 0.5, 20, 1, true, 0, Math.PI), 0, 0.98, -0.22, 0, 0, Math.PI / 2);
     posts(0.28, [0.05, 0.3]); for (const x of [-0.34, 0.34]) k.box("poly", 0.004, 0.26, 0.3, x, 0.24, 0.17);
-    k.box("led", 0.5, 0.01, 0.01, 0, 0.88, -0.07);
   } else { // kitbot-style: open frame, simple shooter on a plate
     k.box("alu", 0.6, 0.006, 0.4, 0, 0.21, 0.06); for (const x of [-0.3, 0.3]) k.box("alu", 0.006, 0.2, 0.4, x, 0.12, 0.06);
     k.box("frame", 0.5, 0.18, 0.006, 0, 0.3, -0.18); flywheelPair(k, 0, 0.36, -0.22, 0.36); k.cyl("roller", 0.03, 0.56, 0, 0.22, 0.28, "x", 12);
@@ -1565,7 +1577,10 @@ function botShoot(b, target) {
   fuel.pos.set([px, py, pz], i * 3); fuel.vel.set([Math.sin(aimYaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(aimYaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4;
   fuel.own[i] = 1 + BOTS.indexOf(b); b.flash = 0.06;
 }
-function drawBots(dt) { for (const b of BOTS) { const u = b.mesh.userData; b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; u.balls.count = Math.min(24, b.store.length);
+function botPose(b, dt) { const h = (lx, lz) => { const [x, z] = bodyPt(b, lx, lz); return floorH(x, z); }, fl = h(0.3, 0.33), fr = h(-0.3, 0.33), bl = h(0.3, -0.33), br = h(-0.3, -0.33), ctr = h(0, 0);
+  const y = Math.max((fl + fr + bl + br) / 4, ctr - 0.03), k = 1 - Math.exp(-(dt || 0.016) * 14); b.py = (b.py || 0) + (y - (b.py || 0)) * k;
+  b.pp = (b.pp || 0) + (Math.atan2((bl + br) - (fl + fr), 2 * 0.66) - (b.pp || 0)) * k; b.pr = (b.pr || 0) + (Math.atan2((fl + bl) - (fr + br), 2 * 0.6) - (b.pr || 0)) * k; }
+function drawBots(dt) { for (const b of BOTS) { const u = b.mesh.userData; botPose(b, dt); b.mesh.position.set(b.x, b.py, b.z); b.mesh.rotation.set(b.pp, b.yaw, b.pr, "YXZ"); u.balls.count = Math.min(24, b.store.length);
   if (u.arm) u.arm.rotation.x = b.armA * 1.05 - 0.25;
   if (u.turret) u.turret.rotation.y += wrap(b.turretYaw + Math.PI - u.turret.rotation.y) * Math.min(1, (dt || 0.016) * 10);
   if (u.drum) u.drum.rotation.y += ((b.st === "shoot" || b.st === "travel") && b.store.length ? 9 : 1.5) * (dt || 0.016); } }
@@ -1643,7 +1658,10 @@ function stepRobot(inp, dt) {
   let wt = inp.rot * DRIVE.wmax * SET.turn;
   if (inp.auto) { tx = inp.vx; tz = inp.vz; wt = inp.yaw != null ? THREE.MathUtils.clamp(wrap(inp.yaw - S.yaw) * 8.5, -3 * Math.PI, 3 * Math.PI) : 0; }
   if (S.aim && inp.shoot && S.hopper > 0 && Math.abs(inp.rot) < 0.1) wt = THREE.MathUtils.clamp(wrap(S.aimYaw - S.yaw) * 8, -DRIVE.wmax, DRIVE.wmax); // heading PID, kP = 8
+  const vx0 = S.vx, vz0 = S.vz;
+  if (REAL.on) { const lim = realDriveLimits(Math.hypot(S.vx, S.vz)), tl = Math.hypot(tx, tz); if (tl > lim.vmax) { tx *= lim.vmax / tl; tz *= lim.vmax / tl; } S.amot = lim.amax; if (REAL.bat.brown > 0) wt = 0; } else S.amot = undefined;
   driveToward(S, tx, tz, wt, dt, DRIVE.wacc);
+  if (REAL.on) { const sp = Math.hypot(S.vx, S.vz); realBattery(dt, BODY.m * Math.hypot(S.vx - vx0, S.vz - vz0) / dt + (sp > 0.05 ? 30 : 0), sp); }
   { const c = Math.cos(S.yaw), s = Math.sin(S.yaw), ax = (S.vx - (S.pvx || 0)) / dt, az = (S.vz - (S.pvz || 0)) / dt; S.ax = ax * c - az * s; S.az = ax * s + az * c; S.pvx = S.vx; S.pvz = S.vz; }
   S.x += S.vx * dt; S.z += S.vz * dt; S.yaw = wrap(S.yaw + S.w * dt);
   let hit = collideField(S);
@@ -1651,10 +1669,46 @@ function stepRobot(inp, dt) {
   for (const b of BOTS) { collideField(b); hit = Math.max(hit, collideBots(S, b), collideBots(b, S)); }
   for (let i = 0; i < BOTS.length; i++) for (let j = i + 1; j < BOTS.length; j++) { collideBots(BOTS[i], BOTS[j]); collideBots(BOTS[j], BOTS[i]); }
   if (hit > 0.8) S.shake = Math.min(0.12, Math.max(S.shake || 0, hit * 0.025));
-  const hs = robot.modules.map((m) => { const [wx, wz] = local2world(m.r[0], m.r[1]); return floorH(wx, wz); });
-  const avg = (a) => (a.length ? a.reduce((p, c) => p + c, 0) / a.length : 0); const fr = [], bk = [], lf = [], rt = [];
-  robot.modules.forEach((m, i) => { (m.r[1] > 0 ? fr : bk).push(hs[i]); (m.r[0] > 0 ? rt : lf).push(hs[i]); });
-  const k = 1 - Math.exp(-dt * 18); S.y += (avg(hs) - S.y) * k; S.pitch += (-Math.atan2(avg(bk) - avg(fr), 0.53) - S.pitch) * k; S.roll += (Math.atan2(avg(rt) - avg(lf), 0.58) - S.roll) * k;
+  stepChassis(dt);
+}
+// ---------- chassis on uneven ground (the BUMP): a rigid body resting on wheel, belly-pan and bumper contacts.
+// Each contact is a stiff spring-damper against the floor; contacts also push sideways along the slope, so the robot slows climbing,
+// speeds up coming down, can scrape its belly on the crest and goes light (less traction) when it crests fast.
+const CH = { pts: null, belly: 0.041, ip: 63 * (0.84 * 0.84 + 0.45 * 0.45) / 12, ir: 63 * (0.9 * 0.9 + 0.45 * 0.45) / 12 };
+function chassisPts() {
+  const P = [];
+  for (const m of robot.modules) P.push({ x: m.r[0], z: m.r[1], y: -BODY.m * G / robot.modules.length / 22000, R: m.R || 0.05, wheel: true, k: 22000, c: 650 }); // tread + module compliance // y: rest compression so S.y sits at 0
+  for (const x of [-0.3, 0, 0.3]) for (const z of [-0.32, -0.16, 0, 0.16, 0.32]) P.push({ x, z: z + BOX.cz, y: CH.belly, k: 90000, c: 1600, mu: 0.15 }); // aluminium belly pan on HDPE
+  for (let a = 0; a < 24; a++) { const t = a / 24 * 4, e = t % 1, side = Math.floor(t), hx = BOX.hx, hz = BOX.hz;
+    const [x, z] = side === 0 ? [-hx + 2 * hx * e, hz] : side === 1 ? [hx, hz - 2 * hz * e] : side === 2 ? [hx - 2 * hx * e, -hz] : [-hx, -hz + 2 * hz * e];
+    P.push({ x, z: z + BOX.cz, y: BUMPER.y0, k: 60000, c: 1200, mu: 0.2 }); } // round pool-noodle bumpers slide
+  return P;
+}
+function resetChassis() { S.y = 0; S.vy = 0; S.pitch = 0; S.wp = 0; S.roll = 0; S.wr = 0; S.ay = 0; S.tractK = 1; }
+function stepChassis(dt) {
+  if (!CH.pts) { if (!robot.modules.length) return; CH.pts = chassisPts(); }
+  if (!Number.isFinite(S.vy)) resetChassis();
+  const n = 4, h = dt / n, m = BODY.m, c = Math.cos(S.yaw), s = Math.sin(S.yaw), f = [s, c]; let wheelN = 0, vy0 = S.vy;
+  for (let it = 0; it < n; it++) {
+    let Fy = -m * G, Tp = -S.wp * 6, Tr = -S.wr * 6, Fx = 0, Fz = 0, wl = 0; const cp = Math.cos(S.pitch), sp = Math.sin(S.pitch), cr = Math.cos(S.roll), sr = Math.sin(S.roll);
+    for (const q of CH.pts) {
+      const wx = S.x + q.x * c + q.z * s, wz = S.z - q.x * s + q.z * c;
+      let g;
+      if (q.wheel) { g = -1; for (const d of [-0.6, -0.3, 0, 0.3, 0.6]) { const dd = d * q.R; g = Math.max(g, floorH(wx + f[0] * dd, wz + f[1] * dd) - (q.R - Math.sqrt(q.R * q.R - dd * dd))); } }
+      else g = floorH(wx, wz);
+      const yp = S.y + (q.x * sr + q.y * cr) * cp - q.z * sp, pen = g - yp; if (pen <= 0) continue;
+      const vp = S.vy + q.x * S.wr - q.z * S.wp, Fn = Math.max(0, q.k * pen - q.c * vp);
+      Fy += Fn; Tp -= q.z * Fn; Tr += q.x * Fn;
+      const [gx, gz] = floorSlope(wx, wz); Fx -= Fn * gx; Fz -= Fn * gz; // the slope pushes the robot downhill
+      if (q.wheel) wl += Fn;
+      else { const v = Math.hypot(S.vx, S.vz); if (v > 1e-3) { Fx -= q.mu * Fn * S.vx / v; Fz -= q.mu * Fn * S.vz / v; } } // scraping drags
+    }
+    S.vy += Fy / m * h; S.y += S.vy * h; S.wp += Tp / CH.ip * h; S.pitch += S.wp * h; S.wr += Tr / CH.ir * h; S.roll += S.wr * h;
+    S.vx += Fx / m * h; S.vz += Fz / m * h; wheelN += wl / n;
+  }
+  S.pitch = THREE.MathUtils.clamp(S.pitch, -0.6, 0.6); S.roll = THREE.MathUtils.clamp(S.roll, -0.6, 0.6); if (S.y < -0.05) { S.y = 0; S.vy = 0; }
+  S.ay += ((S.vy - vy0) / dt - S.ay) * (1 - Math.exp(-dt / 0.05)); // the hopper floor feels the jolt through the frame, not every spring spike S.tractK = THREE.MathUtils.clamp(wheelN / (BODY.m * G), 0.22, 1.15);
+  if (vy0 < -0.9 && S.vy > -0.2) S.shake = Math.max(S.shake || 0, Math.min(0.08, -vy0 * 0.03)); // landed hard
 }
 function controlMech(inp, dt) { // mirrors pyrebuilt teleopPeriodic + ShooterController
   if (inp.armT != null) M.armT = inp.armT;
@@ -1680,8 +1734,9 @@ function stepFuel(dt) {
     if (st[i] !== 0) continue;
     const o = i * 3; let x = pos[o], y = pos[o + 1], z = pos[o + 2], vx = vel[o], vy = vel[o + 1], vz = vel[o + 2];
     t[i] += dt;
-    const fl = floorH(x, z); const onGround = y - r <= fl + 0.002;
-    if (!(onGround && Math.abs(vx) + Math.abs(vz) < 0.01 && Math.abs(vy) < 0.05)) {
+    const fl = floorH(x, z); const onGround = y - r <= fl + 0.002, slope = fl > 0.003 ? floorSlope(x, z) : null, steep = slope && Math.abs(slope[0]) + Math.abs(slope[1]) > 0.03;
+    if (onGround && steep) { vx -= G * 0.71 * slope[0] * dt; vz -= G * 0.71 * slope[1] * dt; } // a rolling ball accelerates at 5/7 g·sinθ
+    if (!(onGround && !steep && Math.abs(vx) + Math.abs(vz) < 0.01 && Math.abs(vy) < 0.05)) {
       const v = Math.hypot(vx, vy, vz); vx -= DRAG_K * v * vx * dt; vy -= (G + DRAG_K * v * vy) * dt; vz -= DRAG_K * v * vz * dt;
       const py = y; x += vx * dt; y += vy * dt; z += vz * dt;
       for (let h = 0; h < 2; h++) {
@@ -1771,8 +1826,9 @@ function tick(inp) {
   if (S.spectate) { stepBots(STEP); for (let i = 0; i < BOTS.length; i++) { collideField(BOTS[i]); for (let j = i + 1; j < BOTS.length; j++) { collideBots(BOTS[i], BOTS[j]); collideBots(BOTS[j], BOTS[i]); } } stepFuel(STEP);
     if (S.running) { S.timeLeft -= STEP; if (S.timeLeft <= 0) { if (S.phase === "auto") { S.phase = "teleop"; S.timeLeft = MATCH.teleop; const r = S.autoPts.red, b = S.autoPts.blue; S.autoWinner = r === b ? (Math.random() < 0.5 ? "red" : "blue") : r > b ? "red" : "blue"; } else { S.timeLeft = 0; endRun(); return false; } } }
     return true; }
+  if (REAL.on && REAL.bat.brown > 0) inp = Object.assign({}, inp, { shoot: false, intake: false, outtake: false });
   solve(); stepRobot(inp, STEP); controlMech(inp, STEP); stepMech(STEP);
-  hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: S.ax || 0, az: S.az || 0 })); S.hopper = HS.n;
+  hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: (S.ax || 0) + G * Math.sin(S.roll || 0), az: (S.az || 0) - G * Math.sin(S.pitch || 0), ay: THREE.MathUtils.clamp(S.ay || 0, -14, 14) })); S.hopper = HS.n;
   stepTransits(STEP); stepFuel(STEP);
   if (S.running && S.mode === "match") { S.timeLeft -= STEP;
     if (S.timeLeft <= 0) { if (S.phase === "auto") { S.phase = "teleop"; S.timeLeft = MATCH.teleop; const r = S.autoPts.red, b = S.autoPts.blue; S.autoWinner = r === b ? (Math.random() < 0.5 ? "red" : "blue") : r > b ? "red" : "blue";
@@ -1785,7 +1841,7 @@ function tick(inp) {
 
 // ================================================================== cameras
 const camState = { pos: new THREE.Vector3(), look: new THREE.Vector3(), yawS: 0, init: false };
-function camYaw() { if (S.cam === "driver" || S.cam === "stands") return S.cam === "driver" ? (side() < 0 ? Math.PI / 2 : -Math.PI / 2) : 0; return Math.atan2(camState.look.x - camState.pos.x, camState.look.z - camState.pos.z); }
+function camYaw() { if (S.cam === "driver" || S.cam === "eye" || S.cam === "stands") return S.cam !== "stands" ? (side() < 0 ? Math.PI / 2 : -Math.PI / 2) : 0; return Math.atan2(camState.look.x - camState.pos.x, camState.look.z - camState.pos.z); }
 function updateDriveCamera(dt) {
   const k = 1 - Math.exp(-dt * 6); let p, l; const s = side();
   const fol = S.spectate ? (BOTS[S.follow % Math.max(1, BOTS.length)] || { x: 0, z: 0, yaw: 0 }) : S; // spectating: follow a robot
@@ -1793,6 +1849,7 @@ function updateDriveCamera(dt) {
   else if (S.cam === "close") { camState.yawS += wrap(fol.yaw - camState.yawS) * (1 - Math.exp(-dt * 6)); const f = [Math.sin(camState.yawS), Math.cos(camState.yawS)];
     p = V3(fol.x - f[0] * 1.7, (fol.y || 0) + 1.0, fol.z - f[1] * 1.7); l = V3(fol.x + f[0] * 0.8, (fol.y || 0) + 0.45, fol.z + f[1] * 0.8); }
   else if (S.cam === "orbit") { const o = S.orb; p = V3(fol.x + Math.sin(o.yaw) * Math.cos(o.pitch) * o.dist, (fol.y || 0) + 0.3 + Math.sin(o.pitch) * o.dist, fol.z + Math.cos(o.yaw) * Math.cos(o.pitch) * o.dist); l = V3(fol.x, (fol.y || 0) + 0.3, fol.z); }
+  else if (S.cam === "eye") { p = V3(s * 8.75, 1.68, s * 1.6); l = V3(S.x, 0.35, S.z); } // standing behind the alliance wall, eyes 1.68 m up
   else if (S.cam === "driver") { p = V3(s * 10.2, 5.4, S.z * 0.35); l = V3(Math.min(Math.abs(S.x - s * 2.2), 7) * s, 0.2, S.z * 0.75); }
   else if (S.cam === "chase") { camState.yawS += wrap(fol.yaw - camState.yawS) * (1 - Math.exp(-dt * 3)); const f = [Math.sin(camState.yawS), Math.cos(camState.yawS)];
     p = V3(THREE.MathUtils.clamp(fol.x - f[0] * 3.2, -8.1, 8.1), (fol.y || 0) + 1.9, THREE.MathUtils.clamp(fol.z - f[1] * 3.2, -3.9, 3.9)); l = V3(fol.x + f[0] * 1.5, (fol.y || 0) + 0.4, fol.z + f[1] * 1.5); }
@@ -1828,6 +1885,7 @@ function hud() {
   ui.cShot.className = "chip" + (M.flyT > 0 && Math.abs(M.fly - M.flyT) < 5 ? " on" : M.flyT > 0 ? " warnc" : "");
   const inRange = S.inZone && S.dist >= SHOT_TABLE[0][0] - 0.1 && S.dist <= SHOT_TABLE[SHOT_TABLE.length - 1][0] + 0.3;
   ui.cDist.className = "chip " + (inRange ? "on" : "warnc"); ui.cDist.firstChild.textContent = S.inZone ? "Hub " : "Pass ";
+  if (REAL.on) { const B = REAL.bat; $("bat").textContent = B.v.toFixed(1); $("cBat").className = "chip " + (B.brown > 0 || B.v < 8 ? "warnc" : B.v < 10 ? "" : "on"); }
   if (LAB.rec || LAB.test) labHud();
 }
 
@@ -1840,6 +1898,7 @@ function segBind(id, attr, get, set) { const bs = document.querySelectorAll(`#${
   bs.forEach((b) => { b.setAttribute("aria-pressed", String(b.dataset[attr]) === String(get())); b.onclick = () => { set(b.dataset[attr]); bs.forEach((x) => x.setAttribute("aria-pressed", x === b)); saveSet(); }; }); }
 segBind("oppSeg", "opp", () => SET.opp, (v) => { SET.opp = +v; });
 segBind("gfxSeg", "gfx", () => SET.gfx, (v) => { SET.gfx = v; applyGfx(); });
+segBind("realSeg", "real", () => (SET.real ? 1 : 0), (v) => { SET.real = v === "1"; applyReal(); });
 segBind("attSeg", "att", () => (SET.attract ? 1 : 0), (v) => { SET.attract = v === "1"; if (SET.attract) startAttract(); else stopAttract(); });
 $("autoSel2").innerHTML = $("autoSel").innerHTML;
 for (const id of ["autoSel", "autoSel2"]) { $(id).value = SET.auto; $(id).onchange = () => { SET.auto = $(id).value; $("autoSel").value = $("autoSel2").value = SET.auto; saveSet(); }; }
@@ -1864,7 +1923,7 @@ const KEYS_HTML = `<h4>Xbox controller (same layout as the robot code)</h4>
   <div><span>Reset field (practice)</span><kbd>R</kbd></div><div><span>Pause</span><kbd>Esc</kbd></div>`;
 $("kgrid").innerHTML = $("kgrid2").innerHTML = KEYS_HTML;
 function preload(n) { HS.n = 0; const ids = []; for (let i = fuel.n - 1; i >= 0 && ids.length < n; i--) if (fuel.st[i] === 0) { fuel.st[i] = 1; ids.push(i); } slotsInto(ids.length, ids); S.hopper = HS.n; }
-function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); if (!S.comp) setupBots(SET.opp); S.myFuel = 0; S.myShots = 0; S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
+function resetRound() { REAL.bat = { v: 12.6, soc: 1, i: 0, brown: 0, low: 12.6 }; resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); if (!S.comp) setupBots(SET.opp); S.myFuel = 0; S.myShots = 0; S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
   Object.assign(M, { arm: ARM.carry, armT: ARM.carry, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, ext: 0 }); S.intakeLatch = false; S.spinOutside = false; }
 function setView(v) {
   S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; $("menu").hidden = v !== "menu"; if (v !== "comp") $("comp").hidden = true; updatePause();
@@ -1885,7 +1944,7 @@ $("modes").onclick = (e) => { const b = e.target.closest(".mode"); if (!b || b.d
   if (g === "garage") { stopAttract(); enterShow(); } else if (g === "comp") openComp(); else if (g === "lab") labOpen(); else menuScreen(g); };
 $("goFree").onclick = () => start("free");
 function start(mode) { stopAttract(); LIVE = null; S.comp = false; S.spectate = false; S.over = false; robot.root.visible = true; S.mode = mode; resetShowcase(); resetRound();
-  S.paused = false; setView("drive"); AU = null; S.cam = "driver"; $("camBtn").textContent = "View: Driver"; setShadowBox(false); toast("Practice", "#e9edf2"); }
+  S.paused = false; setView("drive"); AU = null; S.cam = SET.real ? "eye" : "driver"; $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; setShadowBox(false); toast("Practice", "#e9edf2"); }
 function setPaused(p) { if (p && (LAB.rec || LAB.test) && S.view === "drive") { if (LAB.rec) labStopRec(true); else labEndTest(); return; } if (!S.loaded || S.view !== "drive" || S.intro || S.over) return; S.paused = p; if (p) keys.clear();
   const comp = LIVE && (LIVE.kind === "qual" || LIVE.kind === "playoff");
   $("pTitle").textContent = LIVE ? LIVE.title : "Practice"; $("pKick").textContent = "Paused" + (LIVE && LIVE.kicker ? " · " + LIVE.kicker : "");
@@ -1962,7 +2021,7 @@ function beginLive(o) {
   setupMatchBots(entries); robot.root.visible = !LIVE.spectate; S.timeScale = 1; camState.init = false; drawBoards(true);
   if (S.attract) { S.paused = true; setShadowBox(true); AC.t = 0; AC.shot = 0; $("liveCard").hidden = S.view !== "menu"; for (const b of BOTS) b.mesh.visible = true; return; }
   $("teamsR").textContent = LIVE.red.join(" · "); $("teamsB").textContent = LIVE.blue.join(" · ");
-  S.cam = LIVE.spectate ? "stands" : "driver"; $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; setShadowBox(LIVE.spectate);
+  S.cam = LIVE.spectate ? "stands" : SET.real ? "eye" : "driver"; $("camBtn").textContent = "View: " + CAM_NAMES[S.cam]; setShadowBox(LIVE.spectate);
   S.paused = true; setView("drive"); showIntro();
 }
 // pre-match intro: alliances slide in, then 3-2-1
@@ -2173,36 +2232,7 @@ function updateHots() {
     h.el.hidden = !vis; if (vis) h.el.style.transform = `translate(${(p.x * 0.5 + 0.5) * r.width - 6}px, ${(-p.y * 0.5 + 0.5) * r.height - 9}px)`; }
 }
 
-// ================================================================== LEDs (pyrebuilt components/leds.py: CANdle, 38 LEDs, segments 0/7/14/21/30/36)
-const LED_N = 38;
-function buildLeds(vis) {
-  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.016, 0.012, 0.02), new THREE.MeshBasicMaterial({ toneMapped: false }), LED_N);
-  const m = new THREE.Matrix4(); // a strip along the top of each hopper side plate
-  for (let i = 0; i < LED_N; i++) { const left = i < 19, k = left ? i : i - 19, z = -0.1 + (left ? k : 18 - k) * 0.024; m.makeTranslation(left ? -0.365 : 0.365, 0.537, z); mesh.setMatrixAt(i, m); mesh.setColorAt(i, new THREE.Color(0)); }
-  vis.add(mesh); robot.leds = mesh;
-}
-const LEDC = { green: new THREE.Color(0x00ff40), red: new THREE.Color(0xff1020), off: new THREE.Color(0x101010), tmp: new THREE.Color() };
 function shiftRemaining() { const t = S.timeLeft; if (S.phase === "auto") return t; if (t > 130) return t - 130; if (t > 30) return (t - 30) % 25 || 25; return t; }
-function ledPattern() {
-  if (S.view !== "drive" || S.spectate) return { kind: "rainbow" };
-  if (S.paused || !S.running) return { kind: "rainbow" }; // disabled
-  const active = hubActive(S.alliance), rem = shiftRemaining(), t = S.timeLeft, tele = S.mode === "match" && S.phase === "teleop";
-  const inRange = S.inZone && S.dist >= SHOT_TABLE[0][0] - 0.1 && S.dist <= SHOT_TABLE[SHOT_TABLE.length - 1][0] + 0.3;
-  const flash = tele && !active && rem < 5, inShift4 = t >= 30 && t <= 55, fast = tele && active && rem < 5 && !inShift4, pulse = tele && S.autoWinner !== S.alliance && t > 130;
-  if (!(active || flash)) return { kind: "off" };
-  return { kind: pulse ? "pulse" : fast ? "fast" : flash ? "flash" : "solid", color: inRange ? LEDC.green : LEDC.red };
-}
-function drawLeds(now) {
-  if (!robot.leds) return; const p = ledPattern(), c = LEDC.tmp;
-  for (let i = 0; i < LED_N; i++) {
-    if (p.kind === "rainbow") c.setHSL(((i / LED_N) + now * 0.0004) % 1, 1, 0.5);
-    else if (p.kind === "off") c.copy(LEDC.off);
-    else { let k = 1; if (p.kind === "flash") k = Math.floor(now / 200) % 2; if (p.kind === "fast") k = Math.floor(now / 62) % 2; if (p.kind === "pulse") k = 0.15 + 0.85 * (0.5 + 0.5 * Math.sin(now * 0.004)); c.copy(p.color).multiplyScalar(k || 0.05); }
-    robot.leds.setColorAt(i, c);
-  }
-  robot.leds.instanceColor.needsUpdate = true;
-}
-
 // ================================================================== competition: events, schedule, rankings, alliance selection, playoffs
 const EVENTS = {"nyli2":{"name":"FIRST Long Island Regional","short":"Long Island","dates":"March 18-21, 2026","teams":[[28,"Pierson Whalers",26.0],[263,"Aftershock",69.5],[287,"Floyd Robotics",91.3],[329,"Mohawks",29.4],[353,"POBots",59.8],[358,"Robotic Eagles",52.4],[496,"Royals",46.7],[514,"Entropy",9.2],[527,"Red Dragons",24.5],[533,"The PSIcotics",38.5],[545,"ROBO-DAWGS",15.2],[564,"Longwood RoboLions",22.1],[569,"Rambots 569",9.4],[601,"BayBots",5.4],[806,"The Brooklyn Blacksmiths",14.9],[810,"The Mechanical Bulls",74.3],[870,"TEAM R. I. C. E.",120.0],[871,"Robotechs",38.6],[884,"Mechanical Mules",16.0],[1468,"Hicksville J-Birds",43.6],[1546,"Chaos Inc.",33.6],[1554,"Oceanside Kraken",44.2],[1803,"Vikings",27.5],[1880,"Warriors of East Harlem",61.8],[2027,"Robotic Dragons",20.9],[2161,"Robocats",22.7],[2347,"Trial and Error",20.3],[2487,"Mechanical Animals",11.4],[2638,"Rebel Robotics",71.7],[2869,"Regal Eagles",45.1],[2872,"CyberCats",66.5],[2875,"CyberHawks",37.4],[3137,"T-Birds",23.5],[3171,"HURRICANES",4.4],[3624,"Soaring Colts",25.4],[3950,"RoboGym Robotics",56.6],[4458,"Infernobotix",43.7],[4567,"The Mechanized Mafia",11.7],[5016,"Huntington Robotics",33.2],[5736,"Kingsmen Robotics",210.8],[6423,"Ward Melville Iron Patriots",50.7],[6806,"Mineola Wild Reds",33.2],[7673,"Formosan Sika",18.4],[8267,"Riptide Robotics 8267",97.6],[9016,"Syosset SuperSonics",39.7],[9646,"The Marinators",38.4],[10621,"Crusaders",17.4],[11030,"Bonac Bots",46.8]]},"nyn2":{"name":"Gotham Regional","short":"Gotham","dates":"April 6-8, 2026","teams":[[334,"TechKnights",51.0],[335,"Skillz Tech Gear Botz",-14.3],[358,"Robotic Eagles",67.3],[516,"StuyPlus",45.5],[694,"StuyPulse",185.7],[1155,"SciBorgs",47.2],[1156,"Under Control",224.5],[1796,"RoboTigers",211.7],[1880,"Warriors of East Harlem",71.1],[2265,"Fe Maidens",40.0],[2869,"Regal Eagles",41.7],[2875,"CyberHawks",48.4],[3158,"PrepaTec - TECBOT",102.8],[3193,"Falco Tech",35.8],[3646,"INTEGRA BAHCESEHIR",30.4],[3760,"Robo Raccoons",10.8],[3950,"RoboGym Robotics",77.5],[4027,"Centre Punch",143.4],[4122,"Ossining OBOTS",83.8],[4571,"Rambots",31.4],[6024,"R Factor",16.7],[6348,"PrepaTec - HORUS",31.2],[6402,"GOKTURKLER",23.7],[6880,"Universal Serial Brawlers",7.3],[6911,"SO BOTZ",70.9],[7272,"Envirobots",15.3],[7551,"Extreme Mechanism",46.5],[7636,"Robomania",20.6],[7840,"EMONER ROBOTICS",116.2],[8011,"Wayi Guangzhou",120.5],[8267,"Riptide Robotics 8267",124.2],[8393,"The Giant Diencephalic BrainSTEM Robotics Team",117.6],[8739,"Redhawk Robotics",29.8],[9030,"Qarabagh MecHack",39.2],[9642,"I.N.T. Robotics",29.0],[10045,"Casque Robotics",2.8],[10262,"Bionic Buzzers",67.4],[10390,"GOOGIRL",25.8],[11313,"tROBOmakEr",11.4]]},"dal":{"name":"FIRST Championship - Daly Division","short":"Daly (Champs)","dates":"April 29-May 2, 2026","teams":[[11,"MORT",141.6],[176,"Aces High",199.2],[272,"Cyber Crusaders",146.4],[303,"The T.E.S.T. Team",66.8],[316,"LUNATECS",213.7],[340,"G.R.R. (Greater Rochester Robotics)",172.5],[469,"Las Guerrillas",163.8],[624,"CRyptonite",99.8],[972,"Iron Claw",136.6],[999,"MechaRAMS",41.5],[1058,"PVC Pirates",152.2],[1155,"SciBorgs",33.9],[1156,"Under Control",197.8],[1323,"MadTown Robotics",329.6],[1325,"Inverse Paradox",245.7],[1538,"The Holy Cows",140.0],[1629,"Garrett Coalition (GaCo)",101.5],[1676,"The Pascack PI-oneers",122.8],[1720,"PhyXTGears",118.5],[1727,"REX",104.0],[1741,"Red Alert",52.6],[1880,"Warriors of East Harlem",87.4],[1939,"THE KUHNIGHTS",109.9],[2073,"EagleForce",168.8],[2338,"Gear It Forward",160.5],[2399,"The Fighting Unicorns",120.1],[2429,"The Blockheads",94.5],[2472,"Centurions",133.9],[2530,"Inconceivable",81.0],[2718,"Team OKC e'possums",109.1],[2883,"F.R.E.D.",121.6],[3008,"Team Magma",37.3],[3100,"The Lightning Turtles",124.2],[3314,"Mechanical Mustangs",129.4],[3339,"BumbleB",142.5],[3478,"PrepaTec - LamBot",173.9],[3538,"RoboJackets",200.3],[3646,"INTEGRA BAHCESEHIR",41.9],[3656,"Dexter Dreadbots",163.3],[3880,"Tiki Techs",28.7],[3990,"Tech for Kids",105.1],[4028,"The Beak Squad",203.9],[4065,"Nerds of Prey",133.6],[4188,"Columbus Space Program",129.3],[4189,"Chargers",125.7],[4414,"HighTide",376.6],[4674,"RoboJacks",101.7],[4678,"CyberCavs",224.4],[5534,"Onaway Onabots",77.2],[5550,"BRONChO BOTS",68.6],[5557,"BB-R8ERS",45.1],[5813,"Morpheus",204.9],[5847,"Ironclad",149.2],[5937,"MI Robotics",149.3],[6017,"PrepaTec - Cyberius",140.2],[6106,"PrepaTec - TecGear",45.1],[6391,"Ursuline Bearbotics",82.4],[6696,"Cardinal Dynamics",131.1],[6919,"The Commodores",150.1],[6941,"IronPulse Robotics",158.9],[6998,"Unipards",70.9],[7520,"Team MineKee",178.3],[7632,"An Kang Robotics Maker",126.6],[7712,"ACCN UMOJA",104.6],[8393,"The Giant Diencephalic BrainSTEM Robotics Team",123.1],[8724,"Mayhem",101.2],[9094,"The Earthquakers",137.5],[9175,"BrainMachine-FRC",72.6],[9545,"Caracal Robotics",102.8],[10002,"BotBuilders",58.1],[10213,"BALTA",141.6],[10229,"Event Horizon",44.4],[10619,"Rana's Rivets",8.8],[11141,"AlphaZ",126.0],[11178,"Revelation",64.2]]}};
 const ME = 1880;
@@ -2412,6 +2442,7 @@ function patchCarpet(mat) { // floor-level, upward-facing fragments of the field
       if (vCN.y > 0.9 && vCW.y < 0.03 && abs(vCW.x) < 8.3 && abs(vCW.z) < 4.06) { float f = texture2D(carpetMap, vCW.xz * 0.9).r; float m = texture2D(carpetMap, vCW.xz * 0.061 + 0.31).r; diffuseColor.rgb *= vec3(0.62, 0.64, 0.67) * (0.55 + 0.6 * f) * (0.85 + 0.3 * m); }`);
     sh.fragmentShader = sh.fragmentShader.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nif (vCN.y > 0.9 && vCW.y < 0.03) roughnessFactor = 0.97;"); };
   mat.needsUpdate = true; }
+const vrand = rng(99173); // visual-only randomness (crowd, camera shake), kept apart from the simulation's
 const AR = { crowd: null, crowdN: 0, boards: [], t: 0, ribbons: [] };
 function buildArena() {
   const L = F.carpet.length / 2, W = F.carpet.width / 2;
@@ -2473,7 +2504,7 @@ let crowdT = 0;
 function animateArena(dt) { // ribbon boards scroll; the crowd bounces when fuel goes in
   for (const r of AR.ribbons) r.material.map.offset.x = (r.material.map.offset.x + dt * 0.03) % 1;
   if (AR.crowd && AR.crowd.visible && SET.gfx === "high") { crowdT += dt; if (crowdT > 0.08) { crowdT = 0; const m = new THREE.Matrix4(), base = AR.crowd.userData.base, hype = Math.min(1, (S.hype || 0));
-      for (let k = 0; k < 60; k++) { const i = (Math.random() * AR.crowdN) | 0; m.copy(base[i]); m.elements[13] += Math.random() < 0.15 + hype * 0.5 ? 0.06 + Math.random() * 0.14 * (1 + hype) : 0; AR.crowd.setMatrixAt(i, m); } AR.crowd.instanceMatrix.needsUpdate = true; } }
+      for (let k = 0; k < 60; k++) { const i = (vrand() * AR.crowdN) | 0; m.copy(base[i]); m.elements[13] += vrand() < 0.15 + hype * 0.5 ? 0.06 + vrand() * 0.14 * (1 + hype) : 0; AR.crowd.setMatrixAt(i, m); } AR.crowd.instanceMatrix.needsUpdate = true; } }
   S.hype = Math.max(0, (S.hype || 0) - dt * 0.4);
   drawBoards(false);
 }
@@ -2484,7 +2515,7 @@ function applyGfx() { const g = SET.gfx || "mid";
   renderer.setPixelRatio(Math.min(devicePixelRatio, g === "low" ? 1 : g === "mid" ? 1.5 : 2));
   sun.castShadow = g !== "low"; const ms = g === "high" ? 4096 : 2048; if (sun.shadow.mapSize.x !== ms) { sun.shadow.mapSize.set(ms, ms); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
   if (AR.crowd) { AR.crowd.visible = g !== "low"; AR.crowd.count = g === "high" ? AR.crowdN : Math.floor(AR.crowdN * 0.6); }
-  resize(); }
+  resize(); realResize(); if (REAL.gtao) REAL.gtao.enabled = SET.gfx !== "low"; }
 
 // ================================================================== Auto Lab: draw, record and test your own autonomous routines
 // Routines are stored in blue-alliance WPILib coordinates (metres, degrees, like pyrebuilt) and flip for red when they run.
@@ -2596,7 +2627,7 @@ function labPoseAt(C, t) {
 function userAutoBegin(id) {
   const R = labFind(id); if (!R) return false; const C = labCompile(R); if (!C.smp.length) return false;
   const red = S.alliance === "red", p = w2s(C.smp[0].X, C.smp[0].Y, C.smp[0].th, red);
-  S.x = p.x; S.z = p.z; S.yaw = p.yaw; S.vx = S.vz = S.w = 0; S.pvx = S.pvz = 0;
+  S.x = p.x; S.z = p.z; S.yaw = p.yaw; S.vx = S.vz = S.w = 0; S.pvx = S.pvz = 0; resetChassis();
   AU = { id: "u:" + id, user: true, C, red, clk: 0, st: "run", empty: 0, prevIn: false, lag: 0 }; return true;
 }
 function userAutoStep(dt, cmd) {
@@ -2966,6 +2997,86 @@ $("labImport").onclick = () => labModal({ kick: "Import", title: "Paste a code",
 
 labLoad(); refreshAutoSelects();
 
+// ================================================================== Realistic mode: real-world physics and photographic rendering
+// Physics: a battery with internal resistance (voltage sags under load and drains over a match), Kraken X60 torque-speed curves
+// for the drive and the flywheels, current limits, brownout below 6.8 V, flywheel droop on every shot (an under-speed wheel throws short),
+// ball-to-ball variance, and shots tilted by the chassis. Graphics: smooth creased normals on the CAD, metal and anodised finishes,
+// an arena environment for reflections, overhead truss lighting, ambient occlusion, bloom and a filmic tone curve.
+const REAL = { on: false, ready: false, comp: null, gtao: null, bloom: null, env: null, roomEnv: null, lights: [], bat: { v: 12.6, soc: 1, i: 0, brown: 0, low: 12.6 }, mats: new Map() };
+const KRAKEN = { stall: 7.09, freeRps: 100, kt: 7.09 / 366, rm: 12 / 366 }; // Kraken X60 at 12 V
+function arenaEnvironment() { // a dark hall with rows of bright truss lights, for reflections on metal and polycarbonate
+  const env = new THREE.Scene(), box = new THREE.Mesh(new THREE.BoxGeometry(60, 18, 44), new THREE.MeshBasicMaterial({ color: 0x15181d, side: THREE.BackSide })); box.position.y = 8; env.add(box);
+  const lamp = new THREE.MeshBasicMaterial({ color: 0xffffff }), warm = new THREE.MeshBasicMaterial({ color: 0xfff1dc });
+  for (let i = -3; i <= 3; i++) for (const z of [-6, 0, 6]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), (i + z) % 2 ? lamp : warm); p.rotation.x = Math.PI / 2; p.position.set(i * 5, 16.8, z); env.add(p); }
+  for (const z of [-21.9, 21.9]) { const s = new THREE.Mesh(new THREE.PlaneGeometry(40, 5), new THREE.MeshBasicMaterial({ color: 0x2a2f38 })); s.position.set(0, 3.5, z); s.rotation.y = z > 0 ? Math.PI : 0; env.add(s); }
+  for (const x of [-29.9, 29.9]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(9, 4.5), new THREE.MeshBasicMaterial({ color: 0x9fb4d8 })); b.position.set(x, 7, 0); b.rotation.y = x > 0 ? -Math.PI / 2 : Math.PI / 2; env.add(b); }
+  const pm = new THREE.PMREMGenerator(renderer); const t = pm.fromScene(env, 0.02).texture; pm.dispose(); return t;
+}
+function realSetup() {
+  if (REAL.ready) return; REAL.ready = true;
+  REAL.roomEnv = scene.environment; REAL.env = arenaEnvironment();
+  // overhead truss lights: soft pools of light over the field (no shadow maps; the key light keeps casting shadows)
+  for (const [x, z] of [[-6, -2.4], [-6, 2.4], [0, -2.4], [0, 2.4], [6, -2.4], [6, 2.4]]) { const l = new THREE.SpotLight(0xfff4e6, 150, 26, 0.62, 0.85, 2); l.position.set(x, 10.3, z); l.target.position.set(x * 0.95, 0, z * 0.8); l.visible = false; scene.add(l, l.target); REAL.lights.push(l); }
+  // smooth shading with sharp CAD edges kept sharp
+  for (const P of robot.parts) { const g = P.mesh.geometry; if (!g.attributes.normal) { try { P.flatGeo = g; P.realGeo = toCreasedNormals(g, 32 * DEG); } catch { P.realGeo = null; } } }
+  // post-processing
+  const size = renderer.getDrawingBufferSize(new THREE.Vector2()), rt = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
+  const comp = new EffectComposer(renderer, rt); comp.addPass(new RenderPass(scene, camera));
+  REAL.gtao = new GTAOPass(scene, camera, size.x, size.y); REAL.gtao.output = GTAOPass.OUTPUT.Default; REAL.gtao.blendIntensity = 0.85;
+  REAL.gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1.0, scale: 1.0, samples: 12 }); REAL.gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 12 }); comp.addPass(REAL.gtao);
+  REAL.bloom = new UnrealBloomPass(new THREE.Vector2(size.x, size.y), 0.32, 0.55, 0.9); comp.addPass(REAL.bloom);
+  comp.addPass(new OutputPass()); REAL.comp = comp;
+}
+function realMat(m, kind) { // photographic version of a palette material
+  if (REAL.mats.has(m)) return REAL.mats.get(m);
+  const r = m.clone(); r.flatShading = false; const c = m.color, lum = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b, grey = Math.abs(c.r - c.g) < 0.05 && Math.abs(c.g - c.b) < 0.06;
+  if (kind === "metal" || (m.metalness > 0.3 && grey)) { r.metalness = lum > 0.25 ? 0.95 : 0.75; r.roughness = lum > 0.25 ? 0.3 : 0.45; } // bare and anodised aluminium
+  else if (grey && lum < 0.06) { r.metalness = 0.1; r.roughness = 0.72; } // black plastics, belts, tread
+  else { r.metalness = 0.05; r.roughness = 0.5; r.envMapIntensity = 0.8; } // powder coat, printed parts
+  REAL.mats.set(m, r); return r;
+}
+function applyReal() {
+  const on = !!SET.real; REAL.on = on; if (!S.loaded) return; if (on) realSetup();
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = on ? 0.82 : 1.0;
+  if (REAL.ready) { scene.environment = on ? REAL.env : REAL.roomEnv; for (const l of REAL.lights) l.visible = on; }
+  scene.environmentIntensity = on ? 0.7 : 0.55;
+  scene.children.forEach((o) => { if (o.isHemisphereLight) o.intensity = on ? 0.18 : 0.7; });
+  sun.intensity = on ? 1.6 : 2.2; sun.color.set(on ? 0xfff2e2 : 0xffffff);
+  for (const P of robot.parts) { if (P.realGeo) P.mesh.geometry = on ? P.realGeo : P.flatGeo;
+    P.mats = P.mats.map((m) => { const base = m.userData.base || m;
+      if (base.onBeforeCompile !== THREE.Material.prototype.onBeforeCompile) { base.flatShading = !on; base.needsUpdate = true; return base; } // animated belts keep their shader
+      if (!on) return base; const r = realMat(base); r.userData.base = base; return r; }); }
+  if (REAL.gtao) REAL.gtao.enabled = SET.gfx !== "low";
+  fuelMat.roughness = on ? 0.88 : 0.7; fuelMat.color.set(on ? 0xe9b81c : 0xf2c21a);
+  if (AR.crowd) AR.crowd.material.color.setScalar(on ? 0.42 : 1); // the stands sit in the dark
+  scene.fog = on ? new THREE.FogExp2(0x0b0e13, 0.016) : (S.view === "lab" ? null : new THREE.Fog(0x0a0d12, 30, 85)); if (S.view === "lab") scene.fog = null; LAB.fog = scene.fog || LAB.fog;
+  applyMaterials(); realResize(); $("cBat").hidden = !on;
+}
+function realResize() { if (!REAL.comp) return; const s = renderer.getDrawingBufferSize(new THREE.Vector2()); REAL.comp.setSize(s.x / renderer.getPixelRatio(), s.y / renderer.getPixelRatio()); REAL.comp.setPixelRatio(renderer.getPixelRatio()); }
+addEventListener("resize", realResize);
+function renderFrame() { if (REAL.on && REAL.comp && S.view !== "lab") REAL.comp.render(); else renderer.render(scene, camera); }
+
+// ---------- electrical and motor model (only while Realistic is on)
+function realBattery(dt, driveForce, v) {
+  const B = REAL.bat, voc = 12.75 - 0.95 * (1 - B.soc), R = 0.021; // a fresh FRC battery: ~12.7 V open circuit, ~21 mΩ including wiring
+  const wheelR = 0.0508, gear = 6.03, w = v / wheelR * gear, tau = Math.abs(driveForce) * wheelR / gear / 4, Is = Math.min(60, tau / KRAKEN.kt + 1.5); // four drive motors, 60 A stator limit
+  let I = 4 * (tau * w + Is * Is * KRAKEN.rm) / Math.max(6, B.v) + 4 * 0.8; // drive (mechanical + copper loss) plus steer idle
+  I += Math.max(0, M.flySpin || 0) * 2 + (M.roll ? 18 * Math.abs(M.roll) : 0) + (M.idx ? 12 : 0) + Math.abs(M.armV || 0) * 0.03 + 2.5; // shooter, intake, indexer, pivot, controls
+  B.i = I; B.v = voc - I * R; B.soc = Math.max(0, B.soc - I * dt / 3600 / 18); B.low = Math.min(B.low, B.v);
+  if (B.v < 6.8 && B.brown <= 0) { B.brown = 0.35; toast("BROWNOUT", "var(--warn)"); } // roboRIO disables outputs
+  if (B.brown > 0) B.brown -= dt;
+}
+function realDriveLimits(v) { // what the motors can do at this speed and bus voltage
+  const B = REAL.bat, vfree = 5.29 * Math.max(0, B.v) / 12 * 0.93, aMotor = 4 * KRAKEN.kt * 60 * 6.03 / 0.0508 / BODY.m; // current-limited thrust
+  return { vmax: Math.min(DRIVE.vmax, vfree), amax: B.brown > 0 ? 0 : aMotor * THREE.MathUtils.clamp((vfree - v) / (vfree * 0.3), 0, 1) + 0.6 };
+}
+function realFlywheel(dt) { // two Krakens on ~3e-3 kg·m² of flywheel: current-limited spin-up, back-EMF limited top speed
+  const B = REAL.bat, J = 0.0031, free = KRAKEN.freeRps * Math.max(0, B.v) / 12, err = M.flyT - M.fly;
+  const torque = B.brown > 0 ? 0 : 2 * KRAKEN.kt * 60 * THREE.MathUtils.clamp(1 - M.fly / free, 0, 1);
+  const acc = torque / J / (2 * Math.PI); // rps per second
+  M.fly += err > 0 ? Math.min(err, acc * dt) : Math.max(err, -38 * dt); M.flySpin = err > 1 ? 12 : M.flyT > 0 ? 4 : 0;
+}
+
 // ================================================================== main loop
 let last = performance.now(), acc = 0; const NOINP = { mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false };
 function frame(now) {
@@ -2982,7 +3093,7 @@ function frame(now) {
       const dec = Math.exp(-dt * 14);
       for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3, a = fuel.sq[i] * FUEL_R; fuel.sq[i] *= dec; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], fuel.sqa[o] * a, fuel.sqa[o + 1] * a, fuel.sqa[o + 2] * a, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
       fuel.mesh.instanceMatrix.needsUpdate = true;
-      if (att) attractCam(dt); else updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } if (!att) hud(); drawInner(); drawBots(dt); drawLeds(now); animateArena(dt);
+      if (att) attractCam(dt); else updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (vrand() - 0.5) * S.shake; camera.position.y += (vrand() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } if (!att) hud(); drawInner(); drawBots(dt); animateArena(dt);
     } else if (S.view === "show") {
       if (SV.chortle && !SV.cycle) { SV.chT = (SV.chT + dt) % 1.2; M.armT = SV.chT > 0.7 ? ARM.retract : ARM.carry; }
       stepCycle(dt); stepMech(dt);
@@ -2998,7 +3109,7 @@ function frame(now) {
     poseMech(mdt, vxl, vzl, w);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) ui.toast.style.opacity = 0; }
   }
-  renderer.render(scene, camera);
+  renderFrame();
 }
 requestAnimationFrame(frame);
 
@@ -3008,9 +3119,9 @@ requestAnimationFrame(frame);
     redHub = F.hubs[0].center[0] < 0 ? 0 : 1; blueHub = 1 - redHub; HUB.cx = Math.abs(F.hubs[0].center[0]); // red is the -x side in this field model
     buildNav(); initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
-    buildPool(); buildArena();
+    buildPool(); buildArena(); applyReal();
     S.loaded = true; $("load").hidden = true; document.querySelectorAll(".mode").forEach((b) => { b.disabled = false; }); document.querySelector(".mode").focus({ preventScroll: true }); startAttract();
-    window.__sim = { tick, LAB, labOpen, labCompile, labTest, labStartRec, labStopRec, labEndTest, userAutoBegin, labRecToPath, labDecode, labCode, labPython, labPoseAt, refreshAutoSelects, beginLive, startQuick, QM, POOL, applyPreset, menuScreen, startAttract, stopAttract, LIVE: () => LIVE, botShoot, stepFuel, stepBots, skillOf, designFor, F, comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    window.__sim = { tick, resetChassis, robot, REAL: () => REAL, BokehPass, preload, arena, scene, renderer, sun, setView, LAB, labOpen, labCompile, labTest, labStartRec, labStopRec, labEndTest, userAutoBegin, labRecToPath, labDecode, labCode, labPython, labPoseAt, refreshAutoSelects, beginLive, startQuick, QM, POOL, applyPreset, menuScreen, startAttract, stopAttract, LIVE: () => LIVE, botShoot, stepFuel, stepBots, skillOf, designFor, F, comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();
