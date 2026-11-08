@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Triple Threat: FRC 1880 robot simulator for REBUILT 2026. Quick matches against real teams by EPA, practice, competitions and a garage view of the robot.">
+<meta name="description" content="Triple Threat: FRC 1880 robot simulator for REBUILT 2026. Quick matches against real teams by EPA, practice, competitions, an Auto Lab for drawing or recording your own autos, and a garage view of the robot.">
 <style>html{color-scheme:dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Triple Threat Simulator</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -330,6 +330,125 @@ td.sc b.w{color:var(--fuel)}
 }
 @media (max-width:520px){.mt{font-size:26px}.mode{grid-template-columns:40px minmax(0,1fr) 18px}.screen{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}.rtable{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.dot,.icard,.icount.pop{animation:none;opacity:1;transform:none}.mode::before{transition:none}}
+/* ---------- Auto Lab */
+#lab{position:fixed;inset:0;z-index:4;display:grid;grid-template-columns:260px minmax(0,1fr) 310px;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"bar bar bar" "lib stage insp" "time time time";pointer-events:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#lab>*{pointer-events:auto}
+.lhdr{grid-area:bar;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:linear-gradient(#0e131a,#0b0f15);border-bottom:1px solid var(--line)}
+.lhdr .back{margin:0}
+.lbrand{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 220px}
+.lname{font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:28px;line-height:1.05;background:transparent;border:0;border-bottom:1px dashed transparent;color:var(--ink);padding:0;width:100%;max-width:460px;min-width:0}
+.lname:hover{border-bottom-color:var(--line)}.lname:focus{outline:none;border-bottom-color:var(--fuel)}
+.ltools{display:flex;gap:6px;flex-wrap:wrap}
+.lt{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;background:#18202b;border:1px solid var(--line);color:var(--ink);padding:7px 11px;cursor:pointer;white-space:nowrap}
+.lt:hover:not(:disabled),.lt:focus-visible{border-color:var(--fuel);outline:none}.lt:disabled{opacity:.38;cursor:default}
+.lt[aria-pressed="true"]{background:#243041;box-shadow:inset 0 -2px 0 var(--fuel)}
+.lt.use{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}.lt.use[aria-pressed="true"]{background:rgba(245,197,24,.1);color:var(--fuel);box-shadow:none}
+.lt.danger:hover:not(:disabled){border-color:var(--red);color:#ffb3b5}
+.llib,.linsp{background:#0e131a;overflow:auto;min-height:0;overscroll-behavior:contain}
+.llib{grid-area:lib;border-right:1px solid var(--line);padding-block:14px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:12px;display:flex;flex-direction:column;gap:12px}
+.lnew{display:grid;gap:6px}
+.lnew .pbtn{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:10px;font-size:15px;padding:10px 12px}
+.lnew .pbtn small{grid-column:2;font-family:var(--body);font-size:12px;letter-spacing:0;text-transform:none;color:var(--dim);font-weight:400}
+.lnew .pbtn:not(.lrecbtn){grid-template-columns:minmax(0,1fr)}.lnew .pbtn:not(.lrecbtn) small{grid-column:1}
+.lrecbtn{border-color:rgba(229,72,77,.45);background:linear-gradient(90deg,rgba(229,72,77,.16),transparent)}
+.lrecbtn:hover{border-color:var(--red)!important}
+.rdot{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--red);box-shadow:0 0 0 3px rgba(229,72,77,.25);grid-row:1/3}
+.lnew2{display:grid;grid-template-columns:1fr 1fr;gap:6px}.lnew2 .lt{padding:7px 4px;letter-spacing:.05em;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.lnew .pbtn,.lnew .lt{box-sizing:border-box;width:100%}
+.llist{display:flex;flex-direction:column;gap:3px}
+.litem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;text-align:left;background:transparent;border:1px solid transparent;border-left:3px solid transparent;color:var(--ink);padding:8px 10px;cursor:pointer;font:inherit}
+.litem:hover,.litem:focus-visible{background:#151c26;outline:none}
+.litem[aria-current="true"]{background:#1a2330;border-left-color:var(--fuel)}
+.litem b{font-family:var(--display);font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.litem small{grid-column:1/-1;color:var(--dim);font-size:12px}
+.litem .lon{font-family:var(--display);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fuel);align-self:center}
+.lstage{grid-area:stage;position:relative;min-width:0;min-height:0}
+#labCv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;display:block}
+.lcoord{position:absolute;left:12px;bottom:10px;font-family:var(--display);font-size:13px;letter-spacing:.08em;color:var(--ink);background:rgba(8,11,15,.75);padding:3px 8px;pointer-events:none;font-variant-numeric:tabular-nums}
+.lcoord:empty{display:none}
+.lhint{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-size:13px;color:var(--ink);background:rgba(8,11,15,.8);border:1px solid var(--line);padding:6px 12px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.lhint:empty{display:none}
+.llegend{position:absolute;right:12px;bottom:10px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;font-size:11px;color:var(--dim);background:rgba(8,11,15,.75);padding:4px 8px;pointer-events:none;max-width:calc(100% - 180px)}
+.llegend span{display:flex;align-items:center;gap:5px}.llegend i{display:inline-block;width:14px;height:4px;border-radius:2px}
+.lg-slow{background:hsl(205,70%,58%)}.lg-fast{background:hsl(45,90%,64%)}.lg-in{background:rgba(70,201,122,.7);height:8px!important}.lg-fire{background:#f0a03c;width:6px!important;height:6px!important;border-radius:50%!important}.lg-bad{background:#e5484d}
+.linsp{grid-area:insp;border-left:1px solid var(--line);padding-block:16px;padding-left:16px;padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.ihd{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.ihd h3{margin:0;font-family:var(--wm);font-weight:800;font-style:italic;font-size:40px;line-height:.9}
+.ihd h3 small{font-size:16px;color:var(--dim);font-style:normal;font-family:var(--display);font-weight:600;letter-spacing:.06em}
+.ibtns{display:flex;gap:5px;flex-wrap:wrap}
+.igrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lnum{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px;background:#151c26;border:1px solid var(--line);padding:0 8px}
+.lnum:focus-within{border-color:var(--fuel)}
+.lnum span{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.12em;color:var(--dim)}
+.lnum em{font-style:normal;color:var(--dim);font-size:12px}
+.lnum input{background:transparent;border:0;color:var(--ink);font:inherit;font-size:15px;padding:8px 0;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+.lnum input:focus{outline:none}
+.isec{display:flex;flex-direction:column;gap:9px}
+.isec .seg button{font-size:13px;padding:8px 11px}
+.isec .pbtn{font-size:15px}
+.irow{display:grid;grid-template-columns:96px minmax(0,1fr) 54px;align-items:center;gap:10px;font-size:14px}
+.irow b{font-family:var(--display);font-weight:600;font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+.tog{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center;cursor:pointer;font-size:14px}
+.tog input{position:absolute;opacity:0;width:1px;height:1px}
+.tog i{width:36px;height:20px;border-radius:10px;background:#2a3442;position:relative;transition:background .15s}
+.tog i::after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#c3ccd7;transition:transform .15s}
+.tog input:checked+i{background:var(--ok)}.tog input:checked+i::after{transform:translateX(16px);background:#fff}
+.tog input:focus-visible+i{outline:2px solid var(--fuel);outline-offset:2px}
+.tog small{display:block;color:var(--dim);font-size:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+.stats div{background:#121922;padding:10px 8px;display:flex;flex-direction:column}
+.stats b{font-family:var(--wm);font-weight:800;font-style:italic;font-size:30px;line-height:1}
+.stats span{font-family:var(--display);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.warns{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.4}
+.warns li{padding:7px 10px 7px 28px;position:relative;background:#121922;border-left:3px solid}
+.warns li::before{position:absolute;left:9px;top:7px;font-weight:700}
+.warns li.ok{border-color:var(--ok)}.warns li.ok::before{content:"✓";color:var(--ok)}
+.warns li.bad{border-color:var(--warn)}.warns li.bad::before{content:"!";color:var(--warn)}
+.warns li.tip{border-color:#4a5566}.warns li.tip::before{content:"·";color:var(--dim)}
+.tips ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45;color:#c9d1db}
+.tips b{color:var(--ink)}
+.ltime{grid-area:time;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:14px;align-items:center;padding-block:10px 12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:#0b0f15;border-top:1px solid var(--line)}
+.lplay{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#18202b;color:var(--ink);font-size:15px;cursor:pointer}
+.lplay:hover,.lplay:focus-visible{border-color:var(--fuel);outline:none}
+.ltrack{position:relative;height:46px;background:#121922;border:1px solid var(--line);cursor:pointer;touch-action:none;overflow:hidden;min-width:0}
+.lblocks{position:absolute;left:0;right:0;top:6px;bottom:17px}
+.lblk{position:absolute;top:0;bottom:0;box-shadow:inset -1px 0 0 #0b0f15}
+.lblk.drive{background:#34465e}.lblk.intake{background:#2f8a5c}.lblk.fire{background:#c07d22}.lblk.shoot{background:var(--fuel)}.lblk.wait{background:repeating-linear-gradient(45deg,#4a5463 0 4px,#2f3742 4px 8px)}
+.lticks{position:absolute;left:0;right:0;bottom:1px;height:14px;font-family:var(--display);font-size:10px;letter-spacing:.06em;color:var(--dim);pointer-events:none}
+.lticks span{position:absolute;transform:translateX(-50%)}.lticks span:first-child{transform:none;padding-left:3px}
+.lmark{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--red);pointer-events:none}
+.lmark span{position:absolute;right:5px;top:2px;font-family:var(--display);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#ff9a9d;white-space:nowrap;font-style:normal}
+.lphead{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.7);pointer-events:none}
+.ltimer{font-family:var(--wm);font-weight:800;font-style:italic;font-size:26px;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:120px;text-align:right}
+.ltimer small{font-family:var(--display);font-style:normal;font-weight:600;font-size:14px;color:var(--dim)}
+.lgo{font-size:21px;padding:10px 26px 10px 22px}
+.lmodal{max-width:640px}
+.lmodal h2{margin:4px 0 6px;font-family:var(--wm);font-weight:800;font-style:italic;text-transform:uppercase;font-size:34px;line-height:1}
+.lmodal textarea{white-space:pre;overflow:auto;width:100%;min-height:200px;resize:vertical;background:#0b0f15;color:var(--ink);border:1px solid var(--line);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:10px;box-sizing:border-box}
+.lmodal textarea:focus{outline:none;border-color:var(--fuel)}
+.lmmsg{margin:0;min-height:1.2em;font-size:13px;color:var(--fuel)}
+.lrbig{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.lrbig b{font-family:var(--wm);font-weight:800;font-style:italic;font-size:96px;line-height:.9;color:var(--fuel)}
+.lrbig span{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.1em;text-transform:uppercase}
+/* recording / test banner in the drive view */
+.recbar{bottom:calc(92px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;pointer-events:auto;background:rgba(10,12,16,.88);border:1px solid rgba(229,72,77,.6);padding:7px 8px 7px 14px;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);max-width:calc(100% - 32px);flex-wrap:wrap;justify-content:center}
+.recbar .rdot{animation:recp 1s infinite}
+.recbar b{font-family:var(--display);font-weight:700;letter-spacing:.16em;color:#ff8a8d}
+.recbar.test{border-color:rgba(245,197,24,.6)}.recbar.test .rdot{background:var(--fuel);box-shadow:0 0 0 3px rgba(245,197,24,.25)}.recbar.test b{color:var(--fuel)}
+.recbar .rt{font-family:var(--wm);font-weight:800;font-style:italic;font-size:24px;font-variant-numeric:tabular-nums;min-width:52px;text-align:right}
+.recbar .rlim{color:var(--dim);font-size:13px}
+.recbar .rmsg{font-size:13px;color:#c9d1db}
+@keyframes recp{50%{opacity:.25}}
+body.touching .recbar{bottom:auto;top:calc(56px + env(safe-area-inset-top,0px))}
+@media (max-width:1100px){#lab{grid-template-columns:220px minmax(0,1fr) 280px}.ltools .lt{padding:7px 9px}}
+@media (max-width:860px){
+  #lab{overflow:auto;pointer-events:auto;display:flex;flex-direction:column}
+  #lab>*{flex:none}.lhdr{order:0}.lstage{order:1;height:58vh}.ltime{order:2}.linsp{order:3}.llib{order:4;flex:1 0 auto}
+  .llib,.linsp{overflow:visible;border:0;border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .ltime{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"play track timer" "go go go"}
+  .lplay{grid-area:play}.ltrack{grid-area:track}.ltimer{grid-area:timer;min-width:0;font-size:20px}.lgo{grid-area:go;justify-self:stretch;justify-content:center}
+  .llegend{display:none}.lname{font-size:22px}
+}
 </style>
 
 <div id="app"><canvas id="c"></canvas></div>
@@ -346,6 +465,7 @@ td.sc b.w{color:var(--fuel)}
     <div class="meter"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
   </div>
   <div class="hud tr"><button class="btn" id="specSkip" type="button" hidden>Skip (sim result)</button><button class="btn" id="specSpeed" type="button" hidden>Speed 1×</button><button class="btn" id="autoBtn" type="button">Run auto</button><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
+  <div class="hud recbar" id="recBar" hidden><i class="rdot"></i><b id="recLbl">REC</b><span class="rt" id="recT">0.0</span><span class="rlim">/ 20.0 s</span><span class="rmsg" id="recMsg"></span><button class="btn" id="recStop" type="button">Stop and save</button><button class="btn" id="recCancel" type="button">Cancel</button></div>
   <div class="hud bl" id="chipsBox">
     <div class="chips">
       <div class="chip" id="cHub" hidden>Hub</div>
@@ -393,6 +513,57 @@ td.sc b.w{color:var(--fuel)}
   </aside>
 </div>
 
+<div id="lab" hidden>
+  <header class="lhdr">
+    <button class="back" id="labBack" type="button">‹ Title</button>
+    <div class="lbrand"><div class="kicker">05 · Auto Lab</div><input id="labName" class="lname" type="text" maxlength="40" aria-label="Routine name" spellcheck="false"></div>
+    <div class="ltools" role="toolbar" aria-label="Editor tools">
+      <button class="lt" id="labUndo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+      <button class="lt" id="labRedo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+      <button class="lt" id="labMirror" type="button" title="Flip to the other side of the field">Mirror</button>
+      <button class="lt" id="labSnap" type="button" aria-pressed="true" title="Snap to 10 cm and 15°">Snap</button>
+      <button class="lt" id="labFit" type="button">Fit</button>
+      <button class="lt" id="labExport" type="button">Share</button>
+      <button class="lt use" id="labUse" type="button" aria-pressed="false">Use as my auto</button>
+    </div>
+  </header>
+  <aside class="llib" aria-label="Your autos">
+    <div class="lnew">
+      <button class="pbtn lrecbtn" id="labRec" type="button"><i class="rdot"></i>Record a drive<small>Drive it once, it copies you</small></button>
+      <button class="pbtn" id="labNew" type="button">+ New path<small>Click points on the field</small></button>
+      <div class="lnew2"><button class="lt" id="labTpl" type="button">1880 example</button><button class="lt" id="labImport" type="button">Import code</button></div>
+    </div>
+    <div class="lbl">Your autos</div>
+    <div class="llist" id="labList"></div>
+  </aside>
+  <div class="lstage" id="labStage"><canvas id="labCv" aria-label="Field editor"></canvas><div class="lhint" id="labHint"></div><div class="lcoord" id="labCoord"></div>
+    <div class="llegend" aria-hidden="true"><span><i class="lg-slow"></i>slow</span><span><i class="lg-fast"></i>fast</span><span><i class="lg-in"></i>intake</span><span><i class="lg-fire"></i>shoot on the move</span><span><i class="lg-bad"></i>hits field</span></div></div>
+  <aside class="linsp" id="labInsp" aria-label="Inspector"></aside>
+  <footer class="ltime">
+    <button class="lplay" id="labPlay" type="button" aria-label="Play preview">▶</button>
+    <div class="ltrack" id="labTrack" aria-label="Timeline"><div class="lblocks" id="labBlocks"></div><i class="lmark" id="lab20"><span>Auto ends</span></i><i class="lphead" id="labHead"></i><div class="lticks" id="labTicks"></div></div>
+    <div class="ltimer" id="labTimer">0.0</div>
+    <button class="cta lgo" id="labTest" type="button">Test run <span>›</span></button>
+  </footer>
+</div>
+
+<div id="labModal" class="overlay" hidden>
+  <div class="rcard lmodal" role="dialog" aria-labelledby="lmTitle">
+    <div class="kicker" id="lmKick"></div><h2 id="lmTitle"></h2><p class="fine" id="lmText"></p>
+    <textarea id="lmArea" spellcheck="false" aria-label="Code"></textarea><p class="lmmsg" id="lmMsg" role="status"></p>
+    <div class="plist row3"><button class="cta" id="lmOk" type="button">Copy</button><button class="pbtn" id="lmAlt" type="button" hidden></button><button class="pbtn" id="lmClose" type="button">Close</button></div>
+  </div>
+</div>
+
+<div id="labResult" class="overlay" hidden>
+  <div class="rcard">
+    <div class="kicker">Auto Lab · test run</div>
+    <div class="lrbig"><b id="lrFuel">0</b><span id="lrVerdict">fuel scored in auto</span></div>
+    <ul class="warns" id="lrRows"></ul>
+    <div class="plist row3"><button class="cta" id="lrBack" type="button">Back to editor <span>›</span></button><button class="pbtn" id="lrAgain" type="button">Run again</button></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <div id="comp" hidden><div class="compwrap"><div id="compBody"></div><div id="compResult" hidden></div></div></div>
@@ -412,7 +583,8 @@ td.sc b.w{color:var(--fuel)}
       <button class="mode" type="button" data-go="practice" disabled><span class="num">02</span><span class="mt">Practice<small>Open field, no clock. Drill cycles, autos and shots.</small></span><span class="arr" aria-hidden="true">›</span></button>
       <button class="mode" type="button" data-go="comp" disabled><span class="num">03</span><span class="mt">Competition<small>Long Island, Gotham or Daly. Quals, picks, playoffs.</small></span><span class="arr" aria-hidden="true">›</span></button>
       <button class="mode" type="button" data-go="garage" disabled><span class="num">04</span><span class="mt">Garage<small>Take Triple Threat apart. Every mechanism moves.</small></span><span class="arr" aria-hidden="true">›</span></button>
-      <button class="mode" type="button" data-go="settings" disabled><span class="num">05</span><span class="mt">Settings<small>Graphics, drive feel, controls.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="lab" disabled><span class="num">05</span><span class="mt">Auto Lab<small>Draw autos on the field, or drive once and it copies you.</small></span><span class="arr" aria-hidden="true">›</span></button>
+      <button class="mode" type="button" data-go="settings" disabled><span class="num">06</span><span class="mt">Settings<small>Graphics, drive feel, controls.</small></span><span class="arr" aria-hidden="true">›</span></button>
     </nav>
     <div class="livecard" id="liveCard" hidden>
       <div class="lc-top"><span class="dot"></span>Live exhibition<span class="lc-ev" id="lcEv"></span></div>
@@ -454,14 +626,14 @@ td.sc b.w{color:var(--fuel)}
       <div class="field"><span class="lbl">Alliance</span><div class="seg"><button class="r" id="aRed" type="button" aria-pressed="false">Red</button><button class="b" id="aBlue" type="button" aria-pressed="true">Blue</button></div></div>
       <div class="field"><span class="lbl">Other robots</span><div class="seg" id="oppSeg"><button type="button" data-opp="0" aria-pressed="false">None</button><button type="button" data-opp="1" aria-pressed="true">A scorer</button><button type="button" data-opp="2" aria-pressed="false">Scorer + defender</button></div></div>
       <label class="field"><span class="lbl">Auto (press P to run)</span><select id="autoSel2" class="sel"></select></label>
-      <p class="fine">No clock and no hub shifts. Autos come from frc1880/pyrebuilt autonomous/routines.py. R resets the field.</p>
+      <p class="fine">No clock and no hub shifts. The 1880 autos come from frc1880/pyrebuilt autonomous/routines.py; your own appear here once you build them in Auto Lab. R resets the field.</p>
     </div>
     <div class="qgo"><button class="cta" id="goFree" type="button">Drive <span>›</span></button></div>
   </section>
 
   <!-- settings -->
   <section class="screen sub" id="scrSettings" hidden>
-    <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">05 · Settings</div><h2>Settings</h2></div></header>
+    <header class="shead"><button class="back" type="button" data-back>‹ Back</button><div><div class="kicker">06 · Settings</div><h2>Settings</h2></div></header>
     <div class="panel pgrid">
       <div class="field"><span class="lbl">Graphics</span><div class="seg" id="gfxSeg"><button type="button" data-gfx="low" aria-pressed="false">Performance</button><button type="button" data-gfx="mid" aria-pressed="true">Balanced</button><button type="button" data-gfx="high" aria-pressed="false">Ultra</button></div></div>
       <div class="field"><span class="lbl">Live match behind the menus</span><div class="seg" id="attSeg"><button type="button" data-att="1" aria-pressed="true">On</button><button type="button" data-att="0" aria-pressed="false">Off</button></div></div>
@@ -932,9 +1104,11 @@ const touch = { lx: 0, ly: 0, rx: 0, shoot: false };
 addEventListener("keydown", (e) => {
   if (S.view === "show" && e.code === "Escape") { $("showBack").onclick(); return; }
   if (S.view !== "drive" || e.target.tagName === "INPUT") return;
+  if ((LAB.rec || LAB.test) && ["KeyR", "KeyP"].includes(e.code)) return;
   if (e.repeat) { if (["Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault(); return; }
   keys.add(e.code); if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
-  if (e.code === "Escape") { setPaused(!S.paused); return; }
+  if (e.code === "Escape") { if (LAB.rec || LAB.test) e.stopImmediatePropagation(); setPaused(!S.paused); return; }
+
   if (S.paused) return;
   if (e.code === "KeyF") S.intakeLatch = !S.intakeLatch;
   if (e.code === "KeyC") { S.intakeLatch = false; M.armT = ARM.carry; }
@@ -1424,6 +1598,7 @@ const PATHS = {
 };
 let AU = null; // running auto
 function autoBegin(id) {
+  if (String(id).startsWith("u:")) return userAutoBegin(id.slice(2));
   const def = AUTOS[id]; if (!def) { AU = null; return false; }
   const p = toSim(def.start, def.mirror); S.x = p.x; S.z = p.z; S.yaw = p.yaw; S.vx = S.vz = S.w = 0; S.pvx = S.pvz = 0;
   AU = { id, def, st: def.first, t: 0, cycle: 0, path: null, idx: 0, yawT: p.yaw, empty: 0, init: true };
@@ -1441,7 +1616,7 @@ function follow(cmd) { // simple stand-in for vector_pursuit: 2.5 m/s max, 5 m/s
 }
 function autoStep(dt) { // returns an input command, like the robot's AutonomousStateMachine
   const cmd = { auto: true, vx: 0, vz: 0, yaw: null, shoot: false, intake: false, outtake: false, mx: 0, my: 0, rot: 0 };
-  if (!AU) return cmd; AU.t += dt; const init = AU.init; AU.init = false;
+  if (!AU) return cmd; if (AU.user) { userAutoStep(dt, cmd); return cmd; } AU.t += dt; const init = AU.init; AU.init = false;
   AU.empty = HS.n === 0 && !transits.length ? AU.empty + dt : 0; const empty = AU.empty > 0.5;
   const align0 = () => toSim(PP(0, 0, 0), AU.def.mirror).yaw; // heading 0 for blue, 180 for red
   switch (AU.st) {
@@ -1457,7 +1632,7 @@ function autoStep(dt) { // returns an input command, like the robot's Autonomous
   }
   return cmd;
 }
-function autoName(id) { return { shoot: "Shoot", sgR: "Shoot + Gobbler - Right", sgL: "Shoot + Gobbler - Left", gR: "Gobbler only - Right", gL: "Gobbler only - Left" }[id] || "None"; }
+function autoName(id) { if (String(id).startsWith("u:")) { const r = labFind(id.slice(2)); return r ? r.name : "Deleted auto"; } return { shoot: "Shoot", sgR: "Shoot + Gobbler - Right", sgL: "Shoot + Gobbler - Left", gR: "Gobbler only - Right", gL: "Gobbler only - Left" }[id] || "None"; }
 
 // ================================================================== step
 function stepRobot(inp, dt) {
@@ -1482,6 +1657,7 @@ function stepRobot(inp, dt) {
   const k = 1 - Math.exp(-dt * 18); S.y += (avg(hs) - S.y) * k; S.pitch += (-Math.atan2(avg(bk) - avg(fr), 0.53) - S.pitch) * k; S.roll += (Math.atan2(avg(rt) - avg(lf), 0.58) - S.roll) * k;
 }
 function controlMech(inp, dt) { // mirrors pyrebuilt teleopPeriodic + ShooterController
+  if (inp.armT != null) M.armT = inp.armT;
   if (inp.intake) M.armT = 0;
   if (inp.carry) M.armT = ARM.carry;
   M.flyT = (inp.shoot || S.inZone || S.spinOutside) ? S.sol.rps : 0;
@@ -1603,6 +1779,7 @@ function tick(inp) {
         toast("Teleop · " + (S.autoWinner === S.alliance ? "won auto, hub inactive first" : "hub active first"), "#e9edf2"); }
       else { S.timeLeft = 0; endRun(); return false; } }
     const act = hubActive(S.alliance); if (act !== S.lastActive && S.phase === "teleop") toast(act ? "Your hub is active" : "Your hub is inactive", act ? "var(--ok)" : "var(--warn)"); S.lastActive = act; }
+  if (LAB.rec || LAB.test) labTick(inp);
   return true;
 }
 
@@ -1651,6 +1828,7 @@ function hud() {
   ui.cShot.className = "chip" + (M.flyT > 0 && Math.abs(M.fly - M.flyT) < 5 ? " on" : M.flyT > 0 ? " warnc" : "");
   const inRange = S.inZone && S.dist >= SHOT_TABLE[0][0] - 0.1 && S.dist <= SHOT_TABLE[SHOT_TABLE.length - 1][0] + 0.3;
   ui.cDist.className = "chip " + (inRange ? "on" : "warnc"); ui.cDist.firstChild.textContent = S.inZone ? "Hub " : "Pass ";
+  if (LAB.rec || LAB.test) labHud();
 }
 
 // ================================================================== modes
@@ -1691,7 +1869,8 @@ function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose();
 function setView(v) {
   S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; $("menu").hidden = v !== "menu"; if (v !== "comp") $("comp").hidden = true; updatePause();
   const show = v === "show"; for (const b of BOTS) b.mesh.visible = !show; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show; arena.visible = !show;
-  scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0a0d12);
+  $("lab").hidden = v !== "lab"; if (v === "lab") { if (scene.fog) LAB.fog = scene.fog; scene.fog = null; camera.fov = LAB_FOV; } else { if (!scene.fog && LAB.fog) scene.fog = LAB.fog; camera.fov = 50; camera.up.set(0, 1, 0); }
+  scene.background = show ? BG_SHOW : BG_FIELD; if (scene.fog) scene.fog.color.set(show ? 0x161b22 : 0x0a0d12);
   controls.enabled = show; fill2.visible = show; resize(); if (robot.parts.length) applyMaterials();
 }
 function updatePause() { $("pause").hidden = !(S.view === "drive" && S.paused && !S.intro && !S.over); }
@@ -1703,11 +1882,11 @@ function menuScreen(n) { screen = n; for (const [k, id] of Object.entries(SCREEN
   const f = $(SCREENS[n]).querySelector(n === "title" ? ".mode:not(:disabled)" : ".cta"); if (f) f.focus({ preventScroll: true }); }
 document.querySelectorAll("[data-back]").forEach((b) => { b.onclick = () => menuScreen("title"); });
 $("modes").onclick = (e) => { const b = e.target.closest(".mode"); if (!b || b.disabled) return; const g = b.dataset.go;
-  if (g === "garage") { stopAttract(); enterShow(); } else if (g === "comp") openComp(); else menuScreen(g); };
+  if (g === "garage") { stopAttract(); enterShow(); } else if (g === "comp") openComp(); else if (g === "lab") labOpen(); else menuScreen(g); };
 $("goFree").onclick = () => start("free");
 function start(mode) { stopAttract(); LIVE = null; S.comp = false; S.spectate = false; S.over = false; robot.root.visible = true; S.mode = mode; resetShowcase(); resetRound();
   S.paused = false; setView("drive"); AU = null; S.cam = "driver"; $("camBtn").textContent = "View: Driver"; setShadowBox(false); toast("Practice", "#e9edf2"); }
-function setPaused(p) { if (!S.loaded || S.view !== "drive" || S.intro || S.over) return; S.paused = p; if (p) keys.clear();
+function setPaused(p) { if (p && (LAB.rec || LAB.test) && S.view === "drive") { if (LAB.rec) labStopRec(true); else labEndTest(); return; } if (!S.loaded || S.view !== "drive" || S.intro || S.over) return; S.paused = p; if (p) keys.clear();
   const comp = LIVE && (LIVE.kind === "qual" || LIVE.kind === "playoff");
   $("pTitle").textContent = LIVE ? LIVE.title : "Practice"; $("pKick").textContent = "Paused" + (LIVE && LIVE.kicker ? " · " + LIVE.kicker : "");
   $("pRestart").hidden = !!comp; $("pLeave").textContent = comp ? "Leave match (sim the result)" : "Quit to title"; updatePause(); if (p) $("pResume").focus(); }
@@ -2307,6 +2486,486 @@ function applyGfx() { const g = SET.gfx || "mid";
   if (AR.crowd) { AR.crowd.visible = g !== "low"; AR.crowd.count = g === "high" ? AR.crowdN : Math.floor(AR.crowdN * 0.6); }
   resize(); }
 
+// ================================================================== Auto Lab: draw, record and test your own autonomous routines
+// Routines are stored in blue-alliance WPILib coordinates (metres, degrees, like pyrebuilt) and flip for red when they run.
+const LAB = { list: [], cur: null, C: null, sel: -1, hover: -1, undo: [], redo: [], snap: true, zoom: 1, cx: FIELD_L / 2, cy: FIELD_W / 2, play: false, t: 0, drag: null,
+  rec: null, test: null, fog: null, fuelDirty: true, prevYaw: 0, delArm: 0, pre: null, vp: null, mouse: null, saveT: 0 };
+const LAB_AUTO = MATCH.auto, LAB_VDEF = 3.0, LAB_ACC = 4.5, LAB_ALAT = 3.2, LAB_ZONE_X = FIELD_L / 2 - ZONE_LINE, LAB_HUB = BLUE_HUB, LAB_FOV = 30, LAB_WMAX = 2.6;
+const labUid = () => Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 7);
+const r3 = (v) => Math.round(v * 1000) / 1000;
+function labPt(X, Y, o) { return Object.assign({ X: r3(X), Y: r3(Y), rot: null, spd: LAB_VDEF, intake: false, fire: false, shoot: 0, early: true, wait: 0 }, o || {}); }
+function labLoad() { try { const a = JSON.parse(localStorage.getItem("tt-routines") || "[]"); if (Array.isArray(a)) LAB.list = a.filter((r) => r && r.id && (r.kind === "rec" ? r.rec && Array.isArray(r.rec.s) : Array.isArray(r.pts))); } catch {} }
+function labSave(names) { try { localStorage.setItem("tt-routines", JSON.stringify(LAB.list)); } catch {} if (names) refreshAutoSelects(); }
+const labFind = (id) => LAB.list.find((r) => r.id === id);
+function w2s(X, Y, th, red) { if (red) { X = FIELD_L - X; Y = FIELD_W - Y; th += Math.PI; } return { x: FIELD_L / 2 - X, z: Y - FIELD_W / 2, yaw: Math.atan2(-Math.cos(th), Math.sin(th)) }; }
+function s2w(x, z, yaw, red) { let X = FIELD_L / 2 - x, Y = z + FIELD_W / 2, th = Math.atan2(Math.cos(yaw), -Math.sin(yaw)); if (red) { X = FIELD_L - X; Y = FIELD_W - Y; th -= Math.PI; } return { X, Y, th: wrap(th) }; }
+const hubHeading = (X, Y) => wrap(Math.atan2(LAB_HUB[1] - Y, LAB_HUB[0] - X) + Math.PI); // the shooter is at the rear
+const rotOf = (p) => (p.rot == null ? null : p.rot === "hub" ? hubHeading(p.X, p.Y) : p.rot * DEG);
+const lerpA = (a, b, f) => a + wrap(b - a) * f;
+
+// ---------- built-in example: 1880's Shoot + Gobbler (Right), rebuilt as editable points
+function labTemplate() {
+  const T = (X, Y, o) => labPt(X, Y, o);
+  return { id: labUid(), name: "Gobbler Right (example)", kind: "path", updated: Date.now(), pts: [
+    T(3.6, 0.75, { rot: 90, shoot: 2.5 }), T(3.95, 0.75, { rot: 0, spd: 2.5 }), T(6.1, 0.75, { rot: 0, intake: true, spd: 2.5 }), T(6.7, 0.75, { rot: 90, intake: true, spd: 2.5 }),
+    T(7.7, 1.75, { intake: true, spd: 2.5 }), T(7.7, 3.25, { intake: true, spd: 2.5 }), T(7.7, 1.75, { spd: 2.5 }), T(6.7, 0.75, { rot: 0 }),
+    T(3.6, 0.75, { rot: 0 }), T(2.6, 1.75, { rot: "hub", shoot: 4 }) ] };
+}
+
+// ---------- path compiler: spline, headings, velocity profile, timeline
+function labSpline(a, b, c, d, u) { // centripetal Catmull-Rom as a Hermite segment
+  const k = (p, q) => Math.max(1e-4, Math.sqrt(Math.hypot(q.X - p.X, q.Y - p.Y))), t01 = k(a, b), t12 = k(b, c), t23 = k(c, d);
+  const m1x = c.X - b.X + t12 * ((b.X - a.X) / t01 - (c.X - a.X) / (t01 + t12)), m1y = c.Y - b.Y + t12 * ((b.Y - a.Y) / t01 - (c.Y - a.Y) / (t01 + t12));
+  const m2x = c.X - b.X + t12 * ((d.X - c.X) / t23 - (d.X - b.X) / (t12 + t23)), m2y = c.Y - b.Y + t12 * ((d.Y - c.Y) / t23 - (d.Y - b.Y) / (t12 + t23));
+  const u2 = u * u, u3 = u2 * u, h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
+  return [h00 * b.X + h10 * m1x + h01 * c.X + h11 * m2x, h00 * b.Y + h10 * m1y + h01 * c.Y + h11 * m2y];
+}
+function labCompile(R) {
+  const C = { R, smp: [], stops: [], blocks: [], wpi: [], total: 0, dist: 0, warn: [], bad: null };
+  if (!R) return C;
+  if (R.kind === "rec") {
+    const dt = R.rec.dt, Q = R.rec.s;
+    for (let i = 0; i < Q.length; i++) { const [X, Y, d, f] = Q[i], step = i ? Math.hypot(X - Q[i - 1][0], Y - Q[i - 1][1]) : 0; C.dist += step;
+      C.smp.push({ X, Y, th: d * DEG, t: i * dt, ta: i * dt, f, intake: !!(f & 1), fire: !!(f & 2), seg: 0, wp: -1, s: C.dist, v: step / dt }); }
+    C.total = Math.max(0, (Q.length - 1) * dt);
+    const cat = (q) => (q.fire ? "shoot" : q.intake ? "intake" : "drive"); let i0 = 0;
+    for (let i = 1; i <= C.smp.length; i++) if (i === C.smp.length || cat(C.smp[i]) !== cat(C.smp[i0])) { C.blocks.push({ t0: C.smp[i0].t, t1: C.smp[Math.min(i, C.smp.length - 1)].t, type: cat(C.smp[i0]) }); i0 = i; }
+    labCheck(C); return C;
+  }
+  const P = R.pts, n = P.length, smp = C.smp; if (!n) return C;
+  if (n === 1) { C.wpi[0] = 0; smp.push({ X: P[0].X, Y: P[0].Y, seg: 0, wp: 0 }); }
+  for (let i = 0; i < n - 1; i++) {
+    const b = P[i], c = P[i + 1], a = P[i - 1] || { X: 2 * b.X - c.X, Y: 2 * b.Y - c.Y }, d = P[i + 2] || { X: 2 * c.X - b.X, Y: 2 * c.Y - b.Y };
+    const m = Math.max(2, Math.ceil(Math.hypot(c.X - b.X, c.Y - b.Y) / 0.05)); C.wpi[i] = smp.length;
+    for (let k = 0; k < m; k++) { const [X, Y] = labSpline(a, b, c, d, k / m); smp.push({ X, Y, seg: i, wp: k === 0 ? i : -1 }); }
+  }
+  if (n > 1) { C.wpi[n - 1] = smp.length; smp.push({ X: P[n - 1].X, Y: P[n - 1].Y, seg: n - 2, wp: n - 1 }); }
+  let s = 0; smp[0].s = 0; for (let i = 1; i < smp.length; i++) { s += Math.hypot(smp[i].X - smp[i - 1].X, smp[i].Y - smp[i - 1].Y); smp[i].s = s; } C.dist = s;
+  // heading: rotation targets at points, eased by distance in between (holds the first target before it and the last after it)
+  const tg = []; for (let k = 0; k < n; k++) { const th = rotOf(P[k]); if (th != null) tg.push({ s: smp[C.wpi[k]].s, th }); }
+  let j = 0;
+  for (const q of smp) { if (!tg.length) { q.th = 0; continue; } while (j < tg.length - 1 && tg[j + 1].s <= q.s) j++;
+    if (q.s <= tg[0].s) q.th = tg[0].th; else if (j >= tg.length - 1) q.th = tg[tg.length - 1].th; else { const A = tg[j], B = tg[j + 1]; q.th = lerpA(A.th, B.th, B.s > A.s ? (q.s - A.s) / (B.s - A.s) : 1); } }
+  // velocity profile: per-segment max speed, lateral-acceleration limit on curves, full stops at actions and reversals
+  const N = smp.length, cap = new Float64Array(N), v = new Float64Array(N);
+  for (let i = 0; i < N; i++) { const q = smp[i]; let c = Math.min(DRIVE.vmax, P[q.seg].spd || LAB_VDEF);
+    if (i > 0 && i < N - 1) { const ax = q.X - smp[i - 1].X, ay = q.Y - smp[i - 1].Y, bx = smp[i + 1].X - q.X, by = smp[i + 1].Y - q.Y, la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+      if (la > 1e-6 && lb > 1e-6) { const ang = Math.acos(THREE.MathUtils.clamp((ax * bx + ay * by) / (la * lb), -1, 1)), kap = ang / ((la + lb) / 2); if (kap > 1e-3) c = Math.min(c, Math.sqrt(LAB_ALAT / kap)); if (ang > 1.6) c = 0; } }
+    if (i < N - 1) { const ds = smp[i + 1].s - q.s, dth = Math.abs(wrap(smp[i + 1].th - q.th)); if (ds > 1e-6 && dth > 1e-4) c = Math.min(c, LAB_WMAX * ds / dth); } // time to turn
+    if (q.wp >= 0 && (q.wp === 0 || q.wp === n - 1 || P[q.wp].shoot > 0 || P[q.wp].wait > 0)) c = 0;
+    cap[i] = c; }
+  for (let i = 1; i < N; i++) v[i] = Math.min(cap[i], Math.sqrt(v[i - 1] ** 2 + 2 * LAB_ACC * (smp[i].s - smp[i - 1].s)));
+  v[N - 1] = 0; for (let i = N - 2; i >= 0; i--) v[i] = Math.min(v[i], Math.sqrt(v[i + 1] ** 2 + 2 * LAB_ACC * (smp[i + 1].s - smp[i].s)));
+  let t = 0;
+  for (let i = 0; i < N; i++) { const q = smp[i]; q.v = v[i];
+    if (i > 0) { const ds = q.s - smp[i - 1].s; if (ds > 0) t += ds / Math.max((v[i] + v[i - 1]) / 2, 0.08); }
+    q.ta = t; q.intake = !!P[q.seg].intake; q.fire = !!P[q.seg].fire;
+    if (q.wp >= 0) { const p = P[q.wp], inc = q.wp > 0 ? P[q.wp - 1] : null; q.sIn = !!((inc && inc.intake) || (p.intake && q.wp < n - 1));
+      if (p.shoot > 0) { C.stops.push({ type: "shoot", t0: t, t1: t + p.shoot, wp: q.wp, early: p.early !== false }); t += p.shoot; }
+      if (p.wait > 0) { C.stops.push({ type: "wait", t0: t, t1: t + p.wait, wp: q.wp }); t += p.wait; } }
+    q.t = t; }
+  C.total = t;
+  for (let i = 0; i < n - 1; i++) C.blocks.push({ t0: smp[C.wpi[i]].t, t1: smp[C.wpi[i + 1]].ta, type: P[i].fire ? "fire" : P[i].intake ? "intake" : "drive", wp: i });
+  for (const st of C.stops) C.blocks.push({ t0: st.t0, t1: st.t1, type: st.type, wp: st.wp });
+  labCheck(C); return C;
+}
+function labCheck(C) { // collisions with the field (same distance field the physics uses), time budget, legal start
+  const s = C.smp, N = s.length; C.bad = new Uint8Array(N); C.warn = []; if (!N) return;
+  const segs = new Set(); let hits = 0;
+  for (let i = 0; i < N; i += 2) { const p = w2s(s[i].X, s[i].Y, s[i].th, false), b = { x: p.x, z: p.z, yaw: p.yaw };
+    for (const [lx, lz] of PERIM) { const [wx, wz] = bodyPt(b, lx, lz); if (sdf(wx, wz) < -0.035) { C.bad[i] = 1; if (i + 1 < N) C.bad[i + 1] = 1; hits++; segs.add(s[i].seg); break; } } }
+  const R = C.R;
+  if (hits && R.kind === "path") C.warn.push(["bad", "The robot clips the field between " + [...segs].slice(0, 3).map((k) => `points ${k + 1}–${k + 2}`).join(", ") + ". Move a point or add one to go around."]);
+  else if (hits) C.warn.push(["bad", "Part of this drive scrapes the field. The replay will push along the wall the same way."]);
+  if (C.total > LAB_AUTO + 0.05) C.warn.push(["bad", `Takes ${C.total.toFixed(1)} s. Auto is ${LAB_AUTO} s, so the last ${(C.total - LAB_AUTO).toFixed(1)} s won't run in a match.`]);
+  else C.warn.push(["ok", `Fits in the ${LAB_AUTO} s auto with ${(LAB_AUTO - C.total).toFixed(1)} s to spare.`]);
+  if (s[0].X > LAB_ZONE_X + 0.05) C.warn.push(["bad", `Starts outside your alliance zone. Start at X ≤ ${LAB_ZONE_X.toFixed(2)} m.`]);
+  if (R.kind === "path" && R.pts.length > 1 && !R.pts.some((p) => p.shoot > 0 || p.fire)) C.warn.push(["tip", "Nothing shoots yet. Select a point and add Stop and shoot."]);
+}
+function labPoseAt(C, t) {
+  const s = C.smp, N = s.length; if (!N) return null;
+  let lo = 0, hi = N - 1; while (lo < hi) { const m = (lo + hi + 1) >> 1; if (s[m].ta <= t) lo = m; else hi = m - 1; }
+  const a = s[lo], out = { X: a.X, Y: a.Y, th: a.th, vX: 0, vY: 0, intake: a.intake, fire: a.fire, f: a.f | 0, stop: null };
+  if (t < a.t || lo === N - 1) { if (a.wp >= 0) { out.intake = a.sIn; out.fire = false; for (const st of C.stops) if (st.wp === a.wp && t >= st.t0 && t < st.t1) out.stop = st; } return out; }
+  const b = s[lo + 1], span = b.ta - a.t, f = span > 1e-6 ? THREE.MathUtils.clamp((t - a.t) / span, 0, 1) : 1;
+  out.X = a.X + (b.X - a.X) * f; out.Y = a.Y + (b.Y - a.Y) * f; out.th = lerpA(a.th, b.th, f);
+  if (span > 1e-6) { out.vX = (b.X - a.X) / span; out.vY = (b.Y - a.Y) / span; } return out;
+}
+
+// ---------- running a routine on the robot (practice, test runs, quick matches and competitions)
+function userAutoBegin(id) {
+  const R = labFind(id); if (!R) return false; const C = labCompile(R); if (!C.smp.length) return false;
+  const red = S.alliance === "red", p = w2s(C.smp[0].X, C.smp[0].Y, C.smp[0].th, red);
+  S.x = p.x; S.z = p.z; S.yaw = p.yaw; S.vx = S.vz = S.w = 0; S.pvx = S.pvz = 0;
+  AU = { id: "u:" + id, user: true, C, red, clk: 0, st: "run", empty: 0, prevIn: false, lag: 0 }; return true;
+}
+function userAutoStep(dt, cmd) {
+  const A = AU, C = A.C, q = labPoseAt(C, A.clk), p = w2s(q.X, q.Y, q.th, A.red), sg = A.red ? -1 : 1;
+  const ex = p.x - S.x, ez = p.z - S.z, err = Math.hypot(ex, ez);
+  let vx = -sg * q.vX + 3.2 * ex, vz = sg * q.vY + 3.2 * ez; const m = Math.hypot(vx, vz); if (m > DRIVE.vmax) { vx *= DRIVE.vmax / m; vz *= DRIVE.vmax / m; }
+  cmd.vx = vx; cmd.vz = vz; cmd.yaw = p.yaw;
+  if (C.R.kind === "rec") { const f = q.f; cmd.intake = !!(f & 1); cmd.shoot = !!(f & 2); cmd.outtake = !!(f & 4); cmd.armT = f & 8 ? 0 : f & 16 ? ARM.retract : ARM.carry; }
+  else { cmd.intake = q.intake; cmd.shoot = q.fire || !!(q.stop && q.stop.type === "shoot"); if (!q.intake && A.prevIn) cmd.carry = true; A.prevIn = q.intake; }
+  A.empty = HS.n === 0 && !transits.length ? A.empty + dt : 0;
+  if (q.stop && q.stop.type === "shoot" && q.stop.early && A.empty > 0.35 && A.clk > q.stop.t0 + 0.3) A.clk = q.stop.t1; // hopper is empty: move on
+  else if (err < 0.5 || A.lag > 1) { A.clk += dt; if (err < 0.5) A.lag = 0; } else A.lag += dt; // fell behind (bumped): let the robot catch up
+  if (A.clk >= C.total && (err < 0.12 || A.clk > C.total + 1.5)) { A.st = "done"; if (LAB.test) LAB.test.fin = true; }
+}
+const BUILTIN_AUTOS = [["shoot", "Shoot"], ["sgR", "Shoot + Gobbler - Right"], ["sgL", "Shoot + Gobbler - Left"], ["gR", "Gobbler only - Right"], ["gL", "Gobbler only - Left"]];
+function refreshAutoSelects() {
+  if (String(SET.auto).startsWith("u:") && !labFind(SET.auto.slice(2))) { SET.auto = "sgR"; saveSet(); }
+  const o = (v, l) => `<option value="${v}">${esc(l)}</option>`;
+  const html = o("none", "None (drive it yourself)") + `<optgroup label="1880 autos (pyrebuilt)">${BUILTIN_AUTOS.map(([v, l]) => o(v, l)).join("")}</optgroup>` +
+    (LAB.list.length ? `<optgroup label="Your autos (Auto Lab)">${LAB.list.map((r) => o("u:" + r.id, r.name)).join("")}</optgroup>` : "");
+  for (const id of ["autoSel", "autoSel2"]) { $(id).innerHTML = html; $(id).value = SET.auto; }
+}
+
+// ---------- record a drive
+function labDrive() { // practice field with no other robots, used by recording and test runs
+  S.attract = false; LIVE = null; S.comp = false; S.spectate = false; S.over = false; robot.root.visible = true; S.mode = "free"; resetShowcase(); resetRound(); clearBots();
+  AU = null; S.paused = false; setView("drive"); S.cam = "driver"; $("camBtn").textContent = "View: Driver"; setShadowBox(false); camState.init = false; $("labResult").hidden = true;
+}
+function labStartRec() {
+  LAB.play = false; const C = LAB.C, st = C && C.smp.length ? C.smp[0] : null; labDrive(); preload(8);
+  if (st) { const p = w2s(st.X, st.Y, st.th, S.alliance === "red"); S.x = p.x; S.z = p.z; S.yaw = p.yaw; }
+  LAB.rec = { s: [], t: 0, acc: 0, started: false }; LAB.test = null; $("recBar").hidden = false; labHud(); toast("Drive your auto · the clock starts when you move", "#e9edf2");
+}
+function labRecSample(inp) { const w = s2w(S.x, S.z, S.yaw, S.alliance === "red");
+  const f = (inp.intake ? 1 : 0) | (inp.shoot ? 2 : 0) | (inp.outtake ? 4 : 0) | (M.armT === 0 ? 8 : 0) | (M.armT === ARM.retract ? 16 : 0);
+  LAB.rec.s.push([r3(w.X), r3(w.Y), Math.round(w.th / DEG * 10) / 10, f]); }
+function labTick(inp) {
+  if (LAB.rec) { const r = LAB.rec;
+    if (!r.started) { if (Math.abs(inp.mx) + Math.abs(inp.my) + Math.abs(inp.rot) > 0.05 || inp.shoot || inp.intake || inp.outtake) { r.started = true; labRecSample(inp); } return; }
+    r.t += STEP; r.acc += STEP; if (r.acc >= 0.05 - 1e-9) { r.acc -= 0.05; labRecSample(inp); }
+    if (r.t >= LAB_AUTO) labStopRec(true); return; }
+  if (LAB.test) { const T = LAB.test; T.t += STEP; if (T.t >= LAB_AUTO && T.at20 == null) T.at20 = S.score;
+    if (!AU && T.done == null) { T.done = T.t; T.took = !T.fin; }
+    if ((T.done != null && T.t > T.done + 1.2) || T.t > LAB_AUTO + 12) labEndTest(); }
+}
+function labStopRec(save) { const r = LAB.rec; if (!r) return; LAB.rec = null; $("recBar").hidden = true;
+  if (save && r.s.length > 4) { const d = new Date(), R = { id: labUid(), name: "Recorded " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), kind: "rec", updated: Date.now(), rec: { dt: 0.05, s: r.s } };
+    LAB.list.unshift(R); labSave(true); LAB.cur = null; labOpen(R.id); toast("Saved: " + R.name, "var(--ok)"); }
+  else { labOpen(); if (save) toast("Nothing recorded. Move the robot to start the clock.", "#e9edf2"); } }
+function labRecToPath(R) { // turn a recording into editable points: keep stops and intake changes, simplify the rest
+  const s = R.rec.s, dt = R.rec.dt, n = s.length; if (n < 2) return null;
+  const spd = (i) => (i ? Math.hypot(s[i][0] - s[i - 1][0], s[i][1] - s[i - 1][1]) / dt : n > 1 ? Math.hypot(s[1][0] - s[0][0], s[1][1] - s[0][1]) / dt : 0);
+  const keep = new Set([0, n - 1]), stops = new Map();
+  for (let i = 1; i < n; i++) if ((s[i][3] & 1) !== (s[i - 1][3] & 1)) keep.add(i);
+  for (let i = 0; i < n;) { if (spd(i) < 0.15) { let j = i; while (j + 1 < n && spd(j + 1) < 0.15) j++; const dur = (j - i + 1) * dt;
+      if (dur >= 0.3) { let sh = 0; for (let k = i; k <= j; k++) if (s[k][3] & 2) sh += dt; keep.add(i); stops.set(i, { dur, sh }); } i = j + 1; } else i++; }
+  const rdp = (a, b, out) => { let best = -1, bd = 0.12; const ax = s[a][0], ay = s[a][1], bx = s[b][0], by = s[b][1], L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    for (let k = a + 1; k < b; k++) { const d = Math.abs((bx - ax) * (ay - s[k][1]) - (ax - s[k][0]) * (by - ay)) / L; if (d > bd) { bd = d; best = k; } }
+    if (best > 0) { out.add(best); rdp(a, best, out); rdp(best, b, out); } };
+  const base = [...keep].sort((a, b) => a - b), all = new Set(base); for (let k = 0; k < base.length - 1; k++) rdp(base[k], base[k + 1], all);
+  const idx = [...all].sort((a, b) => a - b), pts = [];
+  for (let k = 0; k < idx.length; k++) { const i = idx[k], j = idx[k + 1] ?? i; let vmax = 0, inN = 0, fire = 0, tot = 0;
+    for (let q = i + 1; q <= j; q++) { vmax = Math.max(vmax, spd(q)); tot++; if (s[q][3] & 1) inN++; if ((s[q][3] & 2) && spd(q) > 0.3) fire++; }
+    const p = labPt(s[i][0], s[i][1], { rot: Math.round(s[i][2]), spd: THREE.MathUtils.clamp(Math.ceil(vmax * 4) / 4, 1, DRIVE.vmax), intake: tot > 0 && inN / tot > 0.5, fire: tot > 0 && fire / tot > 0.3 });
+    const st = stops.get(i); if (st) { if (st.sh >= 0.3) { p.shoot = Math.round(st.sh * 2) / 2; p.early = false; } const w = Math.round((st.dur - st.sh) * 4) / 4; if (w >= 0.25) p.wait = w; }
+    pts.push(p); }
+  return { id: labUid(), name: (R.name + " · editable").slice(0, 40), kind: "path", updated: Date.now(), pts };
+}
+
+// ---------- test run in the real sim
+function labTest() { const R = LAB.cur; if (!R || !LAB.C || !LAB.C.smp.length) { toast("Add a few points first", "#e9edf2"); return; }
+  LAB.play = false; labDrive(); preload(8); if (!autoBegin("u:" + R.id)) { labOpen(); return; }
+  M.arm = M.armT = ARM.carry; S.cam = "chase"; $("camBtn").textContent = "View: " + CAM_NAMES[S.cam];
+  LAB.test = { t: 0, at20: null, done: null, est: LAB.C.total, shots0: 0 }; LAB.rec = null; $("recBar").hidden = false; labHud(); toast("Test run · " + R.name, "#e9edf2"); }
+function labEndTest() { const T = LAB.test; if (!T) return; LAB.test = null; $("recBar").hidden = true; S.over = true; S.paused = true; AU = null;
+  const fuelN = T.at20 != null ? T.at20 : S.score, done = T.done != null ? T.done : T.t, fits = done <= LAB_AUTO + 0.05;
+  $("lrFuel").textContent = fuelN; $("lrVerdict").textContent = fuelN === 1 ? "fuel scored in auto" : "fuel scored in auto";
+  $("lrRows").innerHTML = [
+    [fits ? "ok" : "bad", T.took ? `You took over at ${done.toFixed(1)} s` : fits ? `Finished in ${done.toFixed(1)} s, inside the ${LAB_AUTO} s auto` : `Took ${done.toFixed(1)} s, ${(done - LAB_AUTO).toFixed(1)} s past the end of auto`],
+    ["tip", `Planned time ${T.est.toFixed(1)} s · ${Math.abs(done - T.est) < 0.6 ? "the robot kept to the plan" : done > T.est ? "the robot ran " + (done - T.est).toFixed(1) + " s behind the plan (bumps, aiming or catch-up)" : "it moved on early when the hopper ran empty"}`],
+    ["tip", `${HS.n} fuel still in the hopper · ${S.score} scored in total`]].map(([k, t]) => `<li class="${k}">${esc(t)}</li>`).join("");
+  $("labResult").hidden = false; $("lrBack").focus(); }
+function labHud() { const r = LAB.rec, T = LAB.test; if (!r && !T) return;
+  $("recLbl").textContent = r ? "REC" : "TEST"; $("recBar").classList.toggle("test", !r); $("recCancel").hidden = !r; $("recStop").textContent = r ? "Stop and save" : "End test";
+  const t = r ? r.t : T.t; $("recT").textContent = t.toFixed(1); $("recMsg").textContent = r ? (r.started ? "Recording path, intake and shots" : "Clock starts when you move") : (AU ? "Running " + (LAB.cur ? LAB.cur.name : "") : "Done");
+  $("autoBtn").hidden = true; $("agiBtn").hidden = true; }
+$("recStop").onclick = () => { if (LAB.rec) labStopRec(true); else labEndTest(); };
+$("recCancel").onclick = () => labStopRec(false);
+$("lrBack").onclick = () => labOpen(); $("lrAgain").onclick = () => labTest();
+
+// ---------- editor: open, select, edit, undo
+function labOpen(id) {
+  stopAttract(); LIVE = null; S.comp = false; S.spectate = false; S.over = false; S.running = false; AU = null; LAB.rec = null; LAB.test = null; clearBots();
+  resetFuel(); transits.length = 0; robot.root.visible = true; preload(8); Object.assign(M, { arm: ARM.carry, armT: ARM.carry, roll: 0, idx: 0, fly: 0, flyT: 0 });
+  ui.toast.style.opacity = 0; toastT = 0; $("results").hidden = true; $("labResult").hidden = true; $("recBar").hidden = true; $("intro").hidden = true; S.intro = false;
+  if (!LAB.list.length) { LAB.list.push(labTemplate()); labSave(true); }
+  if (id) labSelect(id); else if (!LAB.cur || !labFind(LAB.cur.id)) labSelect((String(SET.auto).startsWith("u:") && labFind(SET.auto.slice(2)) || LAB.list[0]).id);
+  S.paused = true; setView("lab"); setShadowBox(true); LAB.fuelDirty = true; labRenderAll();
+}
+function labExit() { LAB.play = false; LAB.drag = null; enterMenu(); }
+function labSelect(id) { LAB.cur = labFind(id); LAB.sel = -1; LAB.undo = []; LAB.redo = []; LAB.t = 0; LAB.play = false; LAB.C = labCompile(LAB.cur); LAB.delArm = 0; }
+const labSnap = () => JSON.stringify(LAB.cur);
+function labPush(snap) { LAB.undo.push(snap || labSnap()); if (LAB.undo.length > 100) LAB.undo.shift(); LAB.redo = []; }
+function labReplace(json) { const R = JSON.parse(json), i = LAB.list.findIndex((r) => r.id === R.id); if (i >= 0) LAB.list[i] = R; LAB.cur = R; }
+function labUndo() { if (!LAB.undo.length) return; LAB.redo.push(labSnap()); labReplace(LAB.undo.pop()); LAB.sel = Math.min(LAB.sel, (LAB.cur.pts || []).length - 1); labChanged(true); labRenderInsp(); }
+function labRedo() { if (!LAB.redo.length) return; LAB.undo.push(labSnap()); labReplace(LAB.redo.pop()); labChanged(true); labRenderInsp(); }
+function labChanged(names) { if (!LAB.cur) return; LAB.cur.updated = Date.now(); LAB.C = labCompile(LAB.cur); LAB.t = Math.min(LAB.t, LAB.C.total);
+  clearTimeout(LAB.saveT); LAB.saveT = setTimeout(() => labSave(names), 250); labRenderTrack(); labRenderList(); labRenderStats(); $("labName").value = LAB.cur.name; labTools(); }
+function labRenderAll() { $("labName").value = LAB.cur ? LAB.cur.name : ""; labRenderList(); labRenderInsp(); labRenderTrack(); labTools(); labPlayBtn(); }
+function labTools() { const R = LAB.cur, path = R && R.kind === "path";
+  $("labUndo").disabled = !LAB.undo.length; $("labRedo").disabled = !LAB.redo.length; $("labMirror").disabled = !R; $("labSnap").setAttribute("aria-pressed", LAB.snap);
+  const on = R && SET.auto === "u:" + R.id; $("labUse").setAttribute("aria-pressed", !!on); $("labUse").textContent = on ? "✓ Your auto" : "Use as my auto";
+  $("labHint").textContent = !R ? "" : !path ? "Recorded drive · press play to watch it, or make it editable" : !R.pts.length ? "Click the field to place the start" : LAB.sel >= 0 ? "Drag to move · drag the ring to turn · Del removes" : R.pts.length === 1 ? "Click the field to add the next point" : "Click the field to add points · click the line to insert one"; }
+function labRenderList() {
+  $("labList").innerHTML = LAB.list.map((r) => { const C = r === LAB.cur ? LAB.C : null, meta = r.kind === "rec" ? "Recorded · " + ((r.rec.s.length - 1) * r.rec.dt).toFixed(1) + " s" : "Path · " + r.pts.length + " points" + (C ? " · " + C.total.toFixed(1) + " s" : "");
+    return `<button class="litem" type="button" data-id="${r.id}" aria-current="${r === LAB.cur}"><b>${esc(r.name)}</b>${SET.auto === "u:" + r.id ? '<span class="lon">Your auto</span>' : "<span></span>"}<small>${meta}</small></button>`; }).join(""); }
+$("labList").onclick = (e) => { const b = e.target.closest(".litem"); if (!b) return; labSelect(b.dataset.id); LAB.fuelDirty = true; labRenderAll(); };
+function labNewPath() { const R = { id: labUid(), name: "New auto " + (LAB.list.length + 1), kind: "path", updated: Date.now(), pts: [] }; LAB.list.unshift(R); labSave(true); labSelect(R.id); labRenderAll(); $("labName").select(); }
+$("labNew").onclick = labNewPath;
+$("labTpl").onclick = () => { const R = labTemplate(); R.name = "Gobbler Right " + (LAB.list.length + 1); LAB.list.unshift(R); labSave(true); labSelect(R.id); labRenderAll(); };
+$("labRec").onclick = labStartRec;
+$("labName").oninput = () => { if (!LAB.cur) return; LAB.cur.name = $("labName").value.slice(0, 40) || "Untitled"; clearTimeout(LAB.saveT); LAB.saveT = setTimeout(() => labSave(true), 300); labRenderList(); };
+$("labBack").onclick = labExit;
+$("labUndo").onclick = labUndo; $("labRedo").onclick = labRedo;
+$("labSnap").onclick = () => { LAB.snap = !LAB.snap; labTools(); };
+$("labFit").onclick = () => { LAB.zoom = 1; LAB.cx = FIELD_L / 2; LAB.cy = FIELD_W / 2; };
+$("labMirror").onclick = () => { const R = LAB.cur; if (!R) return; labPush();
+  if (R.kind === "rec") R.rec.s = R.rec.s.map(([X, Y, d, f]) => [X, r3(FIELD_W - Y), -d, f]); else for (const p of R.pts) { p.Y = r3(FIELD_W - p.Y); if (typeof p.rot === "number") p.rot = -p.rot; }
+  labChanged(); labRenderInsp(); toast("Mirrored to the other side", "#e9edf2"); };
+$("labUse").onclick = () => { const R = LAB.cur; if (!R) return; SET.auto = "u:" + R.id; saveSet(); refreshAutoSelects(); labTools(); labRenderList(); toast("Runs in Practice (P), Quick match and Competition", "var(--ok)"); };
+$("labTest").onclick = labTest;
+$("labPlay").onclick = () => labTogglePlay();
+function labTogglePlay() { const C = LAB.C; if (!C || !C.smp.length) return; if (!LAB.play && LAB.t >= C.total - 1e-3) LAB.t = 0; LAB.play = !LAB.play; labPlayBtn(); }
+function labPlayBtn() { $("labPlay").textContent = LAB.play ? "❚❚" : "▶"; $("labPlay").setAttribute("aria-label", LAB.play ? "Pause preview" : "Play preview"); }
+
+// ---------- inspector
+const f1 = (v) => (+v).toFixed(1), f2 = (v) => (+v).toFixed(2);
+function labRenderStats() { const el = $("labStats"); if (!el || !LAB.C) return; const C = LAB.C;
+  el.innerHTML = `<div><b>${f1(C.total)}</b><span>seconds</span></div><div><b>${f1(C.dist)}</b><span>metres</span></div><div><b>${LAB.cur.kind === "rec" ? C.smp.length : LAB.cur.pts.length}</b><span>${LAB.cur.kind === "rec" ? "samples" : "points"}</span></div>`;
+  const w = $("labWarn"); if (w) w.innerHTML = C.warn.map(([k, t]) => `<li class="${k}">${esc(t)}</li>`).join(""); }
+function labRenderInsp() {
+  const R = LAB.cur, el = $("labInsp"); labTools();
+  if (!R) { el.innerHTML = ""; return; }
+  if (R.kind === "rec" || LAB.sel < 0 || !R.pts[LAB.sel]) {
+    el.innerHTML = `<div class="isec"><div class="lbl">${R.kind === "rec" ? "Recorded drive" : "Routine"}</div><div class="stats" id="labStats"></div><ul class="warns" id="labWarn"></ul></div>` +
+      (R.kind === "rec" ? `<div class="isec"><p class="fine">An exact replay of your drive: the path, the timing, when the intake ran and when you shot. It flips automatically when you're on red.</p><button class="pbtn" type="button" data-a="convert">Make it editable</button><p class="fine">Turns the drive into points you can drag. Stops and intake changes are kept; small wiggles are smoothed out.</p></div>` :
+        `<div class="isec tips"><div class="lbl">How to</div><ul><li><b>Click</b> the field to add a point. The first point is where the robot starts.</li><li><b>Drag</b> a point to move it, or drag its ring to turn the robot.</li><li><b>Click the line</b> to insert a point between two others.</li><li>Select a point to make the robot <b>shoot</b>, <b>wait</b> or run the <b>intake</b>.</li><li>Scroll to zoom, right-drag to pan. Hold Shift to place without snapping.</li></ul></div>`) +
+      `<div class="isec"><div class="lbl">Routine</div><div class="ibtns"><button class="lt" type="button" data-a="dup">Duplicate</button><button class="lt danger" type="button" data-a="delr">${LAB.delArm > Date.now() ? "Tap again to delete" : "Delete"}</button></div></div>`;
+    labRenderStats(); return; }
+  const P = R.pts, i = LAB.sel, p = P[i], last = i === P.length - 1, mode = p.rot == null ? "keep" : p.rot === "hub" ? "hub" : "set";
+  const sw = (k, label, on, sub) => `<label class="tog"><input type="checkbox" data-k="${k}"${on ? " checked" : ""}><i></i><span>${label}${sub ? `<small>${sub}</small>` : ""}</span></label>`;
+  el.innerHTML = `<div class="ihd"><div><div class="lbl">${i === 0 ? "Start" : last ? "Last point" : "Point"}</div><h3>${i + 1}<small> of ${P.length}</small></h3></div><div class="ibtns"><button class="lt" type="button" data-a="prev" aria-label="Previous point"${i ? "" : " disabled"}>‹</button><button class="lt" type="button" data-a="next" aria-label="Next point"${last ? " disabled" : ""}>›</button><button class="lt danger" type="button" data-a="del">Delete</button></div></div>
+  <div class="igrid"><label class="lnum"><span>X</span><input type="number" step="0.05" data-k="X" value="${f2(p.X)}"><em>m</em></label><label class="lnum"><span>Y</span><input type="number" step="0.05" data-k="Y" value="${f2(p.Y)}"><em>m</em></label></div>
+  <div class="isec"><div class="lbl">Robot heading here</div><div class="seg" id="labRot"><button type="button" data-rot="keep" aria-pressed="${mode === "keep"}">Ease</button><button type="button" data-rot="set" aria-pressed="${mode === "set"}">Set</button><button type="button" data-rot="hub" aria-pressed="${mode === "hub"}">Face hub</button></div>
+    ${mode === "set" ? `<label class="lnum"><span>Angle</span><input type="number" step="5" data-k="rot" value="${Math.round(p.rot)}"><em>°</em></label>` : `<p class="fine">${mode === "hub" ? "Points the shooter at your hub from this spot." : "Turns smoothly between the headings set on other points."}</p>`}</div>
+  <div class="isec"><div class="lbl">At this point</div>
+    <div class="irow"><span>Stop and shoot</span><input type="range" min="0" max="6" step="0.5" data-k="shoot" value="${p.shoot}"><b data-o="shoot">${p.shoot ? f1(p.shoot) + " s" : "Off"}</b></div>
+    ${p.shoot ? sw("early", "Move on when the hopper is empty", p.early !== false) : ""}
+    <div class="irow"><span>Wait</span><input type="range" min="0" max="6" step="0.25" data-k="wait" value="${p.wait}"><b data-o="wait">${p.wait ? f2(p.wait) + " s" : "Off"}</b></div></div>
+  ${last ? `<p class="fine">The robot stops here. Add points after this one to keep going.</p>` : `<div class="isec"><div class="lbl">Driving to point ${i + 2}</div>
+    <div class="irow"><span>Top speed</span><input type="range" min="0.5" max="${DRIVE.vmax}" step="0.25" data-k="spd" value="${p.spd}"><b data-o="spd">${f2(p.spd)} m/s</b></div>
+    ${sw("intake", "Intake down and running", p.intake, "Collects fuel along the way")}${sw("fire", "Shoot while driving", p.fire, "Auto-aims at the hub as it goes")}</div>`}`;
+}
+function labSyncInsp() { const el = $("labInsp"), p = LAB.cur && LAB.cur.pts && LAB.cur.pts[LAB.sel]; if (!p) return;
+  for (const k of ["X", "Y", "rot"]) { const inp = el.querySelector(`input[data-k="${k}"]`); if (inp && document.activeElement !== inp) inp.value = k === "rot" ? Math.round(p.rot) : f2(p[k]); } }
+$("labInsp").addEventListener("focusin", () => { LAB.pre = labSnap(); });
+$("labInsp").addEventListener("input", (e) => { const t = e.target, k = t.dataset.k, p = LAB.cur && LAB.cur.pts && LAB.cur.pts[LAB.sel]; if (!k || !p || t.type === "checkbox") return;
+  const v = parseFloat(t.value); if (!Number.isFinite(v)) return;
+  if (k === "X") p.X = r3(THREE.MathUtils.clamp(v, 0.4, FIELD_L - 0.4)); else if (k === "Y") p.Y = r3(THREE.MathUtils.clamp(v, 0.4, FIELD_W - 0.4)); else if (k === "rot") p.rot = Math.round(((v + 180) % 360 + 360) % 360 - 180); else p[k] = v;
+  const o = $("labInsp").querySelector(`[data-o="${k}"]`); if (o) o.textContent = k === "spd" ? f2(v) + " m/s" : v ? (k === "wait" ? f2(v) : f1(v)) + " s" : "Off";
+  labChanged(); });
+$("labInsp").addEventListener("change", (e) => { const t = e.target, k = t.dataset.k, p = LAB.cur && LAB.cur.pts && LAB.cur.pts[LAB.sel]; if (!k || !p) return;
+  if (t.type === "checkbox") { labPush(LAB.pre); p[k] = t.checked; labChanged(); } else { if (LAB.pre && LAB.pre !== labSnap()) labPush(LAB.pre); }
+  LAB.pre = labSnap(); if (k === "shoot" || t.type === "checkbox") labRenderInsp(); });
+$("labInsp").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const R = LAB.cur, a = b.dataset.a;
+  if (b.dataset.rot) { const p = R.pts[LAB.sel]; labPush(); const m = b.dataset.rot; p.rot = m === "keep" ? null : m === "hub" ? "hub" : Math.round(LAB.C.smp[LAB.C.wpi[LAB.sel]].th / DEG); labChanged(); labRenderInsp(); return; }
+  if (a === "del") labDelete(LAB.sel); else if (a === "prev") { LAB.sel = Math.max(0, LAB.sel - 1); labSeekPt(LAB.sel); labRenderInsp(); } else if (a === "next") { LAB.sel = Math.min(R.pts.length - 1, LAB.sel + 1); labSeekPt(LAB.sel); labRenderInsp(); }
+  else if (a === "convert") { const Rp = labRecToPath(R); if (!Rp) return; LAB.list.splice(LAB.list.indexOf(R) + 1, 0, Rp); labSave(true); labSelect(Rp.id); labRenderAll(); toast(Rp.pts.length + " points made from your drive", "var(--ok)"); }
+  else if (a === "dup") { const D = JSON.parse(labSnap()); D.id = labUid(); D.name = (R.name + " copy").slice(0, 40); LAB.list.splice(LAB.list.indexOf(R) + 1, 0, D); labSave(true); labSelect(D.id); labRenderAll(); }
+  else if (a === "delr") { if (LAB.delArm > Date.now()) { const i = LAB.list.indexOf(R); LAB.list.splice(i, 1); if (SET.auto === "u:" + R.id) { SET.auto = "sgR"; saveSet(); } labSave(true);
+      if (!LAB.list.length) LAB.list.push(labTemplate()); labSelect(LAB.list[Math.min(i, LAB.list.length - 1)].id); labRenderAll(); toast("Deleted " + R.name, "#e9edf2"); }
+    else { LAB.delArm = Date.now() + 3000; labRenderInsp(); setTimeout(() => { if (LAB.delArm && LAB.delArm <= Date.now() && S.view === "lab" && LAB.sel < 0) labRenderInsp(); }, 3100); } } });
+function labSeekPt(i) { const C = LAB.C; if (C && C.wpi[i] != null) { LAB.play = false; LAB.t = C.smp[C.wpi[i]].ta; labPlayBtn(); } }
+function labDelete(i) { const R = LAB.cur; if (!R || R.kind !== "path" || !R.pts[i]) return; labPush(); R.pts.splice(i, 1); LAB.sel = R.pts.length ? Math.min(i, R.pts.length - 1) : -1; if (i === R.pts.length) LAB.sel = -1; labChanged(); labRenderInsp(); }
+
+// ---------- timeline
+function labRenderTrack() { const C = LAB.C, T = Math.max(LAB_AUTO + 2, Math.ceil(((C && C.total) || 0) + 1)); LAB.tMax = T;
+  const pc = (t) => (100 * t / T).toFixed(3) + "%";
+  const name = { drive: "Drive", intake: "Drive + intake", fire: "Drive + shoot", shoot: "Shoot", wait: "Wait" };
+  $("labBlocks").innerHTML = C ? C.blocks.filter((b) => b.t1 > b.t0 + 1e-3).map((b) => `<i class="lblk ${b.type}" style="left:${pc(b.t0)};width:${pc(b.t1 - b.t0)}" title="${name[b.type]}${b.wp != null ? " · point " + (b.wp + 1) : ""} · ${f1(b.t1 - b.t0)} s"></i>`).join("") : "";
+  $("lab20").style.left = pc(LAB_AUTO); let tk = ""; for (let s = 0; s <= T; s += 5) tk += `<span style="left:${pc(s)}">${s}s</span>`; $("labTicks").innerHTML = tk; }
+function labPlayhead() { const C = LAB.C, T = LAB.tMax || 22; $("labHead").style.left = (100 * LAB.t / T) + "%"; $("labTimer").innerHTML = `${f1(LAB.t)}<small> / ${f1(C ? C.total : 0)} s</small>`; }
+{ const tr = $("labTrack"); let on = false; const seek = (e) => { const r = tr.getBoundingClientRect(), C = LAB.C; if (!C) return; LAB.t = THREE.MathUtils.clamp((e.clientX - r.left) / r.width * (LAB.tMax || 22), 0, C.total); };
+  tr.addEventListener("pointerdown", (e) => { on = true; LAB.play = false; labPlayBtn(); tr.setPointerCapture(e.pointerId); seek(e); });
+  tr.addEventListener("pointermove", (e) => { if (on) seek(e); }); tr.addEventListener("pointerup", () => { on = false; }); tr.addEventListener("pointercancel", () => { on = false; }); }
+
+// ---------- field view: camera, drawing, pointer editing
+function labView() { const r = $("labStage").getBoundingClientRect(); const s0 = Math.max((FIELD_L + 1.0) / Math.max(r.width, 50), (FIELD_W + 1.0) / Math.max(r.height, 50)); return { r, s: s0 / LAB.zoom }; }
+function labCamera(v) { const { r, s } = v, dx = r.left + r.width / 2 - innerWidth / 2, dy = r.top + r.height / 2 - innerHeight / 2;
+  const TX = LAB.cx - dx * s, TY = LAB.cy + dy * s, h = s * innerHeight / (2 * Math.tan(LAB_FOV * DEG / 2)), x = FIELD_L / 2 - TX, z = TY - FIELD_W / 2;
+  camera.position.set(x, h, z); camera.up.set(0, 0, 1); camera.lookAt(x, 0, z); sun.position.set(3, 14, 2); sun.target.position.set(0, 0, 0); }
+const labToPx = (X, Y) => { const v = LAB.vp; return [v.r.width / 2 + (X - LAB.cx) / v.s, v.r.height / 2 - (Y - LAB.cy) / v.s]; };
+const labToW = (px, py) => { const v = LAB.vp; return [LAB.cx + (px - v.r.width / 2) * v.s, LAB.cy - (py - v.r.height / 2) * v.s]; };
+function labFoot(g, X, Y, th, style) { // robot footprint: intake edge in green at the front, shooter dot at the rear
+  const f = [Math.cos(th), Math.sin(th)], l = [-Math.sin(th), Math.cos(th)], hz = BOX.hz + BOX.cz, hx = BOX.hx;
+  const c = (a, b) => labToPx(X + f[0] * a + l[0] * b, Y + f[1] * a + l[1] * b);
+  const pts = [c(hz, hx), c(hz, -hx), c(-hz, -hx), c(-hz, hx)];
+  g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y))); g.closePath(); g.fillStyle = style.fill; g.fill(); g.lineWidth = style.lw || 1.5; g.strokeStyle = style.stroke; g.stroke();
+  g.beginPath(); g.moveTo(...pts[0]); g.lineTo(...pts[1]); g.lineWidth = 3.5; g.strokeStyle = style.front || "#46c97a"; g.stroke();
+  const [rx, ry] = c(-hz + 0.12, 0); g.beginPath(); g.arc(rx, ry, 3, 0, 7); g.fillStyle = "#f5c518"; g.fill(); }
+function labChip(g, x, y, text, bg, fg) { g.font = "600 11px 'Barlow Condensed', 'Arial Narrow', sans-serif"; const w = g.measureText(text).width + 10; g.fillStyle = bg; g.fillRect(x - w / 2, y - 8, w, 16); g.fillStyle = fg; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text, x, y + 0.5); }
+function labDraw() {
+  const cv = $("labCv"), v = LAB.vp, { r, s } = v, dpr = Math.min(2, devicePixelRatio || 1), W = Math.round(r.width * dpr), H = Math.round(r.height * dpr);
+  if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, r.width, r.height);
+  const P = labToPx, R = LAB.cur, C = LAB.C, px = 1 / s;
+  // field frame, 1 m grid, alliance zone, shot range
+  const [x0, y0] = P(0, FIELD_W), [x1, y1] = P(FIELD_L, 0); g.strokeStyle = "rgba(233,237,242,.35)"; g.lineWidth = 1.5; g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  g.beginPath(); for (let X = 1; X < FIELD_L; X++) { const [x] = P(X, 0); g.moveTo(x, y0); g.lineTo(x, y1); } for (let Y = 1; Y < FIELD_W; Y++) { const [, y] = P(0, Y); g.moveTo(x0, y); g.lineTo(x1, y); }
+  g.strokeStyle = "rgba(233,237,242,.07)"; g.lineWidth = 1; g.stroke();
+  { const [zx] = P(LAB_ZONE_X, 0); g.setLineDash([6, 6]); g.strokeStyle = "rgba(62,123,250,.8)"; g.lineWidth = 2; g.beginPath(); g.moveTo(zx, y0); g.lineTo(zx, y1); g.stroke(); g.setLineDash([]);
+    g.fillStyle = "rgba(62,123,250,.07)"; g.fillRect(x0, y0, zx - x0, y1 - y0); labChip(g, (x0 + zx) / 2, y0 + 14, "BLUE ALLIANCE ZONE", "rgba(62,123,250,.85)", "#fff"); }
+  { const [hx, hy] = P(LAB_HUB[0], LAB_HUB[1]), a = SHOT_TABLE[0][0] * px, b = SHOT_TABLE[SHOT_TABLE.length - 1][0] * px;
+    g.beginPath(); g.arc(hx, hy, b, 0, 7); g.arc(hx, hy, a, 0, 7, true); g.fillStyle = "rgba(245,197,24,.06)"; g.fill("evenodd");
+    g.setLineDash([3, 5]); g.strokeStyle = "rgba(245,197,24,.45)"; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy, b, 0, 7); g.stroke(); g.beginPath(); g.arc(hx, hy, a, 0, 7); g.stroke(); g.setLineDash([]);
+    labChip(g, hx, hy - b - 10, "SHOT RANGE", "rgba(245,197,24,.9)", "#1a1405"); }
+  if (!R || !C) return;
+  const smp = C.smp, N = smp.length;
+  if (N > 1) {
+    // intake underlay, then the path coloured by speed, clipping in red
+    g.lineCap = "round"; g.lineJoin = "round";
+    g.beginPath(); for (let i = 1; i < N; i++) if (smp[i - 1].intake) { const a = P(smp[i - 1].X, smp[i - 1].Y), b = P(smp[i].X, smp[i].Y); g.moveTo(...a); g.lineTo(...b); }
+    g.strokeStyle = "rgba(70,201,122,.35)"; g.lineWidth = Math.max(8, 0.5 * px); g.stroke();
+    for (let i = 1; i < N; i++) { const a = P(smp[i - 1].X, smp[i - 1].Y), b = P(smp[i].X, smp[i].Y), k = Math.min(1, (smp[i].v || 0) / DRIVE.vmax);
+      g.beginPath(); g.moveTo(...a); g.lineTo(...b); g.strokeStyle = C.bad[i] ? "#e5484d" : `hsl(${205 - 160 * k},${70 + 20 * k}%,${58 + 6 * k}%)`; g.lineWidth = C.bad[i] ? 5 : 3; g.stroke(); }
+    let acc = 0; for (let i = 1; i < N; i++) { if (!smp[i].fire) continue; acc += smp[i].s - smp[i - 1].s; if (acc > 0.35) { acc = 0; const [x, y] = P(smp[i].X, smp[i].Y); g.beginPath(); g.arc(x, y, 3.5, 0, 7); g.fillStyle = "#f0a03c"; g.fill(); } }
+  }
+  if (R.kind === "rec") { // footprints along a recording, once a second
+    for (let i = 0; i < N; i += 20) labFoot(g, smp[i].X, smp[i].Y, smp[i].th, { fill: "rgba(233,237,242,.04)", stroke: "rgba(233,237,242,.25)", lw: 1 });
+    if (N) { const [sx, sy] = P(smp[0].X, smp[0].Y); labChip(g, sx, sy - 0.75 * px, "START", "#e9edf2", "#0b0e12"); const [ex, ey] = P(smp[N - 1].X, smp[N - 1].Y); labChip(g, ex, ey - 0.75 * px, "END", "rgba(233,237,242,.75)", "#0b0e12"); }
+  } else {
+    const pts = R.pts;
+    pts.forEach((p, i) => { const k = C.wpi[i], th = k != null && smp[k] ? smp[k].th : 0, sel = i === LAB.sel, hov = i === LAB.hover;
+      labFoot(g, p.X, p.Y, th, { fill: sel ? "rgba(245,197,24,.14)" : "rgba(233,237,242,.05)", stroke: sel ? "#f5c518" : hov ? "rgba(233,237,242,.8)" : "rgba(233,237,242,.4)", lw: sel ? 2 : 1.2 });
+      const [x, y] = P(p.X, p.Y); g.beginPath(); g.arc(x, y, 10, 0, 7); g.fillStyle = sel ? "#f5c518" : "#0b0e12"; g.fill(); g.lineWidth = 2; g.strokeStyle = sel ? "#f5c518" : i === 0 ? "#46c97a" : "#e9edf2"; g.stroke();
+      g.fillStyle = sel ? "#1a1405" : "#e9edf2"; g.font = "700 12px 'Barlow Condensed', 'Arial Narrow', sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(i + 1), x, y + 0.5);
+      let cy = y + 0.62 * px + 6; if (i === 0) labChip(g, x, y - 0.62 * px - 8, "START", "#46c97a", "#06130b");
+      if (p.shoot > 0) { labChip(g, x, cy, "SHOOT " + f1(p.shoot) + "s", "#f5c518", "#1a1405"); cy += 18; } if (p.wait > 0) labChip(g, x, cy, "WAIT " + f2(p.wait).replace(/0$/, "") + "s", "#56606d", "#fff");
+      if (sel) { const hz = BOX.hz + 0.38, [kx, ky] = P(p.X + Math.cos(th) * hz, p.Y + Math.sin(th) * hz); g.setLineDash(p.rot == null ? [3, 3] : []); g.beginPath(); g.moveTo(x, y); g.lineTo(kx, ky); g.strokeStyle = "#f5c518"; g.lineWidth = 1.5; g.stroke(); g.setLineDash([]);
+        g.beginPath(); g.arc(kx, ky, 7, 0, 7); g.fillStyle = "#0b0e12"; g.fill(); g.lineWidth = 2.5; g.strokeStyle = "#f5c518"; g.stroke(); LAB.knob = [kx, ky]; } });
+    if (LAB.sel < 0) LAB.knob = null;
+  }
+  // preview ghost
+  if (N && (LAB.play || LAB.t > 0)) { const q = labPoseAt(C, LAB.t); if (q) { labFoot(g, q.X, q.Y, q.th, { fill: "rgba(245,197,24,.18)", stroke: "#f5c518", lw: 2 });
+      const tag = q.stop ? (q.stop.type === "shoot" ? "SHOOTING" : "WAITING") : q.fire ? "SHOOTING" : q.intake ? "INTAKE" : ""; if (tag) { const [x, y] = P(q.X, q.Y); labChip(g, x, y - 0.75 * px, tag, tag === "INTAKE" ? "#46c97a" : "#f5c518", "#0b0e12"); } } }
+}
+function labFrame(dt) {
+  if (LAB.fuelDirty) { const Mx = new THREE.Matrix4(), hide = new THREE.Matrix4().makeScale(0, 0, 0);
+    for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], 0, 0, 0, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
+    fuel.mesh.instanceMatrix.needsUpdate = true; LAB.fuelDirty = false; }
+  const C = LAB.C; if (LAB.play && C) { LAB.t += dt; if (LAB.t >= C.total) { LAB.t = C.total; LAB.play = false; labPlayBtn(); } }
+  LAB.vp = labView(); labCamera(LAB.vp);
+  let out = [0, 0, 0];
+  if (C && C.smp.length) { const q = labPoseAt(C, LAB.t), p = w2s(q.X, q.Y, q.th, false);
+    robot.root.position.set(p.x, 0, p.z); robot.root.rotation.set(0, p.yaw, 0, "YXZ"); robot.root.visible = true;
+    const shooting = !!(q.stop && q.stop.type === "shoot") || q.fire;
+    M.armT = q.intake ? 0 : C.R.kind === "rec" ? (q.f & 8 ? 0 : q.f & 16 ? ARM.retract : ARM.carry) : ARM.carry; M.roll = q.intake && LAB.play ? 1 : 0; M.flyT = shooting && LAB.play ? 60 : 0; M.idx = shooting && LAB.play ? 1 : 0;
+    if (LAB.play) { const vx = -q.vX, vz = q.vY, c = Math.cos(p.yaw), sn = Math.sin(p.yaw); out = [vx * c - vz * sn, vx * sn + vz * c, wrap(p.yaw - LAB.prevYaw) / Math.max(dt, 1e-3)]; }
+    LAB.prevYaw = p.yaw; }
+  else robot.root.visible = false;
+  stepMech(dt); drawInner(); labDraw(); labPlayhead();
+  return out;
+}
+{ const cv = $("labCv");
+  const hitPt = (x, y) => { const R = LAB.cur; if (!R || R.kind !== "path") return -1; let best = -1, bd = 14; R.pts.forEach((p, i) => { const [px, py] = labToPx(p.X, p.Y), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = i; } }); return best; };
+  const hitPath = (x, y) => { const C = LAB.C; if (!C || LAB.cur.kind !== "path") return null; let best = null, bd = 9; for (let i = 0; i < C.smp.length; i += 1) { const q = C.smp[i], [px, py] = labToPx(q.X, q.Y), d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = q; } } return best; };
+  const snapV = (v, e) => (LAB.snap && !e.shiftKey ? Math.round(v / 0.1) * 0.1 : v);
+  const clampXY = (X, Y) => [r3(THREE.MathUtils.clamp(X, 0.45, FIELD_L - 0.45)), r3(THREE.MathUtils.clamp(Y, 0.45, FIELD_W - 0.45))];
+  const local = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cv.addEventListener("contextmenu", (e) => e.preventDefault());
+  cv.addEventListener("pointerdown", (e) => { if (!LAB.vp) return; const [x, y] = local(e); cv.setPointerCapture(e.pointerId); LAB.play = false; labPlayBtn();
+    const R = LAB.cur, path = R && R.kind === "path";
+    if (e.button === 1 || e.button === 2) { LAB.drag = { kind: "pan", x, y, cx: LAB.cx, cy: LAB.cy, moved: true }; return; }
+    if (path && LAB.knob && LAB.sel >= 0 && Math.hypot(LAB.knob[0] - x, LAB.knob[1] - y) < 12) { LAB.drag = { kind: "rot", snap: labSnap(), moved: false }; return; }
+    const i = hitPt(x, y);
+    if (i >= 0) { LAB.sel = i; labSeekPt(i); labRenderInsp(); LAB.drag = { kind: "pt", i, snap: labSnap(), moved: false, x, y }; return; }
+    const q = path && R.pts.length > 1 ? hitPath(x, y) : null;
+    if (q) { labPush(); const src = R.pts[q.seg], np = labPt(...clampXY(q.X, q.Y), { spd: src.spd, intake: src.intake, fire: src.fire }); R.pts.splice(q.seg + 1, 0, np); LAB.sel = q.seg + 1; labChanged(); labRenderInsp(); LAB.drag = { kind: "pt", i: LAB.sel, snap: null, moved: true, x, y }; return; }
+    LAB.drag = { kind: "empty", x, y, cx: LAB.cx, cy: LAB.cy, moved: false }; });
+  cv.addEventListener("pointermove", (e) => { if (!LAB.vp) return; const [x, y] = local(e), [X, Y] = labToW(x, y), D = LAB.drag;
+    $("labCoord").textContent = X >= 0 && X <= FIELD_L && Y >= 0 && Y <= FIELD_W ? `X ${X.toFixed(2)}  Y ${Y.toFixed(2)} m` : "";
+    if (!D) { const h = hitPt(x, y); LAB.hover = h; cv.style.cursor = h >= 0 ? "grab" : LAB.knob && Math.hypot(LAB.knob[0] - x, LAB.knob[1] - y) < 12 ? "alias" : hitPath(x, y) ? "copy" : "crosshair"; return; }
+    if (D.kind === "pan" || (D.kind === "empty" && (D.moved || Math.hypot(x - D.x, y - D.y) > 6))) { D.moved = true; LAB.cx = THREE.MathUtils.clamp(D.cx - (x - D.x) * LAB.vp.s, 0, FIELD_L); LAB.cy = THREE.MathUtils.clamp(D.cy + (y - D.y) * LAB.vp.s, 0, FIELD_W); return; }
+    const R = LAB.cur;
+    if (D.kind === "pt" && R.pts[D.i]) { if (!D.moved && Math.hypot(x - D.x, y - D.y) < 3) return; if (!D.moved && D.snap) labPush(D.snap); D.moved = true;
+      const [cx, cy] = clampXY(snapV(X, e), snapV(Y, e)); R.pts[D.i].X = cx; R.pts[D.i].Y = cy; labChanged(); labSyncInsp(); cv.style.cursor = "grabbing"; }
+    if (D.kind === "rot" && R.pts[LAB.sel]) { const p = R.pts[LAB.sel]; if (!D.moved) { labPush(D.snap); D.moved = true; } let a = Math.atan2(Y - p.Y, X - p.X) / DEG; if (LAB.snap && !e.shiftKey) a = Math.round(a / 15) * 15;
+      p.rot = Math.round(((a + 180) % 360 + 360) % 360 - 180); labChanged(); if (!$("labInsp").querySelector('input[data-k="rot"]')) labRenderInsp(); else labSyncInsp(); } });
+  const up = (e) => { const D = LAB.drag; LAB.drag = null; if (!D || !LAB.vp) return; const R = LAB.cur;
+    if (D.kind === "empty" && !D.moved) { if (!R) return; if (R.kind !== "path") { toast("This is a recorded drive. Make it editable to add points.", "#e9edf2"); return; }
+      if (LAB.sel >= 0 && R.pts.length > 1) { LAB.sel = -1; labRenderInsp(); return; } // first click on empty space just deselects
+      const [X, Y] = labToW(D.x, D.y); if (X < 0 || X > FIELD_L || Y < 0 || Y > FIELD_W) return; labPush();
+      const prev = R.pts[R.pts.length - 1], np = labPt(...clampXY(snapV(X, e), snapV(Y, e)), prev ? { spd: prev.spd, intake: prev.intake } : { rot: 0 });
+      R.pts.push(np); LAB.sel = R.pts.length - 1; labChanged(); labRenderInsp(); }
+    if (D.kind === "pt" && D.moved) labRenderInsp(); };
+  cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", () => { LAB.drag = null; });
+  cv.addEventListener("pointerleave", () => { LAB.hover = -1; $("labCoord").textContent = ""; });
+  cv.addEventListener("wheel", (e) => { if (!LAB.vp) return; e.preventDefault(); const [x, y] = local(e), [X, Y] = labToW(x, y); LAB.zoom = THREE.MathUtils.clamp(LAB.zoom * Math.exp(-e.deltaY * 0.0015), 1, 6);
+    LAB.vp = labView(); const v = LAB.vp; LAB.cx = THREE.MathUtils.clamp(X - (x - v.r.width / 2) * v.s, 0, FIELD_L); LAB.cy = THREE.MathUtils.clamp(Y + (y - v.r.height / 2) * v.s, 0, FIELD_W); }, { passive: false }); }
+addEventListener("keydown", (e) => {
+  if (S.view !== "lab") return;
+  if (!$("labModal").hidden) { if (e.code === "Escape") $("labModal").hidden = true; return; }
+  const t = e.target, typing = (t.tagName === "INPUT" && !["checkbox", "range"].includes(t.type)) || t.tagName === "TEXTAREA" || t.tagName === "SELECT"; if (typing) { if (e.code === "Escape") t.blur(); return; }
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && e.code === "KeyZ") { e.preventDefault(); e.shiftKey ? labRedo() : labUndo(); return; } if (mod && e.code === "KeyY") { e.preventDefault(); labRedo(); return; }
+  if (e.code === "Delete" || e.code === "Backspace") { if (LAB.sel >= 0) { e.preventDefault(); labDelete(LAB.sel); } return; }
+  if (e.code === "Space") { e.preventDefault(); labTogglePlay(); return; }
+  if (e.code === "Escape") { if (LAB.sel >= 0) { LAB.sel = -1; labRenderInsp(); } else labExit(); return; }
+  const R = LAB.cur, p = R && R.pts && R.pts[LAB.sel], d = e.shiftKey ? 0.25 : 0.05, mv = { ArrowLeft: [-d, 0], ArrowRight: [d, 0], ArrowUp: [0, d], ArrowDown: [0, -d] }[e.code];
+  if (p && mv) { e.preventDefault(); if (!e.repeat) labPush(); p.X = r3(THREE.MathUtils.clamp(p.X + mv[0], 0.45, FIELD_L - 0.45)); p.Y = r3(THREE.MathUtils.clamp(p.Y + mv[1], 0.45, FIELD_W - 0.45)); labChanged(); labSyncInsp(); }
+});
+
+// ---------- share codes and Python export
+function labCode(R) { const o = R.kind === "rec" ? { v: 1, n: R.name, k: "rec", dt: R.rec.dt, s: R.rec.s } :
+    { v: 1, n: R.name, k: "path", p: R.pts.map((p) => [p.X, p.Y, p.rot === "hub" ? "h" : p.rot, p.spd, (p.intake ? 1 : 0) | (p.fire ? 2 : 0) | (p.early !== false ? 4 : 0), p.shoot, p.wait]) };
+  return "TT1." + btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
+function labDecode(str) { const m = String(str).trim().match(/TT1\.([A-Za-z0-9+/=]+)/); if (!m) throw new Error("That doesn't look like an Auto Lab code. Codes start with TT1.");
+  const o = JSON.parse(decodeURIComponent(escape(atob(m[1])))), num = (v, a, b, d) => (Number.isFinite(+v) ? THREE.MathUtils.clamp(+v, a, b) : d);
+  const name = String(o.n || "Imported auto").slice(0, 40);
+  if (o.k === "rec" && Array.isArray(o.s)) return { id: labUid(), name, kind: "rec", updated: Date.now(), rec: { dt: num(o.dt, 0.02, 0.2, 0.05), s: o.s.slice(0, 1200).map((q) => [num(q[0], 0, FIELD_L, 1), num(q[1], 0, FIELD_W, 1), num(q[2], -360, 360, 0), num(q[3], 0, 31, 0) | 0]) } };
+  if (o.k === "path" && Array.isArray(o.p)) return { id: labUid(), name, kind: "path", updated: Date.now(), pts: o.p.slice(0, 80).map((q) => labPt(num(q[0], 0.45, FIELD_L - 0.45, 2), num(q[1], 0.45, FIELD_W - 0.45, 2),
+    { rot: q[2] === "h" ? "hub" : q[2] == null ? null : num(q[2], -180, 180, 0), spd: num(q[3], 0.5, DRIVE.vmax, LAB_VDEF), intake: !!(q[4] & 1), fire: !!(q[4] & 2), early: !!(q[4] & 4), shoot: num(q[5], 0, 6, 0), wait: num(q[6], 0, 6, 0) })) };
+  throw new Error("This code is missing its points."); }
+function labPython(R0) {
+  const R = R0.kind === "rec" ? labRecToPath(R0) : R0, P = R.pts; if (!P.length) return "# Add some points first.";
+  const cls = (R0.name.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join("") || "LabAuto").replace(/^(\d)/, "Auto$1");
+  const n2 = (v) => (+v).toFixed(3), deg = (p) => (p.rot == null ? null : p.rot === "hub" ? hubHeading(p.X, p.Y) / DEG : p.rot);
+  const pp = (p, last) => { const d = deg(p); return `        vector_pursuit.PathPoint(Translation2d(${n2(p.X)}, ${n2(p.Y)})${d != null ? `, Rotation2d.fromDegrees(${d.toFixed(1)})` : ""}${last ? "" : `, speed=${(+p.spd).toFixed(2)}`}),${p.rot === "hub" ? "  # faces the hub" : ""}`; };
+  const legs = []; let a = 0; for (let i = 1; i < P.length; i++) if (i === P.length - 1 || P[i].shoot > 0 || P[i].wait > 0) { legs.push([a, i]); a = i; }
+  const st = []; const first = rotOf(P[0]);
+  const actions = (i) => { const out = []; if (P[i].shoot > 0) out.push(["shoot", P[i].shoot, P[i].early !== false]); if (P[i].wait > 0) out.push(["wait", P[i].wait]); return out; };
+  const seq = []; actions(0).forEach((x) => seq.push({ k: x[0], a: x, at: 0 })); legs.forEach(([i, j], n) => { seq.push({ k: "drive", leg: n + 1, i, j }); actions(j).forEach((x) => seq.push({ k: x[0], a: x, at: j })); });
+  const cnt = { shoot: 0, wait: 0 }, names = seq.map((q) => (q.k === "drive" ? `drive_${q.leg}` : `${q.k}_${++cnt[q.k]}`));
+  let out = `# Auto Lab export of "${R0.name}" from the Triple Threat simulator.\n# Blue-alliance field coordinates in metres and degrees, like autonomous/routines.py.\n# set_trajectory(field_flip=is_red()) flips them for red. This is a starting point:\n# check the path-finished check and component names against your code before it drives the real robot.\n\n` +
+    `from magicbot import AutonomousStateMachine, state, timed_state\nfrom wpimath.geometry import Pose2d, Rotation2d, Translation2d\n\nfrom components.drivetrain import Drivetrain\nfrom components.indexer import Indexer\nfrom components.intake import Intake\nfrom controllers.shooter import ShooterController\nfrom motion import vector_pursuit\nfrom utilities.game import is_red\n\n\n` +
+    `class ${cls}(AutonomousStateMachine):  # or the shared base class in routines.py that defines set_trajectory()\n    MODE_NAME = "${R0.name.replace(/"/g, "'")}"\n\n    drivetrain: Drivetrain\n    indexer: Indexer\n    intake: Intake\n    shooter_controller: ShooterController\n\n` +
+    `    blue_starting_pose = Pose2d(${n2(P[0].X)}, ${n2(P[0].Y)}, Rotation2d.fromDegrees(${((first ?? 0) / DEG).toFixed(1)}))\n    mirror = False\n\n`;
+  legs.forEach(([i, j], n) => { out += `    LEG_${n + 1} = [  # points ${i + 1} to ${j + 1}\n${P.slice(i, j + 1).map((p, k, arr) => pp(p, k === arr.length - 1)).join("\n")}\n    ]\n\n`; });
+  seq.forEach((q, n) => { const nm = names[n], nx = names[n + 1], firstS = n === 0 ? "first=True, " : "";
+    if (q.k === "drive") { const [i, j] = [q.i, q.j], intake = P.slice(i, j).some((p) => p.intake), fire = P.slice(i, j).some((p) => p.fire);
+      out += `    ${n === 0 ? "@state(first=True)" : "@state"}\n    def ${nm}(self, initial_call: bool) -> None:\n        if initial_call:\n            self.set_trajectory(self.LEG_${q.leg}, field_flip=is_red(), mirror=self.mirror)\n` +
+        `        ${intake ? "self.intake.intake()" : "self.intake.carry()"}${intake && P.slice(i, j).some((p) => !p.intake) ? "  # the editor runs it on part of this leg only" : ""}\n` + (fire ? `        self.shooter_controller.engage()  # shoot while driving\n` : "") +
+        `        if self.path_finished():  # replace with your trajectory-done check\n            self.${nx ? `next_state("${nx}")` : "done()"}\n\n`; }
+    else if (q.k === "shoot") out += `    @timed_state(${firstS}duration=${(+q.a[1]).toFixed(1)}${nx ? `, next_state="${nx}"` : ""})\n    def ${nm}(self) -> None:\n        self.shooter_controller.engage()\n` + (q.a[2] ? `        if self.indexer.is_hopper_empty():\n            ${nx ? `self.next_state("${nx}")` : "self.done()"}\n` : "") + "\n";
+    else out += `    @timed_state(${firstS}duration=${(+q.a[1]).toFixed(2)}${nx ? `, next_state="${nx}"` : ""})\n    def ${nm}(self) -> None:\n        pass\n\n`; });
+  return out.trimEnd() + "\n"; }
+function labModal(o) { $("lmKick").textContent = o.kick; $("lmTitle").textContent = o.title; $("lmText").textContent = o.text; $("lmArea").value = o.value || ""; $("lmArea").readOnly = !!o.ro; $("lmArea").placeholder = o.ph || "";
+  $("lmOk").innerHTML = esc(o.ok) + " <span>›</span>"; $("lmOk").onclick = () => o.go($("lmArea").value); $("lmAlt").hidden = !o.alt; if (o.alt) { $("lmAlt").textContent = o.alt; $("lmAlt").onclick = o.altGo; }
+  $("lmMsg").textContent = ""; $("labModal").hidden = false; (o.ro ? $("lmOk") : $("lmArea")).focus(); if (o.ro) $("lmArea").select(); }
+async function labCopy(text) { try { await navigator.clipboard.writeText(text); $("lmMsg").textContent = "Copied."; } catch { $("lmArea").focus(); $("lmArea").select(); $("lmMsg").textContent = "Selected. Press Ctrl+C (or Cmd+C) to copy."; } }
+$("lmClose").onclick = () => { $("labModal").hidden = true; };
+$("labExport").onclick = () => { const R = LAB.cur; if (!R) return; const code = labCode(R);
+  labModal({ kick: "Share", title: R.name, text: "Send this code to a teammate. They paste it into Import code in their Auto Lab. Or switch to Python for a pyrebuilt-style routine.", value: code, ro: true, ok: "Copy code", go: () => labCopy(code),
+    alt: "Show Python", altGo: () => { const py = labPython(R); labModal({ kick: "Export · pyrebuilt", title: "Python routine", text: "A magicbot state machine in the style of autonomous/routines.py, with one state per drive leg and action. Review it before running it on the robot.", value: py, ro: true, ok: "Copy Python", go: () => labCopy(py) }); } }); };
+$("labImport").onclick = () => labModal({ kick: "Import", title: "Paste a code", text: "Paste an Auto Lab code (it starts with TT1.).", value: "", ph: "TT1.…", ok: "Import", go: (v) => {
+  try { const R = labDecode(v); LAB.list.unshift(R); labSave(true); labSelect(R.id); labRenderAll(); $("labModal").hidden = true; toast("Imported " + R.name, "var(--ok)"); } catch (err) { $("lmMsg").textContent = err.message || "Couldn't read that code."; } } });
+
+labLoad(); refreshAutoSelects();
+
 // ================================================================== main loop
 let last = performance.now(), acc = 0; const NOINP = { mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false };
 function frame(now) {
@@ -2334,7 +2993,8 @@ function frame(now) {
       if (fly) { fly.t = Math.min(1, fly.t + dt * 1.6); const e = 1 - Math.pow(1 - fly.t, 3); controls.target.lerpVectors(fly.fromT, fly.toT, e); camera.position.lerpVectors(fly.fromP, fly.toP, e); if (fly.t >= 1) fly = null; }
       controls.update(); drawInner(); robot.root.updateMatrixWorld(); updateHots();
       $("vArm").textContent = Math.max(0, M.arm).toFixed(0) + "° · " + armLabel(); $("vFlyV").textContent = Math.round(M.fly) + " rps"; $("vHoodV").textContent = M.hood.toFixed(1) + "°";
-    } else { pollPadMenu(); mdt = 0; }
+    } else if (S.view === "lab") { const lv = labFrame(dt); vxl = lv[0]; vzl = lv[1]; w = lv[2]; }
+    else { pollPadMenu(); mdt = 0; }
     poseMech(mdt, vxl, vzl, w);
     if (toastT > 0) { toastT -= dt; if (toastT <= 0) ui.toast.style.opacity = 0; }
   }
@@ -2350,7 +3010,7 @@ requestAnimationFrame(frame);
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
     buildPool(); buildArena();
     S.loaded = true; $("load").hidden = true; document.querySelectorAll(".mode").forEach((b) => { b.disabled = false; }); document.querySelector(".mode").focus({ preventScroll: true }); startAttract();
-    window.__sim = { beginLive, startQuick, QM, POOL, applyPreset, menuScreen, startAttract, stopAttract, LIVE: () => LIVE, botShoot, stepFuel, stepBots, skillOf, designFor, F, comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    window.__sim = { tick, LAB, labOpen, labCompile, labTest, labStartRec, labStopRec, labEndTest, userAutoBegin, labRecToPath, labDecode, labCode, labPython, labPoseAt, refreshAutoSelects, beginLive, startQuick, QM, POOL, applyPreset, menuScreen, startAttract, stopAttract, LIVE: () => LIVE, botShoot, stepFuel, stepBots, skillOf, designFor, F, comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();

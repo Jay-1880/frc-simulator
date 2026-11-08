@@ -14,6 +14,15 @@ A browser simulator for FRC 1880's HtH V2 robot in the 2026 game, REBUILT.
 - **LEDs from pyrebuilt `leds.py`:** green in range, red out of range, flashing near shift changes, pulsing in transition if you lost auto, rainbow when disabled.
 - **Matches:** 20 s auto, then 2:20 teleop with REBUILT hub shifts (timing from pyrebuilt's `game.py`; the auto winner's hub goes inactive first). Fuel in an inactive hub doesn't count.
 - **Autos from pyrebuilt:** Shoot, Shoot + Gobbler (left / right) and Gobbler only (left / right), with the waypoints, headings and state machines from `autonomous/routines.py`.
+- **Auto Lab:** build your own autos on a top-down field.
+  - **Record a drive:** drive the robot once and it saves your path, timing, intake and shots as an auto that replays exactly. The clock starts when you first move and stops at 20 s.
+  - **Make it editable:** turns a recording into draggable points, keeping your stops and intake changes and smoothing out the wiggles.
+  - **Draw paths:** click to add points, drag to move them, drag the ring to turn the robot, or click the line to insert a point. Each point can set a heading (or face the hub), stop and shoot (optionally moving on once the hopper is empty), and wait. Each leg can set a top speed, run the intake, or shoot while driving.
+  - **Planner:** smooth splines with a velocity profile that slows for curves, turns and stops. The path is colored by speed, and a timeline shows every drive, intake, shot and wait against the 20 s auto.
+  - **Checks:** warns when the robot's footprint hits the field, when the auto runs past 20 s, or when it starts outside the alliance zone.
+  - **Preview and test:** preview the auto with the real robot model, or test run it in the full physics sim and see the fuel scored, time taken and how closely the robot kept to the plan.
+  - **Share:** codes a teammate can import, and a Python export in the style of pyrebuilt's `routines.py`. Mirror flips an auto left/right, and red-alliance flips are automatic.
+  - **Use as my auto:** your auto runs in practice (P), quick match and competitions.
 - **Practice:** drive on the 2026 field with no clock. Fuel inside the robot is soft foam that collides with the CAD and squashes. Robots are 63 kg rigid bodies with traction-limited pushing; AI robots plan with A*.
 - **Garage:** orbit the CAD, click parts, show, hide or isolate subsystems, explode the model, and run the intake, hood, indexer, flywheels and swerve by hand or with the full shot cycle.
 - **Robot behavior follows [frc1880/pyrebuilt](https://github.com/frc1880/pyrebuilt):** Xbox layout, field-oriented drive with stick shaping, 4.0 m/s and 0.75 rot/s limits, the hood and flywheel table, intake positions, and the "chortle" agitation.
@@ -39,6 +48,8 @@ Graphics (Performance, Balanced, Ultra), the live match behind the menus (on/off
 | Follow next robot while spectating | | N |
 | Slow mode | RB | Shift |
 | Run selected auto (practice) | | P |
+| Auto Lab: play preview / delete point / undo / nudge | | Space / Del / Ctrl+Z / arrows |
+| Stop and save a recording | Start | Esc |
 | Agitate intake while shooting | | H |
 
 ## Notes
