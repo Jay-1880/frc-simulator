@@ -80,6 +80,7 @@ details.keys summary{cursor:pointer;font-family:var(--display);font-weight:600;l
 #load{display:flex;flex-direction:column;gap:6px}
 .sliders{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:6px 10px;align-items:center}
 .sliders b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sel{font:inherit;font-size:14px;color:var(--ink);background:#1a222d;border:1px solid var(--line);border-radius:7px;padding:6px 8px}
 @media (max-width:640px){.sliders{grid-template-columns:auto minmax(0,1fr)}}
 #load .fuelbar{width:100%;height:6px}
 #toast{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:700;font-size:40px;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;width:max-content;max-width:90vw}
@@ -149,7 +150,7 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
     <div class="cell" id="hopper"><div class="lbl">Hopper</div><div class="big" id="hop">0<span>/30</span></div><div class="fuelbar"><i id="hopbar"></i></div></div>
     <div class="cell"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
   </div></div>
-  <div class="hud tr"><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
+  <div class="hud tr"><button class="btn" id="autoBtn" type="button">Run auto</button><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
   <div class="hud bl">
     <div class="chips">
       <div class="chip" id="cHub" hidden>Hub</div>
@@ -215,6 +216,18 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
       <span class="lbl">Opponents</span>
       <div class="seg" id="oppSeg"><button type="button" data-opp="0" aria-pressed="false">None</button><button type="button" data-opp="1" aria-pressed="true">Scorer</button><button type="button" data-opp="2" aria-pressed="false">Scorer + defender</button></div>
     </div>
+    <div class="row">
+      <label class="lbl" for="autoSel">Auto</label>
+      <select id="autoSel" class="sel">
+        <option value="none">None (drive it yourself)</option>
+        <option value="shoot">Shoot</option>
+        <option value="sgR">Shoot + Gobbler - Right</option>
+        <option value="sgL">Shoot + Gobbler - Left</option>
+        <option value="gR">Gobbler only - Right</option>
+        <option value="gL">Gobbler only - Left</option>
+      </select>
+      <span class="fine">From frc1880/pyrebuilt autonomous/routines.py. Runs in the match's auto period, or press P in practice.</span>
+    </div>
     <div class="row sliders">
       <label class="lbl" for="spdDrive">Drive speed <b id="spdDriveV">100%</b></label><input type="range" id="spdDrive" min="40" max="120" step="5" value="100">
       <label class="lbl" for="spdTurn">Turn speed <b id="spdTurnV">100%</b></label><input type="range" id="spdTurn" min="40" max="140" step="5" value="100">
@@ -250,6 +263,7 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
         <div><span>Auto-aim / camera</span><kbd>T / V</kbd></div>
         <div><span>Slow mode</span><kbd>Shift hold</kbd></div>
         <div><span>Agitate while shooting</span><kbd>H</kbd></div>
+        <div><span>Run selected auto (practice)</span><kbd>P</kbd></div>
         <div><span>Reset field / menu</span><kbd>R / Esc</kbd></div>
       </div>
     </details>
@@ -661,7 +675,7 @@ const S = {
   score: 0, total: 0, pts: { red: 0, blue: 0 }, autoPts: { red: 0, blue: 0 }, phase: "practice", timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
 };
 let redHub = 0, blueHub = 1;
-const SET = { opp: 1, drive: 1, turn: 1 };
+const SET = { opp: 1, drive: 1, turn: 1, auto: "sgR" };
 try { const j = JSON.parse(localStorage.getItem("tt-set") || "{}"); Object.assign(SET, j); } catch {}
 resize();
 const myHub = () => (S.alliance === "red" ? redHub : blueHub);
@@ -684,6 +698,7 @@ addEventListener("keydown", (e) => {
   if (e.code === "KeyB") toggleSpin();
   if (e.code === "KeyG") toggleField();
   if (e.code === "KeyH") toggleAgitate();
+  if (e.code === "KeyP") runAutoPractice();
   if (e.code === "KeyT") toggleAim();
   if (e.code === "KeyV") cycleCam();
   if (e.code === "KeyR") resetRound();
@@ -695,6 +710,9 @@ function toggleField() { S.field = !S.field; $("fieldBtn").textContent = S.field
 function toggleAim() { S.aim = !S.aim; toast(S.aim ? "Auto-aim on" : "Auto-aim off", "#e9edf2"); }
 function cycleCam() { S.cam = { driver: "chase", chase: "top", top: "driver" }[S.cam]; $("camBtn").textContent = "View: " + S.cam[0].toUpperCase() + S.cam.slice(1); }
 function toggleAgitate() { S.agitate = !S.agitate; $("agiBtn").textContent = "Agitate: " + (S.agitate ? "on" : "off"); $("agiBtn").setAttribute("aria-pressed", S.agitate); if (!S.agitate && M.armT === ARM.retract) M.armT = ARM.carry; toast(S.agitate ? "Intake agitates while shooting" : "Agitate off", "#e9edf2"); }
+function runAutoPractice() { if (S.mode === "match") return; if (SET.auto === "none") { toast("Pick an auto in the menu first", "#e9edf2"); return; }
+  autoBegin(SET.auto); preload(8); M.arm = M.armT = ARM.carry; camState.init = false; toast("Auto: " + autoName(SET.auto)); }
+$("autoBtn").onclick = runAutoPractice;
 $("agiBtn").onclick = toggleAgitate; $("fieldBtn").onclick = toggleField; $("camBtn").onclick = cycleCam; $("menuBtn").onclick = () => setPaused(true);
 function stick(el, cb) {
   let id = null; const knob = el.querySelector("i");
@@ -910,6 +928,69 @@ function botShoot(b, d) {
 }
 function drawBots() { for (const b of BOTS) { b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; b.mesh.userData.balls.count = Math.min(14, b.store.length); } }
 
+// ================================================================== autonomous routines (ported from pyrebuilt autonomous/routines.py)
+// Paths are written in WPILib blue-alliance field coordinates (m, deg) like the robot code, then flipped for red and mirrored for "Left".
+const FIELD_L = 16.54, FIELD_W = 8.07, BLUE_HUB = [182.11 * IN, 158.84 * IN];
+const PP = (X, Y, deg = null) => ({ X, Y, deg });
+function toSim(pt, mirror) {
+  let X = pt.X, Y = pt.Y, th = pt.deg == null ? null : pt.deg * DEG;
+  if (mirror) { Y = FIELD_W - Y; if (th != null) th = -th; }
+  if (S.alliance === "red") { X = FIELD_L - X; Y = FIELD_W - Y; if (th != null) th += Math.PI; }
+  // this field model has blue on +x; WPILib +Y is the blue driver's left (+z here)
+  return { x: FIELD_L / 2 - X, z: Y - FIELD_W / 2, yaw: th == null ? null : Math.atan2(-Math.cos(th), Math.sin(th)) };
+}
+const shooterToHub = (X, Y) => (Math.atan2(BLUE_HUB[1] - Y, BLUE_HUB[0] - X) - Math.PI) / DEG; // shooter is at the rear
+const GOB = PP(3.6, 0.75, 90);
+const AUTOS = {
+  shoot: { start: PP(FIELD_L - 12.972, FIELD_W - 3.915, 180), first: "driving_to_shoot" },
+  sgR: { start: GOB, first: "shooting" }, sgL: { start: GOB, first: "shooting", mirror: true },
+  gR: { start: PP(3.6, 0.75, 0), first: "aligning" }, gL: { start: PP(3.6, 0.75, 0), first: "aligning", mirror: true },
+};
+const sp = GOB;
+const PATHS = {
+  shoot: [PP(FIELD_L - 12.972 - 1, FIELD_W - 3.915, shooterToHub(FIELD_L - 12.972 - 1, FIELD_W - 3.915))],
+  collect: [PP(sp.X + 2.5, sp.Y, 0), PP(sp.X + 4.1 - 1.0, sp.Y, 90), PP(sp.X + 4.1, sp.Y + 1.0), PP(sp.X + 4.1, sp.Y + 2.5)],
+  returning: [PP(sp.X + 4.1, sp.Y + 1.0), PP(sp.X + 4.1 - 1.0, sp.Y, 0), PP(sp.X, sp.Y, 0), PP(sp.X - 1.0, sp.Y + 1.0, -135)],
+  hub_collect: [PP(sp.X - 0.5, sp.Y, 0), PP(sp.X + 2.2, sp.Y, 0), PP(sp.X + 3.2 - 0.8, sp.Y), PP(sp.X + 3.2, sp.Y + 0.8, 90), PP(sp.X + 3.2, sp.Y + 3.0)],
+  hub_returning: [PP(sp.X + 3.2, sp.Y + 0.8), PP(sp.X + 3.2 - 0.8, sp.Y), PP(sp.X, sp.Y, 0), PP(sp.X - 1.0, sp.Y + 1.0, -135)],
+};
+let AU = null; // running auto
+function autoBegin(id) {
+  const def = AUTOS[id]; if (!def) { AU = null; return false; }
+  const p = toSim(def.start, def.mirror); S.x = p.x; S.z = p.z; S.yaw = p.yaw; S.vx = S.vz = S.w = 0; S.pvx = S.pvz = 0;
+  AU = { id, def, st: def.first, t: 0, cycle: 0, path: null, idx: 0, yawT: p.yaw, empty: 0, init: true };
+  return true;
+}
+function setState(st) { AU.st = st; AU.t = 0; AU.init = true; }
+function setPath(name) { AU.path = PATHS[name].map((q) => toSim(q, AU.def.mirror)); AU.idx = 0; }
+function follow(cmd) { // simple stand-in for vector_pursuit: 2.5 m/s max, 5 m/s² accel, 0.1 m / 15° tolerance
+  const P = AU.path; let wp = P[AU.idx]; let d = Math.hypot(wp.x - S.x, wp.z - S.z);
+  while (AU.idx < P.length - 1 && d < 0.35) { AU.idx++; wp = P[AU.idx]; d = Math.hypot(wp.x - S.x, wp.z - S.z); }
+  for (let k = AU.idx; k < P.length; k++) if (P[k].yaw != null) { AU.yawT = P[k].yaw; break; }
+  let rem = d; for (let k = AU.idx; k < P.length - 1; k++) rem += Math.hypot(P[k + 1].x - P[k].x, P[k + 1].z - P[k].z);
+  const v = Math.min(2.5, Math.sqrt(2 * 5 * Math.max(rem - 0.03, 0))); cmd.vx = d > 1e-3 ? (wp.x - S.x) / d * v : 0; cmd.vz = d > 1e-3 ? (wp.z - S.z) / d * v : 0; cmd.yaw = AU.yawT;
+  return AU.idx === P.length - 1 && d < 0.1 && Math.abs(wrap(AU.yawT - S.yaw)) < 15 * DEG;
+}
+function autoStep(dt) { // returns an input command, like the robot's AutonomousStateMachine
+  const cmd = { auto: true, vx: 0, vz: 0, yaw: null, shoot: false, intake: false, outtake: false, mx: 0, my: 0, rot: 0 };
+  if (!AU) return cmd; AU.t += dt; const init = AU.init; AU.init = false;
+  AU.empty = HS.n === 0 && !transits.length ? AU.empty + dt : 0; const empty = AU.empty > 0.5;
+  const align0 = () => toSim(PP(0, 0, 0), AU.def.mirror).yaw; // heading 0 for blue, 180 for red
+  switch (AU.st) {
+    case "driving_to_shoot": if (init) setPath("shoot"); if (follow(cmd)) setState("shooting_timed"); break;
+    case "shooting_timed": cmd.shoot = true; if (AU.t > 3) setState("done"); break;
+    case "shooting": cmd.shoot = true; if (AU.t > 2.5 || (empty && AU.t > 1.45)) setState("aligning"); break;
+    case "aligning": cmd.yaw = align0(); if (!init && Math.abs(wrap(cmd.yaw - S.yaw)) < 3 * DEG) setState(AU.cycle !== 1 ? "collect" : "hub_collect"); break;
+    case "collect": case "hub_collect": if (init) setPath(AU.st); if (S.inZone) cmd.carry = true; else cmd.intake = true;
+      if (follow(cmd)) setState(AU.st === "collect" ? "returning" : "hub_returning"); break;
+    case "returning": case "hub_returning": if (init) setPath(AU.st); if (follow(cmd)) setState("spraying"); break;
+    case "spraying": if (init) AU.cycle++; cmd.shoot = true; if (empty && AU.cycle === 1) setState("aligning"); break;
+    default: break;
+  }
+  return cmd;
+}
+function autoName(id) { return { shoot: "Shoot", sgR: "Shoot + Gobbler - Right", sgL: "Shoot + Gobbler - Left", gR: "Gobbler only - Right", gL: "Gobbler only - Left" }[id] || "None"; }
+
 // ================================================================== step
 function stepRobot(inp, dt) {
   let tx, tz;
@@ -917,6 +998,7 @@ function stepRobot(inp, dt) {
   else { const c = Math.cos(S.yaw), s = Math.sin(S.yaw); tx = (-inp.mx * c + inp.my * s) * DRIVE.vmax; tz = (inp.mx * s + inp.my * c) * DRIVE.vmax; } // robot-oriented: stick up = intake forward
   tx *= SET.drive; tz *= SET.drive;
   let wt = inp.rot * DRIVE.wmax * SET.turn;
+  if (inp.auto) { tx = inp.vx; tz = inp.vz; wt = inp.yaw != null ? THREE.MathUtils.clamp(wrap(inp.yaw - S.yaw) * 8.5, -3 * Math.PI, 3 * Math.PI) : 0; }
   if (S.aim && inp.shoot && S.hopper > 0 && Math.abs(inp.rot) < 0.1) wt = THREE.MathUtils.clamp(wrap(S.aimYaw - S.yaw) * 8, -DRIVE.wmax, DRIVE.wmax); // heading PID, kP = 8
   driveToward(S, tx, tz, wt, dt, DRIVE.wacc);
   { const c = Math.cos(S.yaw), s = Math.sin(S.yaw), ax = (S.vx - (S.pvx || 0)) / dt, az = (S.vz - (S.pvz || 0)) / dt; S.ax = ax * c - az * s; S.az = ax * s + az * c; S.pvx = S.vx; S.pvz = S.vz; }
@@ -933,6 +1015,7 @@ function stepRobot(inp, dt) {
 }
 function controlMech(inp, dt) { // mirrors pyrebuilt teleopPeriodic + ShooterController
   if (inp.intake) M.armT = 0;
+  if (inp.carry) M.armT = ARM.carry;
   M.flyT = (inp.shoot || S.inZone || S.spinOutside) ? S.sol.rps : 0;
   M.hoodT = THREE.MathUtils.clamp(S.inZone ? S.sol.hood : inp.shoot ? 40 : HOOD_MAX - 1, HOOD_MIN, HOOD_MAX);
   const atSpeed = M.flyT > 0 && Math.abs(M.fly - M.flyT) < 5;
@@ -1037,6 +1120,9 @@ function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fu
 function exitHub(i) { const h = fuel.hub[i]; const [cx, , cz] = F.hubs[h].center; const s = cx < 0 ? 1 : -1; const lane = [-0.45, -0.15, 0.15, 0.45][Math.floor(Math.random() * 4)];
   fuel.pos.set([cx + s * (HUB.half + FUEL_R + 0.03), 0.2, cz + lane], i * 3); fuel.vel.set([s * (1.6 + Math.random() * 1.2), 0, (Math.random() - 0.5) * 1.2], i * 3); fuel.st[i] = 0; fuel.t[i] = 0; }
 function tick(inp) {
+  if (AU && (S.phase === "auto" || S.mode !== "match")) { const touched = Math.abs(inp.mx) + Math.abs(inp.my) + Math.abs(inp.rot) > 0.15 && S.mode !== "match";
+    if (touched) { AU = null; toast("Auto cancelled", "#e9edf2"); } else { inp = autoStep(STEP); if (AU && AU.st === "done") AU = null; } }
+  else if (AU && S.phase !== "auto") AU = null;
   solve(); stepRobot(inp, STEP); controlMech(inp, STEP); stepMech(STEP);
   hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: S.ax || 0, az: S.az || 0 })); S.hopper = HS.n;
   stepTransits(STEP); stepFuel(STEP);
@@ -1071,7 +1157,8 @@ function pulse() { ui.score.animate?.([{ transform: "scale(1.25)" }, { transform
 function armLabel() { const a = M.arm; if (a < 4) return "deployed"; if (Math.abs(a - ARM.carry) < 4) return "carry"; if (Math.abs(a - ARM.retract) < 4) return "retracted"; if (a > 110) return "stowed"; return "moving"; }
 function hud() {
   $("ptsR").textContent = S.pts.red; $("ptsB").textContent = S.pts.blue;
-  $("phase").textContent = S.mode === "match" ? (S.phase === "auto" ? "Auto" : S.timeLeft <= 30 ? "Endgame" : "Teleop") : "Practice";
+  $("phase").textContent = S.mode === "match" ? (S.phase === "auto" ? "Auto" : S.timeLeft <= 30 ? "Endgame" : "Teleop") : AU ? "Auto" : "Practice";
+  $("autoBtn").hidden = S.mode === "match";
   ui.time.textContent = S.mode === "match" ? (() => { const t = Math.ceil(Math.max(0, S.timeLeft)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); })() : "∞";
   document.querySelector(".sred").classList.toggle("mine", S.alliance === "red"); document.querySelector(".sblue").classList.toggle("mine", S.alliance === "blue");
   const ch = $("cHub"); ch.hidden = S.mode !== "match";
@@ -1093,6 +1180,7 @@ function setAlliance(a) { S.alliance = a; $("aRed").setAttribute("aria-pressed",
   ui.board.classList.toggle("blue", a === "blue"); if (robot.bumperMat) robot.bumperMat.color.set(a === "red" ? 0xd8333a : 0x2f6df0); try { localStorage.setItem("tt-alliance", a); } catch {} }
 function saveSet() { try { localStorage.setItem("tt-set", JSON.stringify(SET)); } catch {} }
 document.querySelectorAll("#oppSeg button").forEach((b) => { b.setAttribute("aria-pressed", +b.dataset.opp === SET.opp); b.onclick = () => { SET.opp = +b.dataset.opp; document.querySelectorAll("#oppSeg button").forEach((x) => x.setAttribute("aria-pressed", x === b)); saveSet(); }; });
+$("autoSel").value = SET.auto; $("autoSel").onchange = () => { SET.auto = $("autoSel").value; saveSet(); };
 for (const [id, key] of [["spdDrive", "drive"], ["spdTurn", "turn"]]) { const el = $(id); el.value = Math.round(SET[key] * 100); $(id + "V").textContent = el.value + "%"; el.oninput = () => { SET[key] = el.value / 100; $(id + "V").textContent = el.value + "%"; saveSet(); }; }
 $("aRed").onclick = () => setAlliance("red"); $("aBlue").onclick = () => setAlliance("blue");
 try { const a = localStorage.getItem("tt-alliance"); if (a === "red" || a === "blue") setAlliance(a); } catch {}
@@ -1105,7 +1193,8 @@ function setView(v) {
   scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0f141a);
   controls.enabled = show; fill2.visible = show; resize(); if (robot.parts.length) applyMaterials();
 }
-function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); toast(mode === "match" ? "Auto · 20 seconds" : "Practice", mode === "match" ? "var(--fuel)" : "#e9edf2"); }
+function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); AU = null; if (mode === "match" && SET.auto !== "none") autoBegin(SET.auto);
+  toast(mode === "match" ? "Auto · " + (SET.auto !== "none" ? autoName(SET.auto) : "drive it yourself") : "Practice", mode === "match" ? "var(--fuel)" : "#e9edf2"); }
 $("goFree").onclick = () => start("free"); $("goTimed").onclick = () => start("match"); $("goShow").onclick = () => enterShow();
 function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; if (p) keys.clear(); }
 function enterMenu() { S.paused = true; setView("menu"); }
@@ -1287,7 +1376,7 @@ requestAnimationFrame(frame);
     initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
     S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow"].forEach((id) => $(id).disabled = false); $("goFree").focus();
-    window.__sim = { BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    window.__sim = { AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();
