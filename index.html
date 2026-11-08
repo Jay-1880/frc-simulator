@@ -25,7 +25,7 @@ body{background:#0b0e12;color:var(--ink);font-family:var(--body);overflow:hidden
 #app{position:fixed;inset:0}
 canvas#c{display:block;width:100%;height:100%;touch-action:none}
 .hud{position:fixed;pointer-events:none;font-variant-numeric:tabular-nums}
-.top{top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;justify-content:center;
+.top{top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;justify-content:flex-start;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .board{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;backdrop-filter:blur(8px)}
 .board .cell{padding:6px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:72px}
@@ -34,6 +34,8 @@ canvas#c{display:block;width:100%;height:100%;touch-action:none}
 .big{font-family:var(--display);font-weight:700;font-size:30px;line-height:1}
 .alli{width:8px;align-self:stretch;min-width:8px!important;padding:0!important;background:var(--red)}
 .blue .alli{background:var(--blue)}
+.sred .big{color:#ff7b7f}.sblue .big{color:#7fa8ff}
+.board .mine{background:rgba(255,255,255,.06)}
 #hopper .big span{font-size:16px;color:var(--dim)}
 .fuelbar{width:64px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
 .fuelbar i{display:block;height:100%;background:var(--fuel);width:0}
@@ -76,6 +78,9 @@ details.keys summary{cursor:pointer;font-family:var(--display);font-weight:600;l
 .fine{font-size:11px;color:var(--dim);line-height:1.5}
 .fine a{color:var(--dim)}
 #load{display:flex;flex-direction:column;gap:6px}
+.sliders{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);gap:6px 10px;align-items:center}
+.sliders b{color:var(--ink);font-variant-numeric:tabular-nums}
+@media (max-width:640px){.sliders{grid-template-columns:auto minmax(0,1fr)}}
 #load .fuelbar{width:100%;height:6px}
 #toast{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:700;font-size:40px;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;width:max-content;max-width:90vw}
 .touch{position:fixed;inset:0;pointer-events:none;display:none}
@@ -128,6 +133,7 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
   #info{width:auto;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(46% + 12px)}
   .hot span{display:none}
 }
+@media (max-width:1100px){#driveUI .tr{top:calc(78px + env(safe-area-inset-top,0px))}body.touching .bl{top:calc(130px + env(safe-area-inset-top,0px))}}
 @media (max-width:640px){.board .cell{padding:5px 9px;min-width:52px}.big{font-size:23px}.card h1{font-size:30px}.kgrid{grid-template-columns:1fr}.bl .note{display:none}.go{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
@@ -137,14 +143,16 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
 <div id="driveUI" hidden>
   <div class="hud top"><div class="board" id="board">
     <div class="cell alli"></div>
-    <div class="cell"><div class="lbl">Score</div><div class="big" id="score">0</div></div>
-    <div class="cell"><div class="lbl">Time</div><div class="big" id="time">--</div></div>
+    <div class="cell sred"><div class="lbl">Red</div><div class="big" id="ptsR">0</div></div>
+    <div class="cell"><div class="lbl" id="phase">Practice</div><div class="big" id="time">--</div></div>
+    <div class="cell sblue"><div class="lbl">Blue</div><div class="big" id="ptsB">0</div></div>
     <div class="cell" id="hopper"><div class="lbl">Hopper</div><div class="big" id="hop">0<span>/30</span></div><div class="fuelbar"><i id="hopbar"></i></div></div>
     <div class="cell"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
   </div></div>
   <div class="hud tr"><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
   <div class="hud bl">
     <div class="chips">
+      <div class="chip" id="cHub" hidden>Hub</div>
       <div class="chip" id="cIntake">Intake</div>
       <div class="chip" id="cAim">Auto-aim</div>
       <div class="chip" id="cShot">Flywheel <b id="rps">0</b> rps</div>
@@ -203,9 +211,17 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
       <span class="lbl">Alliance</span>
       <div class="seg"><button class="r" id="aRed" type="button" aria-pressed="false">Red</button><button class="b" id="aBlue" type="button" aria-pressed="true">Blue</button></div>
     </div>
+    <div class="row">
+      <span class="lbl">Opponents</span>
+      <div class="seg" id="oppSeg"><button type="button" data-opp="0" aria-pressed="false">None</button><button type="button" data-opp="1" aria-pressed="true">Scorer</button><button type="button" data-opp="2" aria-pressed="false">Scorer + defender</button></div>
+    </div>
+    <div class="row sliders">
+      <label class="lbl" for="spdDrive">Drive speed <b id="spdDriveV">100%</b></label><input type="range" id="spdDrive" min="40" max="120" step="5" value="100">
+      <label class="lbl" for="spdTurn">Turn speed <b id="spdTurnV">100%</b></label><input type="range" id="spdTurn" min="40" max="140" step="5" value="100">
+    </div>
     <div class="go">
       <button class="primary" id="goFree" type="button" disabled>Practice<small>Free drive, no clock</small></button>
-      <button id="goTimed" type="button" disabled>60-second run<small>Best: <span id="best">none yet</span></small></button>
+      <button id="goTimed" type="button" disabled>Full match<small>Auto + teleop, hub shifts · best <span id="best">none yet</span></small></button>
       <button id="goShow" type="button" disabled>Explore robot<small>Parts, mechanisms, explode</small></button>
     </div>
     <details class="keys" open><summary>Controls</summary>
@@ -254,6 +270,9 @@ const DRAG_K = 0.5 * 1.2 * 0.49 * Math.PI * FUEL_R * FUEL_R / 0.2155;
 const HUB = { half: 0.597, body: 1.43, rim: 1.829, open: 0.50, netOff: 0.85, netY0: 1.70, netY1: 3.02, netZ: 0.70, cx: 3.645 };
 // pyrebuilt: speed_at_12_volts 4.0 m/s, max_angular_rate 0.75 rot/s, exponential stick shaping 1.5 / 2.0, deadzone 0.1
 const DRIVE = { vmax: 4.0, wmax: 0.75 * 2 * Math.PI, acc: 9, wacc: 25, expo: 1.5, rexpo: 2.0, dead: 0.1 };
+// rigid body: 60 kg (pyrebuilt path-planning mass) + bumpers; yaw inertia of a 0.9 x 0.86 m box
+const BODY = { m: 63, I: 63 * (0.9 * 0.9 + 0.86 * 0.86) / 12, eWall: 0.18, eBot: 0.25, mu: 0.35, traction: 1.05 * 9.81 };
+const MATCH = { auto: 20, teleop: 140 };
 const BOX = { hx: 0.45, hz: 0.43, cz: 0.012, top: 0.55 };
 const BUMPER = { y0: 0.04, y1: 0.165 };
 const LANES = [-0.21, 0, 0.21];
@@ -290,7 +309,7 @@ addEventListener("resize", resize);
 
 const fill2 = new THREE.DirectionalLight(0xcfe0ff, 1.1); fill2.position.set(-3, 2.5, -2); fill2.visible = false; scene.add(fill2);
 const $ = (id) => document.getElementById(id);
-const ui = { score: $("score"), time: $("time"), hop: $("hop"), hopbar: $("hopbar"), rate: $("rate"), rps: $("rps"), hood: $("hood"), dist: $("dist"),
+const ui = { score: $("ptsB"), time: $("time"), hop: $("hop"), hopbar: $("hopbar"), rate: $("rate"), rps: $("rps"), hood: $("hood"), dist: $("dist"),
   cIntake: $("cIntake"), cAim: $("cAim"), cShot: $("cShot"), cDist: $("cDist"), board: $("board"), toast: $("toast"), menu: $("menu") };
 let best = 0; try { best = +localStorage.getItem("tt-best") || 0; } catch {}
 if (best) $("best").textContent = best + " fuel";
@@ -639,9 +658,11 @@ const S = {
   view: "menu", alliance: "blue", mode: "free", running: false, paused: true, loaded: false,
   x: 0, z: 0, yaw: 0, vx: 0, vz: 0, w: 0, y: 0, pitch: 0, roll: 0,
   hopper: 0, aim: true, field: true, agitate: false, spinOutside: false, intakeLatch: false, laneT: [0, 0.09, 0.18], chortle: 0, outT: 0,
-  score: 0, total: 0, timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
+  score: 0, total: 0, pts: { red: 0, blue: 0 }, autoPts: { red: 0, blue: 0 }, phase: "practice", timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
 };
 let redHub = 0, blueHub = 1;
+const SET = { opp: 1, drive: 1, turn: 1 };
+try { const j = JSON.parse(localStorage.getItem("tt-set") || "{}"); Object.assign(SET, j); } catch {}
 resize();
 const myHub = () => (S.alliance === "red" ? redHub : blueHub);
 const side = () => Math.sign(F.hubs[myHub()].center[0]);
@@ -763,27 +784,140 @@ const driveCtx = {
     const lvx = HS.v[o], lvz = HS.v[o + 2]; hsRemove(i); if (fid < 0) return;
     fuel.pos.set([wx, S.y + Math.max(HS.p[o + 1], FUEL_R), wz], fid * 3); fuel.vel.set([lvx * c + lvz * s + S.vx, HS.v[o + 1], -lvx * s + lvz * c + S.vz], fid * 3); fuel.st[fid] = 0; fuel.t[fid] = -0.25; },
 };
+// ================================================================== rigid-body robots
+const PERIM = []; for (let k = 0; k < 32; k++) { const t = k / 32 * 4; let lx, lz;
+  if (t < 1) { lx = -BOX.hx + 2 * BOX.hx * t; lz = BOX.hz; } else if (t < 2) { lx = BOX.hx; lz = BOX.hz - 2 * BOX.hz * (t - 1); } else if (t < 3) { lx = BOX.hx - 2 * BOX.hx * (t - 2); lz = -BOX.hz; } else { lx = -BOX.hx; lz = -BOX.hz + 2 * BOX.hz * (t - 3); }
+  PERIM.push([lx, lz + BOX.cz]); }
+function bodyPt(b, lx, lz) { const c = Math.cos(b.yaw), s = Math.sin(b.yaw); return [b.x + lx * c + lz * s, b.z - lx * s + lz * c]; }
+function impulse(b, rx, rz, nx, nz, e) { // b hits something fixed at offset r with normal n; returns impact speed
+  const k = rz * nx - rx * nz, vn = (b.vx + b.w * rz) * nx + (b.vz - b.w * rx) * nz; if (vn >= 0) return 0;
+  const j = -(1 + e) * vn / (1 / BODY.m + k * k / BODY.I); b.vx += j * nx / BODY.m; b.vz += j * nz / BODY.m; b.w += j * k / BODY.I;
+  const tx = -nz, tz = nx, kt = rz * tx - rx * tz, vt = (b.vx + b.w * rz) * tx + (b.vz - b.w * rx) * tz;
+  const jt = THREE.MathUtils.clamp(-vt / (1 / BODY.m + kt * kt / BODY.I), -BODY.mu * j, BODY.mu * j); b.vx += jt * tx / BODY.m; b.vz += jt * tz / BODY.m; b.w += jt * kt / BODY.I;
+  return -vn;
+}
+function collideField(b) {
+  let hit = 0;
+  for (let it = 0; it < 3; it++) {
+    let best = null;
+    for (const [lx, lz] of PERIM) { const [wx, wz] = bodyPt(b, lx, lz); const d = sdf(wx, wz); if (d < 0.004 && (!best || d < best.d)) best = { d, wx, wz }; }
+    if (!best) break; const [gx, gz] = grad(best.wx, best.wz);
+    hit = Math.max(hit, impulse(b, best.wx - b.x, best.wz - b.z, gx, gz, BODY.eWall));
+    const pen = 0.004 - best.d; b.x += gx * pen; b.z += gz * pen;
+  }
+  return hit;
+}
+function collideBots(A, B) { // A's bumper points against B's bumper box
+  const cB = Math.cos(B.yaw), sB = Math.sin(B.yaw); let best = null;
+  if (Math.hypot(A.x - B.x, A.z - B.z) > 1.4) return 0;
+  for (const [lx, lz] of PERIM) { const [wx, wz] = bodyPt(A, lx, lz); const rx = wx - B.x, rz = wz - B.z; const bx = rx * cB - rz * sB, bz = rx * sB + rz * cB - BOX.cz;
+    const ox = BOX.hx - Math.abs(bx), oz = BOX.hz - Math.abs(bz); if (ox <= 0 || oz <= 0) continue;
+    let nlx = 0, nlz = 0, pen; if (ox < oz) { nlx = Math.sign(bx); pen = ox; } else { nlz = Math.sign(bz); pen = oz; }
+    if (!best || pen > best.pen) best = { pen, wx, wz, nx: nlx * cB + nlz * sB, nz: -nlx * sB + nlz * cB }; }
+  if (!best) return 0;
+  const { nx, nz } = best, rAx = best.wx - A.x, rAz = best.wz - A.z, rBx = best.wx - B.x, rBz = best.wz - B.z;
+  const kA = rAz * nx - rAx * nz, kB = rBz * nx - rBx * nz;
+  const vn = ((A.vx + A.w * rAz) - (B.vx + B.w * rBz)) * nx + ((A.vz - A.w * rAx) - (B.vz - B.w * rBx)) * nz;
+  A.x += nx * best.pen / 2; A.z += nz * best.pen / 2; B.x -= nx * best.pen / 2; B.z -= nz * best.pen / 2;
+  if (vn >= 0) return 0;
+  const j = -(1 + BODY.eBot) * vn / (2 / BODY.m + kA * kA / BODY.I + kB * kB / BODY.I);
+  A.vx += j * nx / BODY.m; A.vz += j * nz / BODY.m; A.w += j * kA / BODY.I; B.vx -= j * nx / BODY.m; B.vz -= j * nz / BODY.m; B.w -= j * kB / BODY.I;
+  return -vn;
+}
+// wheels push toward the commanded velocity, limited by traction (so pushing matches and hits feel heavy)
+function driveToward(b, tx, tz, wt, dt, wacc) {
+  const ax = tx - b.vx, az = tz - b.vz, al = Math.hypot(ax, az), amax = BODY.traction * dt;
+  if (al > amax) { b.vx += ax / al * amax; b.vz += az / al * amax; } else { b.vx = tx; b.vz = tz; }
+  const dw = wt - b.w, wm = wacc * dt; b.w += Math.abs(dw) > wm ? Math.sign(dw) * wm : dw;
+}
+
+// ================================================================== opponent robots (AI)
+const BOTS = [];
+function makeBotMesh(color) {
+  const g = new THREE.Group(); const m = (c, r = 0.7) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+  const add = (geo, mat, x, y, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o; };
+  const th = 0.085, h = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2, bm = m(color, 0.85);
+  add(new THREE.BoxGeometry(2 * BOX.hx, h, th), bm, 0, yc, BOX.hz - th / 2 + BOX.cz); add(new THREE.BoxGeometry(2 * BOX.hx, h, th), bm, 0, yc, -BOX.hz + th / 2 + BOX.cz);
+  add(new THREE.BoxGeometry(th, h, 2 * BOX.hz - 2 * th), bm, BOX.hx - th / 2, yc, BOX.cz); add(new THREE.BoxGeometry(th, h, 2 * BOX.hz - 2 * th), bm, -BOX.hx + th / 2, yc, BOX.cz);
+  add(new THREE.BoxGeometry(0.72, 0.09, 0.7), m(0x2a2f36), 0, 0.11, BOX.cz);
+  const frame = m(0x8d96a1, 0.45); for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.36, 0.62), frame, x, 0.34, 0.02);
+  add(new THREE.BoxGeometry(0.62, 0.2, 0.22), m(0x30353d), 0, 0.5, -0.24); // shooter
+  for (const x of [-0.18, 0.18]) { const w = add(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 14), m(0xd4a514, 0.5), x, 0.5, -0.24); w.rotation.z = Math.PI / 2; }
+  add(new THREE.CylinderGeometry(0.03, 0.03, 0.64, 10), m(0x1e5aa8, 0.6), 0, 0.17, BOX.hz + 0.06).rotation.z = Math.PI / 2; // intake roller
+  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 14); balls.count = 0; g.add(balls);
+  const tmp = new THREE.Matrix4(); for (let k = 0; k < 14; k++) { tmp.makeTranslation(-0.2 + (k % 3) * 0.2, 0.26 + Math.floor(k / 6) * 0.13, 0.02 + (Math.floor(k / 3) % 2) * 0.15); balls.setMatrixAt(k, tmp); }
+  g.userData.balls = balls; scene.add(g); return g;
+}
+function setupBots(n) {
+  for (const b of BOTS) scene.remove(b.mesh); BOTS.length = 0; const s = -side(), opp = S.alliance === "red" ? "blue" : "red";
+  const col = opp === "red" ? 0xd8333a : 0x2f6df0;
+  if (n >= 1) BOTS.push({ role: "score", x: s * 5.6, z: 1.6, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 });
+  if (n >= 2) BOTS.push({ role: "defend", x: s * 5.6, z: -1.6, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 });
+  for (const b of BOTS) Object.assign(b, { alliance: opp, vx: 0, vz: 0, w: 0, store: [], state: "collect", tgt: -1, think: 0, shootT: 0, stuckT: 0, unstick: 0, mesh: makeBotMesh(col) });
+  for (const b of BOTS) if (b.role === "score") for (let i = fuel.n - 1, k = 0; i >= 0 && k < 8; i--) if (fuel.st[i] === 0) { fuel.st[i] = 6; b.store.push(i); k++; }
+}
+function routeAround(b, gx, gz) { // detour past either side of a hub instead of driving into it
+  for (const h of F.hubs) { const hx = h.center[0]; if (Math.sign(b.x - hx) === Math.sign(gx - hx)) continue;
+    const t = (hx - b.x) / ((gx - b.x) || 1e-6), zc = b.z + (gz - b.z) * t; if (Math.abs(zc) > 1.45) continue;
+    const zs = Math.abs(b.z) > 0.3 ? Math.sign(b.z) : (gz >= 0 ? 1 : -1); return [hx + Math.sign(b.x - hx) * 0.2, zs * 2.15]; }
+  return [gx, gz];
+}
+function botHub(b) { return b.alliance === "red" ? redHub : blueHub; }
+function stepBots(dt) {
+  for (const b of BOTS) {
+    const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]); let tx = 0, tz = 0, wantYaw = b.yaw, vmax = 3.4;
+    b.think -= dt;
+    if (b.role === "defend") { // stay between the player and the player's hub
+      const ph = F.hubs[myHub()].center; const dx = ph[0] - S.x, dz = ph[2] - S.z, d = Math.hypot(dx, dz) || 1;
+      const [gx, gz] = routeAround(b, S.x + dx / d * 1.0, S.z + dz / d * 1.0); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(S.x - b.x, S.z - b.z); vmax = 3.6;
+    } else if (b.state === "collect") {
+      if (b.store.length >= 12 || (b.think < 0 && b.tgt < 0 && b.store.length >= 1)) b.state = "score";
+      if (b.think < 0) { b.think = 0.4; let best = -1, bd = 1e9; // nearest loose fuel on the floor
+        for (let k = 0; k < 120; k++) { const i = (Math.random() * fuel.n) | 0; if (fuel.st[i] !== 0 || (b.skip && b.skip.has(i))) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2 || !inField(fuel.pos[o], fuel.pos[o + 2]) || sdf(fuel.pos[o], fuel.pos[o + 2]) < 0.5) continue; // the robot must fit there
+          const d = Math.hypot(fuel.pos[o] - b.x, fuel.pos[o + 2] - b.z) + (Math.sign(fuel.pos[o]) === hs ? 0 : 1.5); if (d < bd) { bd = d; best = i; } }
+        if (best >= 0 && (b.tgt < 0 || b.tgtT === 0 || fuel.st[b.tgt] !== 0 || bd < Math.hypot(fuel.pos[b.tgt * 3] - b.x, fuel.pos[b.tgt * 3 + 2] - b.z) - 0.5)) b.tgt = best; }
+      if (b.tgt >= 0 && fuel.st[b.tgt] === 0) { const o = b.tgt * 3; const [gx, gz] = routeAround(b, fuel.pos[o], fuel.pos[o + 2]); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(tx, tz); vmax = Math.min(3.2, 0.8 + Math.hypot(tx, tz) * 1.5); } else b.tgt = -1;
+    } else { // score: drive into the alliance zone, put the shooter toward the hub, fire
+      const [gx, gz] = routeAround(b, hb[0] + hs * 2.4, THREE.MathUtils.clamp(b.z, -1.5, 1.5)); tx = gx - b.x; tz = gz - b.z;
+      const dh = Math.hypot(hb[0] - b.x, hb[2] - b.z); wantYaw = Math.atan2(hb[0] - b.x, hb[2] - b.z) + Math.PI;
+      if (Math.hypot(tx, tz) < 0.5 || (hs * b.x > HUB.cx + 1.4 && hs * b.x < HUB.cx + 3.4)) { tx = tz = 0;
+        if (Math.abs(wrap(wantYaw - b.yaw)) < 0.08 && b.store.length) { b.shootT -= dt; if (b.shootT <= 0) { b.shootT = 0.32; botShoot(b, dh); } } }
+      if (!b.store.length) { b.state = "collect"; b.think = 0; }
+    }
+    // steer around walls and the hub
+    const dc = sdf(b.x, b.z); if (dc < 1.0) { const [gx, gz] = grad(b.x, b.z); tx += gx * (1.0 - dc) * 2.5; tz += gz * (1.0 - dc) * 2.5; }
+    const l = Math.hypot(tx, tz); if (l > 1e-3) { const v = Math.min(vmax, l * 2.2); tx = tx / l * v; tz = tz / l * v; }
+    if (b.unstick > 0) { b.unstick -= dt; tx = -Math.sin(b.yaw) * 1.5; tz = -Math.cos(b.yaw) * 1.5; }
+    if (l > 0.6 && Math.hypot(b.vx, b.vz) < 0.25) { b.stuckT += dt; if (b.stuckT > 1.2) { b.stuckT = 0; b.unstick = 0.7; if (b.tgt >= 0) (b.skip || (b.skip = new Set())).add(b.tgt); b.tgt = -1; } } else b.stuckT = 0;
+    if (b.tgt >= 0 && b.state === "collect") { b.tgtT = (b.tgtT || 0) + dt; if (b.tgtT > 4) { (b.skip || (b.skip = new Set())).add(b.tgt); b.tgt = -1; b.tgtT = 0; } } else b.tgtT = 0;
+    driveToward(b, tx, tz, THREE.MathUtils.clamp(wrap(wantYaw - b.yaw) * 6, -4.5, 4.5), dt, 20);
+    b.x += b.vx * dt; b.z += b.vz * dt; b.yaw = wrap(b.yaw + b.w * dt);
+  }
+}
+function botShoot(b, d) {
+  const i = b.store.pop(); const th = 62 * DEG, back = b.yaw + Math.PI, px = b.x + Math.sin(back) * 0.3, pz = b.z + Math.cos(back) * 0.3;
+  const hb = F.hubs[botHub(b)].center, dd = Math.hypot(hb[0] - px, hb[2] - pz), sp = solveSpeed(dd, th, HUB.rim + 0.18 - 0.55) * (1 + (Math.random() - 0.5) * 0.05);
+  const yaw = Math.atan2(hb[0] - px, hb[2] - pz) + (Math.random() - 0.5) * 3 * DEG;
+  fuel.pos.set([px, 0.55, pz], i * 3); fuel.vel.set([Math.sin(yaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(yaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4; fuel.owner = fuel.owner || new Int8Array(fuel.n); fuel.owner[i] = 1;
+}
+function drawBots() { for (const b of BOTS) { b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; b.mesh.userData.balls.count = Math.min(14, b.store.length); } }
+
 // ================================================================== step
 function stepRobot(inp, dt) {
   let tx, tz;
   if (S.field) { const cy = camYaw(); tx = (-inp.mx * Math.cos(cy) + inp.my * Math.sin(cy)) * DRIVE.vmax; tz = (inp.mx * Math.sin(cy) + inp.my * Math.cos(cy)) * DRIVE.vmax; } // stick right = the driver's right
   else { const c = Math.cos(S.yaw), s = Math.sin(S.yaw); tx = (-inp.mx * c + inp.my * s) * DRIVE.vmax; tz = (inp.mx * s + inp.my * c) * DRIVE.vmax; } // robot-oriented: stick up = intake forward
-  const ax = tx - S.vx, az = tz - S.vz, al = Math.hypot(ax, az), amax = DRIVE.acc * dt;
-  if (al > amax) { S.vx += ax / al * amax; S.vz += az / al * amax; } else { S.vx = tx; S.vz = tz; }
-  let wt = inp.rot * DRIVE.wmax;
+  tx *= SET.drive; tz *= SET.drive;
+  let wt = inp.rot * DRIVE.wmax * SET.turn;
   if (S.aim && inp.shoot && S.hopper > 0 && Math.abs(inp.rot) < 0.1) wt = THREE.MathUtils.clamp(wrap(S.aimYaw - S.yaw) * 8, -DRIVE.wmax, DRIVE.wmax); // heading PID, kP = 8
-  const dw = wt - S.w, wm = DRIVE.wacc * dt; S.w += Math.abs(dw) > wm ? Math.sign(dw) * wm : dw;
+  driveToward(S, tx, tz, wt, dt, DRIVE.wacc);
   { const c = Math.cos(S.yaw), s = Math.sin(S.yaw), ax = (S.vx - (S.pvx || 0)) / dt, az = (S.vz - (S.pvz || 0)) / dt; S.ax = ax * c - az * s; S.az = ax * s + az * c; S.pvx = S.vx; S.pvz = S.vz; }
   S.x += S.vx * dt; S.z += S.vz * dt; S.yaw = wrap(S.yaw + S.w * dt);
-  for (let it = 0; it < 3; it++) {
-    let px = 0, pz = 0, n = 0;
-    for (let k = 0; k < 28; k++) { const t = k / 28 * 4; let lx, lz;
-      if (t < 1) { lx = -BOX.hx + 2 * BOX.hx * t; lz = BOX.hz; } else if (t < 2) { lx = BOX.hx; lz = BOX.hz - 2 * BOX.hz * (t - 1); } else if (t < 3) { lx = BOX.hx - 2 * BOX.hx * (t - 2); lz = -BOX.hz; } else { lx = -BOX.hx; lz = -BOX.hz + 2 * BOX.hz * (t - 3); }
-      const [wx, wz] = local2world(lx, lz + BOX.cz); const d = sdf(wx, wz);
-      if (d < 0.005) { const [gx, gz] = grad(wx, wz); px += gx * (0.005 - d); pz += gz * (0.005 - d); n++; } }
-    if (!n) break; px /= Math.sqrt(n); pz /= Math.sqrt(n); S.x += px; S.z += pz;
-    const l = Math.hypot(px, pz); if (l > 0) { const nx = px / l, nz = pz / l, vn = S.vx * nx + S.vz * nz; if (vn < 0) { S.vx -= vn * nx * 1.1; S.vz -= vn * nz * 1.1; } }
-  }
+  let hit = collideField(S);
+  stepBots(dt);
+  for (const b of BOTS) { collideField(b); hit = Math.max(hit, collideBots(S, b), collideBots(b, S)); }
+  for (let i = 0; i < BOTS.length; i++) for (let j = i + 1; j < BOTS.length; j++) { collideBots(BOTS[i], BOTS[j]); collideBots(BOTS[j], BOTS[i]); }
+  if (hit > 0.8) S.shake = Math.min(0.12, Math.max(S.shake || 0, hit * 0.025));
   const hs = robot.modules.map((m) => { const [wx, wz] = local2world(m.r[0], m.r[1]); return floorH(wx, wz); });
   const avg = (a) => (a.length ? a.reduce((p, c) => p + c, 0) / a.length : 0); const fr = [], bk = [], lf = [], rt = [];
   robot.modules.forEach((m, i) => { (m.r[1] > 0 ? fr : bk).push(hs[i]); (m.r[0] > 0 ? rt : lf).push(hs[i]); });
@@ -855,6 +989,14 @@ function stepFuel(dt) {
         }
       }
     }
+    for (const b of BOTS) { if (t[i] <= 0 || y > BOX.top + r) continue; const rx = x - b.x, rz = z - b.z; if (rx * rx + rz * rz > 0.7) continue;
+      const cb = Math.cos(b.yaw), sb = Math.sin(b.yaw), lx = rx * cb - rz * sb, lz = rx * sb + rz * cb - BOX.cz;
+      if (Math.abs(lx) > BOX.hx + r || Math.abs(lz) > BOX.hz + r) continue;
+      if (b.role === "score" && b.state === "collect" && lz > BOX.hz - 0.04 && Math.abs(lx) < 0.32 && b.store.length < 14) { st[i] = 6; b.store.push(i); break; }
+      const ox = BOX.hx + r - Math.abs(lx), oz = BOX.hz + r - Math.abs(lz); const nlx = ox < oz ? Math.sign(lx) : 0, nlz = ox < oz ? 0 : Math.sign(lz), pen = Math.min(ox, oz);
+      const wx = nlx * cb + nlz * sb, wz = -nlx * sb + nlz * cb; x += wx * pen; z += wz * pen;
+      const rel = (vx - (b.vx + b.w * rz)) * wx + (vz - (b.vz - b.w * rx)) * wz; if (rel < 0) { vx -= rel * wx * 1.35; vz -= rel * wz * 1.35; } }
+    if (st[i] !== 0) continue;
     pos[o] = x; pos[o + 1] = y; pos[o + 2] = z; vel[o] = vx; vel[o + 1] = vy; vel[o + 2] = vz;
     const hc = hcell(x, z); next[i] = head[hc]; head[hc] = i;
   }
@@ -876,14 +1018,25 @@ function stepFuel(dt) {
     const fh = floorH(pos[o], pos[o + 2]) + r; if (pos[o + 1] < fh) pos[o + 1] = fh;
   }
 }
-function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fuel.hub[i] = h; if (S.running && h === myHub()) { S.score++; pulse(); } S.total++; }
+function hubActive(a) { // pyrebuilt utilities/game.py shift schedule; the alliance that won auto goes inactive first
+  if (S.mode !== "match" || S.phase === "auto") return true;
+  const t = S.timeLeft, win = S.autoWinner === a;
+  if (t > 130 || t <= 30) return true; if (t > 105) return !win; if (t > 80) return win; if (t > 55) return !win; return win;
+}
+function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fuel.hub[i] = h; S.total++; if (!S.running) return;
+  const a = h === redHub ? "red" : "blue"; if (!hubActive(a)) return; S.pts[a]++; if (S.phase === "auto") S.autoPts[a]++;
+  if (a === S.alliance) { S.score++; pulse(); } }
 function exitHub(i) { const h = fuel.hub[i]; const [cx, , cz] = F.hubs[h].center; const s = cx < 0 ? 1 : -1; const lane = [-0.45, -0.15, 0.15, 0.45][Math.floor(Math.random() * 4)];
   fuel.pos.set([cx + s * (HUB.half + FUEL_R + 0.03), 0.2, cz + lane], i * 3); fuel.vel.set([s * (1.6 + Math.random() * 1.2), 0, (Math.random() - 0.5) * 1.2], i * 3); fuel.st[i] = 0; fuel.t[i] = 0; }
 function tick(inp) {
   solve(); stepRobot(inp, STEP); controlMech(inp, STEP); stepMech(STEP);
   hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: S.ax || 0, az: S.az || 0 })); S.hopper = HS.n;
   stepTransits(STEP); stepFuel(STEP);
-  if (S.running && S.mode === "timed") { S.timeLeft -= STEP; if (S.timeLeft <= 0) { S.timeLeft = 0; endRun(); return false; } }
+  if (S.running && S.mode === "match") { S.timeLeft -= STEP;
+    if (S.timeLeft <= 0) { if (S.phase === "auto") { S.phase = "teleop"; S.timeLeft = MATCH.teleop; const r = S.autoPts.red, b = S.autoPts.blue; S.autoWinner = r === b ? (Math.random() < 0.5 ? "red" : "blue") : r > b ? "red" : "blue";
+        toast("Teleop · " + (S.autoWinner === S.alliance ? "you won auto: your hub goes inactive first" : "your hub stays active first"), "#e9edf2"); }
+      else { S.timeLeft = 0; endRun(); return false; } }
+    const act = hubActive(S.alliance); if (act !== S.lastActive && S.phase === "teleop") toast(act ? "Your hub is active" : "Your hub is inactive", act ? "var(--ok)" : "var(--warn)"); S.lastActive = act; }
   return true;
 }
 
@@ -909,7 +1062,13 @@ function toast(msg, color) { ui.toast.textContent = msg; ui.toast.style.color = 
 function pulse() { ui.score.animate?.([{ transform: "scale(1.25)" }, { transform: "scale(1)" }], { duration: 220 }); }
 function armLabel() { const a = M.arm; if (a < 4) return "deployed"; if (Math.abs(a - ARM.carry) < 4) return "carry"; if (Math.abs(a - ARM.retract) < 4) return "retracted"; if (a > 110) return "stowed"; return "moving"; }
 function hud() {
-  ui.score.textContent = S.score; ui.time.textContent = S.mode === "timed" ? Math.ceil(Math.max(0, S.timeLeft)) : "∞";
+  $("ptsR").textContent = S.pts.red; $("ptsB").textContent = S.pts.blue;
+  $("phase").textContent = S.mode === "match" ? (S.phase === "auto" ? "Auto" : S.timeLeft <= 30 ? "Endgame" : "Teleop") : "Practice";
+  ui.time.textContent = S.mode === "match" ? (() => { const t = Math.ceil(Math.max(0, S.timeLeft)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); })() : "∞";
+  document.querySelector(".sred").classList.toggle("mine", S.alliance === "red"); document.querySelector(".sblue").classList.toggle("mine", S.alliance === "blue");
+  const ch = $("cHub"); ch.hidden = S.mode !== "match";
+  if (!ch.hidden) { const act = hubActive(S.alliance); let nxt = S.phase === "auto" ? S.timeLeft : S.timeLeft > 130 ? S.timeLeft - 130 : S.timeLeft > 30 ? (S.timeLeft - 30) % 25 : S.timeLeft;
+    ch.className = "chip " + (act ? "on" : "warnc"); ch.textContent = (act ? "Hub active " : "Hub inactive ") + Math.ceil(nxt) + "s"; }
   ui.hop.innerHTML = S.hopper + "<span>/" + CAP + "</span>"; ui.hopbar.style.width = (100 * S.hopper / CAP) + "%";
   const now = performance.now(); S.shots = S.shots.filter((t) => now - t < 1000); ui.rate.textContent = S.shots.length;
   ui.rps.textContent = Math.round(M.fly); ui.hood.textContent = M.hood.toFixed(0); ui.dist.textContent = S.dist.toFixed(1);
@@ -924,24 +1083,28 @@ function hud() {
 // ================================================================== modes
 function setAlliance(a) { S.alliance = a; $("aRed").setAttribute("aria-pressed", a === "red"); $("aBlue").setAttribute("aria-pressed", a === "blue");
   ui.board.classList.toggle("blue", a === "blue"); if (robot.bumperMat) robot.bumperMat.color.set(a === "red" ? 0xd8333a : 0x2f6df0); try { localStorage.setItem("tt-alliance", a); } catch {} }
+function saveSet() { try { localStorage.setItem("tt-set", JSON.stringify(SET)); } catch {} }
+document.querySelectorAll("#oppSeg button").forEach((b) => { b.setAttribute("aria-pressed", +b.dataset.opp === SET.opp); b.onclick = () => { SET.opp = +b.dataset.opp; document.querySelectorAll("#oppSeg button").forEach((x) => x.setAttribute("aria-pressed", x === b)); saveSet(); }; });
+for (const [id, key] of [["spdDrive", "drive"], ["spdTurn", "turn"]]) { const el = $(id); el.value = Math.round(SET[key] * 100); $(id + "V").textContent = el.value + "%"; el.oninput = () => { SET[key] = el.value / 100; $(id + "V").textContent = el.value + "%"; saveSet(); }; }
 $("aRed").onclick = () => setAlliance("red"); $("aBlue").onclick = () => setAlliance("blue");
 try { const a = localStorage.getItem("tt-alliance"); if (a === "red" || a === "blue") setAlliance(a); } catch {}
 function preload(n) { HS.n = 0; const ids = []; for (let i = fuel.n - 1; i >= 0 && ids.length < n; i--) if (fuel.st[i] === 0) { fuel.st[i] = 1; ids.push(i); } slotsInto(ids.length, ids); S.hopper = HS.n; }
-function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); S.score = 0; S.total = 0; S.timeLeft = 60; S.running = true; camState.init = false;
+function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); setupBots(SET.opp); S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
   Object.assign(M, { arm: ARM.carry, armT: ARM.carry, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, ext: 0 }); S.intakeLatch = false; S.spinOutside = false; }
 function setView(v) {
   S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; ui.menu.hidden = !(v === "menu" || (v === "drive" && S.paused));
-  const show = v === "show"; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show;
+  const show = v === "show"; for (const b of BOTS) b.mesh.visible = !show; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show;
   scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0f141a);
   controls.enabled = show; fill2.visible = show; resize(); if (robot.parts.length) applyMaterials();
 }
-function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); toast(mode === "timed" ? "Go! 60 seconds" : "Practice", mode === "timed" ? "var(--fuel)" : "#e9edf2"); }
-$("goFree").onclick = () => start("free"); $("goTimed").onclick = () => start("timed"); $("goShow").onclick = () => enterShow();
+function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); toast(mode === "match" ? "Auto · 20 seconds" : "Practice", mode === "match" ? "var(--fuel)" : "#e9edf2"); }
+$("goFree").onclick = () => start("free"); $("goTimed").onclick = () => start("match"); $("goShow").onclick = () => enterShow();
 function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; if (p) keys.clear(); }
 function enterMenu() { S.paused = true; setView("menu"); }
-function endRun() { S.running = false; const sc = S.score;
-  if (sc > best) { best = sc; try { localStorage.setItem("tt-best", String(best)); } catch {} $("best").textContent = best + " fuel"; toast("New best: " + sc); } else toast("Time! " + sc + " fuel");
-  setTimeout(() => setPaused(true), 1800); }
+function endRun() { S.running = false; const sc = S.pts[S.alliance], op = S.pts[S.alliance === "red" ? "blue" : "red"];
+  const res = sc > op ? "You win " : sc < op ? "You lose " : "Tie "; toast(res + sc + "–" + op, sc >= op ? "var(--fuel)" : "#e9edf2");
+  if (sc > best) { best = sc; try { localStorage.setItem("tt-best", String(best)); } catch {} $("best").textContent = best + " pts"; }
+  setTimeout(() => setPaused(true), 2600); }
 
 // ================================================================== showcase
 const studio = new THREE.Group(); studio.visible = false; scene.add(studio);
@@ -1090,7 +1253,7 @@ function frame(now) {
       const dec = Math.exp(-dt * 14);
       for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3, a = fuel.sq[i] * FUEL_R; fuel.sq[i] *= dec; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], fuel.sqa[o] * a, fuel.sqa[o + 1] * a, fuel.sqa[o + 2] * a, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
       fuel.mesh.instanceMatrix.needsUpdate = true;
-      updateDriveCamera(dt); hud(); drawInner();
+      updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } hud(); drawInner(); drawBots();
     } else if (S.view === "show") {
       if (SV.chortle && !SV.cycle) { SV.chT = (SV.chT + dt) % 1.2; M.armT = SV.chT > 0.7 ? ARM.retract : ARM.carry; }
       stepCycle(dt); stepMech(dt);
@@ -1116,7 +1279,7 @@ requestAnimationFrame(frame);
     initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
     S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow"].forEach((id) => $(id).disabled = false); $("goFree").focus();
-    window.__sim = { sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    window.__sim = { BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();
