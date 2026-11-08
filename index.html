@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="FRC 1880 HtH V2 robot simulator for REBUILT 2026">
+<style>html{color-scheme:dark}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Triple Threat Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: full-bleed 3D scene; driver-station HUD bars on the edges; showcase gets a side panel (bottom sheet on phones) */
+:root{
+  --ink:#e9edf2; --dim:#9aa6b4; --panel:rgba(14,18,24,.8); --solid:#121820; --line:rgba(170,190,215,.18);
+  --fuel:#f5c518; --red:#e5484d; --blue:#3e7bfa; --ok:#46c97a; --warn:#f0a03c;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:#0b0e12;color:var(--ink);font-family:var(--body);overflow:hidden;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+#app{position:fixed;inset:0}
+canvas#c{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:fixed;pointer-events:none;font-variant-numeric:tabular-nums}
+.top{top:calc(10px + env(safe-area-inset-top,0px));left:0;right:0;display:flex;justify-content:center;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.board{display:flex;align-items:stretch;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;backdrop-filter:blur(8px)}
+.board .cell{padding:6px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:72px}
+.board .cell+.cell{border-left:1px solid var(--line)}
+.lbl{font-family:var(--display);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.big{font-family:var(--display);font-weight:700;font-size:30px;line-height:1}
+.alli{width:8px;align-self:stretch;min-width:8px!important;padding:0!important;background:var(--red)}
+.blue .alli{background:var(--blue)}
+#hopper .big span{font-size:16px;color:var(--dim)}
+.fuelbar{width:64px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
+.fuelbar i{display:block;height:100%;background:var(--fuel);width:0}
+.bl{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-start;max-width:calc(100% - 32px)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);color:var(--dim);display:flex;gap:6px;align-items:center}
+.chip b{color:var(--ink);font-weight:600}
+.chip.on{color:var(--ink);border-color:rgba(70,201,122,.5)}
+.chip.on::before,.chip.warnc::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ok)}
+.chip.warnc::before{background:var(--warn)}
+.note{font-size:11px;color:var(--dim);background:var(--panel);padding:3px 8px;border-radius:5px;border:1px solid var(--line)}
+.tr{top:calc(10px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));pointer-events:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.btn{pointer-events:auto;font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:rgba(245,197,24,.6)}
+.btn[aria-pressed="true"]{background:#2a3442;border-color:rgba(245,197,24,.55)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fuel);outline-offset:2px}
+#menu{position:fixed;inset:0;display:grid;place-items:center;background:rgba(6,8,11,.55);backdrop-filter:blur(3px);z-index:5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px;overflow:auto}
+.card{width:min(600px,100%);background:var(--solid);border:1px solid var(--line);border-radius:14px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:16px}
+.card h1{font-family:var(--display);font-size:38px;line-height:.95;margin:0;letter-spacing:.01em;text-wrap:balance}
+.card h1 em{font-style:normal;color:var(--fuel)}
+.sub{color:var(--dim);margin:4px 0 0;font-size:14px;line-height:1.45;max-width:62ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:14px;background:transparent;color:var(--dim);border:0;padding:8px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:#1e2733;color:var(--ink)}
+.seg button.r[aria-pressed="true"]{background:var(--red);color:#fff}
+.seg button.b[aria-pressed="true"]{background:var(--blue);color:#fff}
+.go{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.go button{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:12px;border-radius:9px;border:1px solid var(--line);cursor:pointer;background:#1a222d;color:var(--ink);text-align:left}
+.go button small{display:block;font-family:var(--body);font-weight:400;font-size:12px;letter-spacing:0;text-transform:none;color:var(--dim);margin-top:2px}
+.go button.primary{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}
+.go button.primary small{color:#5a4a10}
+.go button:disabled{opacity:.5;cursor:default}
+details.keys summary{cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:12px;color:var(--dim)}
+.kgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 16px;font-size:13px;color:var(--dim);margin-top:8px}
+.kgrid div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
+.kgrid kbd{font-family:var(--display);font-weight:600;color:var(--ink);letter-spacing:.04em;text-align:right}
+.kgrid h4{grid-column:1/-1;margin:8px 0 0;font-family:var(--display);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--fuel)}
+.fine{font-size:11px;color:var(--dim);line-height:1.5}
+.fine a{color:var(--dim)}
+#load{display:flex;flex-direction:column;gap:6px}
+#load .fuelbar{width:100%;height:6px}
+#toast{position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--display);font-weight:700;font-size:40px;letter-spacing:.04em;text-transform:uppercase;pointer-events:none;opacity:0;transition:opacity .3s;text-shadow:0 2px 12px rgba(0,0,0,.6);text-align:center;width:max-content;max-width:90vw}
+.touch{position:fixed;inset:0;pointer-events:none;display:none}
+.touch.show{display:block}
+.stick{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);pointer-events:auto;touch-action:none}
+.stick i{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:rgba(255,255,255,.25)}
+#stL{left:max(24px,env(safe-area-inset-left,0px));bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+#stR{right:max(24px,env(safe-area-inset-right,0px));bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.tbtns{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:calc(175px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;pointer-events:auto}
+.tbtn{width:66px;height:66px;border-radius:50%;font-family:var(--display);font-weight:700;font-size:13px;text-transform:uppercase;border:2px solid rgba(255,255,255,.25);background:rgba(14,18,24,.6);color:var(--ink);touch-action:none}
+.tbtn.shoot{border-color:var(--fuel);color:var(--fuel)}
+.tbtn.act{background:rgba(245,197,24,.3)}
+body.touching .bl{bottom:auto;top:calc(96px + env(safe-area-inset-top,0px))}
+body.touching .bl .note{display:none}
+
+/* ---------- showcase */
+#show{position:fixed;inset:0;pointer-events:none}
+.showbar{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;gap:8px;align-items:center;pointer-events:auto;flex-wrap:wrap;max-width:calc(100% - 360px)}
+.showbar h2{margin:0 6px 0 0;font-family:var(--display);font-size:24px;letter-spacing:.02em}
+.showbar h2 em{font-style:normal;color:var(--fuel)}
+#side{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:330px;
+  background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:12px;overflow:auto;pointer-events:auto;display:flex;flex-direction:column}
+#side section{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+#side h3{margin:0;font-family:var(--display);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:600}
+.subs{display:flex;flex-direction:column;gap:2px}
+.subrow{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:5px 6px;border-radius:7px;cursor:pointer}
+.subrow:hover{background:rgba(255,255,255,.05)}
+.subrow.sel{background:rgba(245,197,24,.12)}
+.sw{width:10px;height:10px;border-radius:3px}
+.subrow .nm{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.subrow .ct{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+.eye{background:none;border:1px solid var(--line);color:var(--dim);border-radius:5px;font-size:11px;font-family:var(--display);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;cursor:pointer}
+.eye[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+.mrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mrow .btn{padding:5px 9px;font-size:13px}
+.mlabel{display:flex;justify-content:space-between;font-size:13px;color:var(--dim)}
+.mlabel b{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:600}
+input[type=range]{width:100%;accent-color:var(--fuel)}
+.desc{font-size:13px;line-height:1.45;color:var(--dim)}
+.desc b{color:var(--ink);font-weight:600}
+#info{position:absolute;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));width:min(380px,calc(100% - 380px));background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;pointer-events:auto;backdrop-filter:blur(8px)}
+#info h4{margin:2px 0 4px;font-family:var(--display);font-size:20px;line-height:1.05}
+.hot{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.hot i{width:12px;height:12px;border-radius:50%;background:var(--fuel);box-shadow:0 0 0 3px rgba(245,197,24,.25)}
+.hot span{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.05em;text-transform:uppercase;background:var(--panel);border:1px solid var(--line);padding:2px 7px;border-radius:5px}
+.hot:hover span{border-color:var(--fuel)}
+@media (max-width:760px){
+  #side{top:auto;left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;height:44%}
+  .showbar{max-width:calc(100% - 32px)}
+  #info{width:auto;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(46% + 12px)}
+  .hot span{display:none}
+}
+@media (max-width:640px){.board .cell{padding:5px 9px;min-width:52px}.big{font-size:23px}.card h1{font-size:30px}.kgrid{grid-template-columns:1fr}.bl .note{display:none}.go{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+
+<div id="app"><canvas id="c"></canvas></div>
+
+<div id="driveUI" hidden>
+  <div class="hud top"><div class="board" id="board">
+    <div class="cell alli"></div>
+    <div class="cell"><div class="lbl">Score</div><div class="big" id="score">0</div></div>
+    <div class="cell"><div class="lbl">Time</div><div class="big" id="time">--</div></div>
+    <div class="cell" id="hopper"><div class="lbl">Hopper</div><div class="big" id="hop">0<span>/30</span></div><div class="fuelbar"><i id="hopbar"></i></div></div>
+    <div class="cell"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
+  </div></div>
+  <div class="hud tr"><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
+  <div class="hud bl">
+    <div class="chips">
+      <div class="chip" id="cIntake">Intake</div>
+      <div class="chip" id="cAim">Auto-aim</div>
+      <div class="chip" id="cShot">Flywheel <b id="rps">0</b> rps</div>
+      <div class="chip">Hood <b id="hood">--</b>°</div>
+      <div class="chip" id="cDist">Hub <b id="dist">--</b> m</div>
+    </div>
+    <div class="note" id="padNote">Demo physics, not calibrated. Shooter table and drive limits come from frc1880/pyrebuilt.</div>
+  </div>
+  <div class="touch" id="touch">
+    <div class="stick" id="stL"><i></i></div>
+    <div class="stick" id="stR"><i></i></div>
+    <div class="tbtns"><button class="tbtn" id="tCarry" type="button">Carry</button><button class="tbtn" id="tIntake" type="button">Intake</button><button class="tbtn shoot" id="tShoot" type="button">Shoot</button></div>
+  </div>
+</div>
+
+<div id="show" hidden>
+  <div class="showbar">
+    <button class="btn" id="showBack" type="button">← Menu</button>
+    <h2>Explore <em>Triple Threat</em></h2>
+    <button class="btn" id="showCycle" type="button">Run shot cycle</button>
+    <button class="btn" id="showLabels" type="button" aria-pressed="true">Labels</button>
+    <button class="btn" id="showReset" type="button">Reset view</button>
+  </div>
+  <div id="hots"></div>
+  <div id="info" hidden><div class="lbl" id="infoSub">Part</div><h4 id="infoName"></h4><div class="desc" id="infoDesc"></div>
+    <div class="mrow" style="margin-top:8px"><button class="btn" id="infoHide" type="button">Hide part</button><button class="btn" id="infoIso" type="button">Isolate subsystem</button><button class="btn" id="infoClose" type="button">Close</button></div></div>
+  <aside id="side">
+    <section><h3>Subsystems</h3><div class="subs" id="subs"></div>
+      <div class="mrow"><button class="btn" id="showAll" type="button">Show all</button><button class="btn" id="vGlass" type="button" aria-pressed="true">See-through hopper</button></div></section>
+    <section><h3>Intake</h3>
+      <div class="mlabel"><span>Pivot angle from deployed</span><b id="vArm">--</b></div>
+      <div class="mrow"><button class="btn" data-arm="0" type="button">Deploy 0°</button><button class="btn" data-arm="72" type="button">Carry 72°</button><button class="btn" data-arm="90" type="button">Retract 90°</button><button class="btn" data-arm="stow" type="button">Start config</button></div>
+      <div class="mrow"><button class="btn" id="vRoll" type="button" aria-pressed="false">Rollers</button><button class="btn" id="vDrop" type="button">Feed fuel</button><button class="btn" id="vChortle" type="button" aria-pressed="false">Agitate (chortle)</button></div></section>
+    <section><h3>Indexer and shooter</h3>
+      <div class="mrow"><button class="btn" id="vIdx" type="button" aria-pressed="false">HtH indexer</button></div>
+      <div class="mlabel"><span>Flywheel</span><b id="vFlyV">0 rps</b></div><input type="range" id="vFly" min="0" max="95" step="1" value="0" aria-label="Flywheel speed">
+      <div class="mlabel"><span>Hood angle</span><b id="vHoodV">70°</b></div><input type="range" id="vHood" min="48" max="70" step="0.5" value="70" aria-label="Hood angle">
+    </section>
+    <section><h3>Drivetrain</h3><div class="mrow"><button class="btn" id="vDrive" type="button" aria-pressed="false">Spin and steer modules</button></div></section>
+    <section><h3>Explode</h3><input type="range" id="vExplode" min="0" max="1" step="0.01" value="0" aria-label="Explode view"></section>
+    <section><p class="fine" style="margin:0">Click any part to see its name. Drag to orbit, scroll or pinch to zoom, right-drag to pan. Mechanism ranges and ratios come from the frc1880/pyrebuilt code.</p></section>
+  </aside>
+</div>
+
+<div id="toast"></div>
+
+<div id="menu">
+  <div class="card">
+    <div>
+      <div class="lbl">FRC 1880 · Warriors · REBUILT 2026</div>
+      <h1>Triple <em>Threat</em> Simulator</h1>
+      <p class="sub">The HtH V2 robot from your Onshape assembly. The intake pivots out over the bumper, the HtH indexer feeds the injectors, and the three-lane shooter fires out the back with an adjustable hood.</p>
+    </div>
+    <div id="load"><div class="lbl" id="loadTxt">Loading robot CAD…</div><div class="fuelbar"><i id="loadBar"></i></div></div>
+    <div class="row">
+      <span class="lbl">Alliance</span>
+      <div class="seg"><button class="r" id="aRed" type="button" aria-pressed="false">Red</button><button class="b" id="aBlue" type="button" aria-pressed="true">Blue</button></div>
+    </div>
+    <div class="go">
+      <button class="primary" id="goFree" type="button" disabled>Practice<small>Free drive, no clock</small></button>
+      <button id="goTimed" type="button" disabled>60-second run<small>Best: <span id="best">none yet</span></small></button>
+      <button id="goShow" type="button" disabled>Explore robot<small>Parts, mechanisms, explode</small></button>
+    </div>
+    <details class="keys" open><summary>Controls</summary>
+      <div class="kgrid">
+        <h4>Xbox controller (same layout as your robot code)</h4>
+        <div><span>Drive / turn</span><kbd>Left stick / right stick</kbd></div>
+        <div><span>Intake (deploy + rollers)</span><kbd>LT hold</kbd></div>
+        <div><span>Shoot</span><kbd>RT hold</kbd></div>
+        <div><span>Carry intake</span><kbd>LB</kbd></div>
+        <div><span>Retract intake</span><kbd>D-pad down</kbd></div>
+        <div><span>Outtake</span><kbd>A hold</kbd></div>
+        <div><span>Spin flywheel on/off</span><kbd>B</kbd></div>
+        <div><span>Reset robot pose</span><kbd>X</kbd></div>
+        <div><span>Slow mode</span><kbd>RB hold</kbd></div>
+        <div><span>Field / robot-oriented</span><kbd>View (back)</kbd></div>
+        <div><span>Camera</span><kbd>Y</kbd></div>
+        <div><span>Auto-aim on/off</span><kbd>Left stick click</kbd></div>
+        <h4>Keyboard</h4>
+        <div><span>Drive / turn</span><kbd>WASD / Q E</kbd></div>
+        <div><span>Intake on/off</span><kbd>F</kbd></div>
+        <div><span>Shoot</span><kbd>Space hold</kbd></div>
+        <div><span>Carry / retract</span><kbd>C / Z</kbd></div>
+        <div><span>Outtake</span><kbd>X hold</kbd></div>
+        <div><span>Spin flywheel on/off</span><kbd>B</kbd></div>
+        <div><span>Field / robot-oriented</span><kbd>G</kbd></div>
+        <div><span>Auto-aim / camera</span><kbd>T / V</kbd></div>
+        <div><span>Slow mode</span><kbd>Shift hold</kbd></div>
+        <div><span>Reset field / menu</span><kbd>R / Esc</kbd></div>
+      </div>
+    </details>
+    <p class="fine">Field, hub and fuel models: AdvantageScope by Littleton Robotics (FRC 6328), BSD-3-Clause, <a href="LICENSE-AdvantageScope.txt" target="_blank" rel="noopener">license</a>. Field physics constants follow the open-source <a href="https://github.com/Codemaster145/frc-simulator" target="_blank" rel="noopener">frc-simulator</a>. Robot behavior follows <a href="https://github.com/frc1880/pyrebuilt" target="_blank" rel="noopener">frc1880/pyrebuilt</a>.</p>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+// ================================================================== constants
+const STEP = 1 / 120, G = 9.81, DEG = Math.PI / 180;
+const FUEL_R = 0.075, CAP = 30; // about what this hopper holds without fuel piling over the top
+const DRAG_K = 0.5 * 1.2 * 0.49 * Math.PI * FUEL_R * FUEL_R / 0.2155;
+const HUB = { half: 0.597, body: 1.43, rim: 1.829, open: 0.50, netOff: 0.85, netY0: 1.70, netY1: 3.02, netZ: 0.70, cx: 3.645 };
+// pyrebuilt: speed_at_12_volts 4.0 m/s, max_angular_rate 0.75 rot/s, exponential stick shaping 1.5 / 2.0, deadzone 0.1
+const DRIVE = { vmax: 4.0, wmax: 0.75 * 2 * Math.PI, acc: 9, wacc: 25, expo: 1.5, rexpo: 2.0, dead: 0.1 };
+const BOX = { hx: 0.45, hz: 0.43, cz: 0.012, top: 0.55 };
+const BUMPER = { y0: 0.04, y1: 0.165 };
+const LANES = [-0.21, 0, 0.21];
+const LANE_PERIOD = 0.27;
+// pyrebuilt ballistics: range (m, to shooter), hood (deg), flywheel (rps)
+const IN = 0.0254;
+const SHOT_TABLE = [[54, 70, 53], [74, 70, 56], [94, 65, 58], [114, 65, 61], [134, 65, 69], [154, 62.5, 75], [174, 60, 85]].map(([r, h, f]) => [r * IN, h, f]);
+const HOOD_MIN = 48, HOOD_MAX = 70;
+const ARM = { carry: 72, retract: 90 }; // degrees from deployed (pyrebuilt: 0.20 / 0.25 rotations)
+const ZONE_LINE = 8.27 - 158.06 * IN, ZONE_BUMPER = (26 / 2 + 4) * IN; // alliance zone (G408)
+
+// ================================================================== renderer
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+const scene = new THREE.Scene();
+const BG_FIELD = new THREE.Color(0x0f141a), BG_SHOW = new THREE.Color(0x161b22);
+scene.background = BG_FIELD; scene.fog = new THREE.Fog(0x0f141a, 24, 60);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.03, 200);
+scene.add(new THREE.HemisphereLight(0xdfe8f5, 0x3a3f46, 1.5));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 30 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+scene.add(sun, sun.target);
+const controls = new OrbitControls(camera, canvas); controls.enabled = false; controls.enableDamping = true; controls.target.set(0, 0.3, 0);
+controls.minDistance = 0.5; controls.maxDistance = 6; controls.maxPolarAngle = Math.PI * 0.495;
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight;
+  if (S && S.view === "show" && innerWidth > 760) camera.setViewOffset(innerWidth + 340, innerHeight, 340, 0, innerWidth, innerHeight); else camera.clearViewOffset();
+  camera.updateProjectionMatrix(); }
+addEventListener("resize", resize);
+
+const fill2 = new THREE.DirectionalLight(0xcfe0ff, 1.1); fill2.position.set(-3, 2.5, -2); fill2.visible = false; scene.add(fill2);
+const $ = (id) => document.getElementById(id);
+const ui = { score: $("score"), time: $("time"), hop: $("hop"), hopbar: $("hopbar"), rate: $("rate"), rps: $("rps"), hood: $("hood"), dist: $("dist"),
+  cIntake: $("cIntake"), cAim: $("cAim"), cShot: $("cShot"), cDist: $("cDist"), board: $("board"), toast: $("toast"), menu: $("menu") };
+let best = 0; try { best = +localStorage.getItem("tt-best") || 0; } catch {}
+if (best) $("best").textContent = best + " fuel";
+
+// ================================================================== loading
+async function fetchProgress(url, onp) {
+  const r = await fetch(url); if (!r.ok) throw new Error(url + " returned " + r.status);
+  const total = +r.headers.get("content-length") || 0;
+  if (!r.body || !total) return new Uint8Array(await r.arrayBuffer());
+  const rd = r.body.getReader(); const parts = []; let got = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp(Math.min(1, got / total)); }
+  const out = new Uint8Array(got); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; } return out;
+}
+function b64(bytes) { const bin = atob(new TextDecoder().decode(bytes).trim()); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+let pRobot = 0, pField = 0;
+const setLoad = () => { $("loadBar").style.width = (100 * (pRobot * 0.6 + pField * 0.4)).toFixed(0) + "%"; };
+
+// ================================================================== robot model + rig
+const fuelMat = new THREE.MeshStandardMaterial({ color: 0xf2c21a, roughness: 0.7 });
+const SUBS = {
+  intake: { name: "Intake", color: "#4aa3ff", desc: "Over-the-bumper intake. Two roller motors (leader + opposed follower) and two pivot motors. Pivot: 27:1 MAXPlanetary into a 24:12 #35 chain, fused CANcoder. Positions from deployed: carry 72°, retract 90°, soft limit 122° (start configuration)." },
+  indexer: { name: "HtH indexer", color: "#46c97a", desc: "HtH V2: a Kraken X60 driving 20T/29T HTD pulleys and sushi rollers along the hopper floor, carrying fuel back to the injectors. It runs only when the flywheel is at speed." },
+  shooter: { name: "Triple Threat shooter", color: "#ff6a3d", desc: "Three lanes on one shaft: 4 in brass flywheels with 3 in Stealth wheels, Kraken X60 leader and follower. 2 in injector wheels push fuel up the ramps. Fires out the back at 53 to 95 rps." },
+  hopper: { name: "Hopper", color: "#d8c97a", desc: "Hopper walls between the intake and the shooter. While shooting, the intake agitates (\"chortle\") between carry and retract to keep fuel moving." },
+  drivetrain: { name: "Swerve drive", color: "#b0b8c4", desc: "Four SDS MK5n modules, Kraken X60 drive and X44 steer, 6.03:1 drive ratio, 2 in wheel radius, 4.0 m/s free speed, 60 kg robot mass in path planning." },
+  electrical: { name: "Electrical", color: "#9b8cff", desc: "Battery, PDH, CANdle LEDs and the two vision cameras on the bellypan." },
+};
+const robot = { root: new THREE.Group(), parts: [], modules: [], hopperBalls: null };
+scene.add(robot.root);
+let RIG, PAL = [], palMats = [];
+const hiMats = new Map(), ghostMats = new Map();
+const chanRate = { intake: 0, indexer: 0, shooter: 0, deploy: 0, hood: 0 };
+const beltPhase = { intake: { value: 0 }, indexer: { value: 0 }, shooter: { value: 0 } };
+function palMat(i) {
+  if (!palMats[i]) { const [c, m] = PAL[i]; palMats[i] = new THREE.MeshStandardMaterial({ color: new THREE.Color().setRGB(...c, THREE.SRGBColorSpace), metalness: Math.min(m, 0.55), roughness: m > 0.3 ? 0.42 : 0.62, flatShading: true }); }
+  return palMats[i];
+}
+function hiMat(i) { if (!hiMats.has(i)) { const m = palMat(i).clone(); m.emissive = new THREE.Color(0xf5c518); m.emissiveIntensity = 0.45; hiMats.set(i, m); } return hiMats.get(i); }
+function ghostMat(i) { if (!ghostMats.has(i)) { const m = palMat(i).clone(); m.transparent = true; m.opacity = 0.07; m.depthWrite = false; ghostMats.set(i, m); } return ghostMats.get(i); }
+function beltMat(i, P) {
+  const m = palMat(i).clone(); const ax = new THREE.Vector3(...P.h.beltAxis), nr = new THREE.Vector3(...P.h.beltNorm); const ph = beltPhase[P.h.chan] || { value: 0 };
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uPhase = ph; sh.uniforms.uAxis = { value: ax }; sh.uniforms.uNorm = { value: nr };
+    sh.vertexShader = "varying vec3 vBeltPos;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\nvBeltPos = position;");
+    sh.fragmentShader = "uniform float uPhase; uniform vec3 uAxis; uniform vec3 uNorm; varying vec3 vBeltPos;\n" + sh.fragmentShader.replace("#include <color_fragment>",
+      "#include <color_fragment>\nfloat bs = dot(vBeltPos, uNorm) >= 0.0 ? 1.0 : -1.0; float bu = dot(vBeltPos, uAxis) - bs * uPhase; float bt = smoothstep(0.3, 0.45, abs(fract(bu / 0.018) - 0.5)); diffuseColor.rgb *= mix(1.0, 0.5, bt);");
+  };
+  m.customProgramCacheKey = () => "belt"; return m;
+}
+async function loadRobot() {
+  const buf = b64(await fetchProgress("robot2.b64.txt", (p) => { pRobot = p; setLoad(); }));
+  const hl = new DataView(buf.buffer).getUint32(0, true);
+  const H = JSON.parse(new TextDecoder().decode(buf.subarray(4, 4 + hl)));
+  const data = buf.buffer.slice(4 + hl);
+  RIG = H.rig; PAL = H.palette;
+  const vis = new THREE.Group(); robot.root.add(vis); robot.vis = vis;
+  const armG = new THREE.Group(); armG.position.fromArray(RIG.armPivot); vis.add(armG); robot.arm = armG;
+  const hoodG = new THREE.Group(); hoodG.position.fromArray(RIG.hoodPivot); vis.add(hoodG); robot.hood = hoodG;
+  const extG = new THREE.Group(); vis.add(extG); robot.ext = extG;
+  robot.occ = { stat: buildSDF(H.occ.stat, H.occ.cell), ext: buildSDF(H.occ.ext, H.occ.cell), arm: buildSDF(H.occ.arm, H.occ.cell) };
+  const modBy = new Map();
+  const ordered = [...H.parts].sort((a, b) => (a.role === "wheel" ? -1 : 0) - (b.role === "wheel" ? -1 : 0));
+  ordered.forEach((h, idx) => {
+    const q = new Uint16Array(data, h.vOff, h.vCount * 3); const pos = new Float32Array(h.vCount * 3);
+    for (let i = 0; i < h.vCount * 3; i += 3) for (let k = 0; k < 3; k++) pos[i + k] = H.qmin[k] + q[i + k] * H.qscale[k] - h.pivot[k];
+    const idxArr = h.i32 ? new Uint32Array(data, H.idxBase + h.iOff, h.iCount) : new Uint16Array(data, H.idxBase + h.iOff, h.iCount);
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(pos, 3)); geo.setIndex(new THREE.BufferAttribute(idxArr, 1));
+    const P = { h, id: idx, sub: h.sub, center: new THREE.Vector3(...h.min).add(new THREE.Vector3(...h.max)).multiplyScalar(0.5) };
+    const mats = h.groups.map(([ci, s, n], k) => { geo.addGroup(s, n, k); return h.role === "belt" ? beltMat(ci, P) : palMat(ci); });
+    geo.computeBoundingSphere();
+    const mesh = new THREE.Mesh(geo, mats); mesh.castShadow = true; mesh.receiveShadow = true; mesh.userData.part = P;
+    const obj = new THREE.Group(); obj.add(mesh); P.obj = obj; P.mesh = mesh; P.mats = mats;
+    let parent = vis; const ppos = new THREE.Vector3();
+    if (h.group === "arm") { parent = armG; ppos.fromArray(RIG.armPivot); }
+    else if (h.group === "hood") { parent = hoodG; ppos.fromArray(RIG.hoodPivot); }
+    else if (h.group === "ext") { parent = extG; }
+    else if (h.group && h.group.startsWith("mod:")) {
+      let m = modBy.get(h.group);
+      if (!m) { const st = new THREE.Group(); st.position.set(h.pivot[0], 0, h.pivot[2]); vis.add(st); m = { st, r: [h.pivot[0], h.pivot[2]], ang: 0, dir: 1 }; modBy.set(h.group, m); robot.modules.push(m); }
+      parent = m.st; ppos.copy(m.st.position);
+      if (h.role === "wheel") { m.wheel = obj; m.R = (h.max[1] - h.min[1]) / 2; P.module = m; }
+      P.inModule = true;
+    }
+    obj.position.fromArray(h.pivot).sub(ppos); P.base = obj.position.clone(); parent.add(obj);
+    if (h.role === "spin") P.axis = new THREE.Vector3(...h.axis);
+    robot.parts.push(P);
+  });
+  for (const m of robot.modules) { // swerve wheel axles: horizontal direction of least extent
+    let bestA = 0, bestE = 1e9; const arr = m.wheel.children[0].geometry.attributes.position.array;
+    for (let a = 0; a < Math.PI; a += Math.PI / 72) { const c = Math.cos(a), s = Math.sin(a); let lo = 1e9, hi = -1e9;
+      for (let i = 0; i < arr.length; i += 9) { const v = arr[i] * c + arr[i + 2] * s; if (v < lo) lo = v; if (v > hi) hi = v; }
+      if (hi - lo < bestE) { bestE = hi - lo; bestA = a; } }
+    m.axle = new THREE.Vector3(Math.cos(bestA), 0, Math.sin(bestA)); m.a0 = Math.atan2(m.axle.z, -m.axle.x); m.base = m.st.position.clone();
+  }
+  // bumpers (not in the CAD): 3.3 in thick, alliance colored
+  const fx = BOX.hx, fz = BOX.hz, th = 0.085, hgt = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2;
+  const bm = new THREE.MeshStandardMaterial({ color: 0x2f6df0, roughness: 0.85 }), trim = new THREE.MeshStandardMaterial({ color: 0x15181d, roughness: 0.6 });
+  const bumpG = new THREE.Group(); vis.add(bumpG); robot.bumpers = bumpG;
+  const add = (w, d, x, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), bm); m.position.set(x, yc, z + BOX.cz); m.castShadow = true; bumpG.add(m);
+    const t = new THREE.Mesh(new THREE.BoxGeometry(w + 0.004, 0.012, d + 0.004), trim); t.position.set(x, BUMPER.y1, z + BOX.cz); bumpG.add(t); };
+  add(2 * fx, th, 0, fz - th / 2); add(2 * fx, th, 0, -fz + th / 2); add(th, 2 * fz - 2 * th, fx - th / 2, 0); add(th, 2 * fz - 2 * th, -fx + th / 2, 0);
+  robot.bumperMat = bm;
+  // fuel inside the robot (physics particles) and fuel moving through the shooter
+  robot.inner = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 16, 12), fuelMat, 96); robot.inner.castShadow = true; robot.inner.count = 0; robot.inner.frustumCulled = false; vis.add(robot.inner);
+  const roller = robot.parts.find((p) => p.h.name === "Roller") || robot.parts.find((p) => p.h.group === "arm" && /Sushi/.test(p.h.name));
+  robot.rollerLocal = roller ? roller.base.clone() : new THREE.Vector3(0, 0.3, 0.3);
+}
+
+// ================================================================== mechanisms (shared by sim and showcase)
+const M = { arm: 122.4, armT: 122.4, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, hoodV: 0, drive: false, ext: 0 };
+function stepMech(dt) {
+  const e = M.armT - M.arm, vmax = 330, amax = 2400; const vt = Math.sign(e) * Math.min(vmax, Math.sqrt(2 * amax * Math.abs(e)));
+  M.armV += THREE.MathUtils.clamp(vt - M.armV, -amax * dt, amax * dt); M.arm += M.armV * dt;
+  if (Math.abs(M.armT - M.arm) < 0.05 && Math.abs(M.armV) < 5) { M.arm = M.armT; M.armV = 0; }
+  const hv = THREE.MathUtils.clamp((M.hoodT - M.hood) * 12, -140, 140); M.hoodV = hv; M.hood += hv * dt;
+  M.fly += (M.flyT - M.fly) * (1 - Math.exp(-dt / 0.32));
+  // the intake pushes the hopper extension out; it stays out until the robot is reset to its start configuration
+  const et = RIG.ext[Math.round(THREE.MathUtils.clamp(M.arm, 0, RIG.ext.length - 1))];
+  M.ext = M.armT >= RIG.armDeployDeg - 1 ? Math.min(M.ext, et) : Math.max(M.ext, et);
+  chanRate.intake = M.roll * 45; chanRate.indexer = M.idx * 28; chanRate.deploy = -M.armV * DEG * 9; chanRate.hood = M.hoodV * DEG * 8.5;
+  chanRate.shooter = -Math.min(M.fly * 2 * Math.PI, 42 + M.fly * 0.15); // visual cap so the wheels don't strobe
+  beltPhase.intake.value += M.roll * 1.6 * dt; beltPhase.indexer.value += M.idx * 1.1 * dt; beltPhase.shooter.value += Math.min(M.fly / 95, 1) * 2.2 * dt;
+}
+function poseMech(dt, vxl, vzl, w) {
+  robot.arm.rotation.x = (RIG.armDeployDeg - M.arm) * DEG;
+  robot.hood.rotation.x = -(RIG.hoodCadDeg - M.hood) * DEG;
+  robot.ext.position.z = M.ext;
+  for (const P of robot.parts) if (P.axis && P.obj.visible) P.obj.rotateOnAxis(P.axis, (chanRate[P.h.chan] || 0) * dt);
+  for (const m of robot.modules) {
+    const mvx = vxl + w * m.r[1], mvz = vzl - w * m.r[0]; const sp = Math.hypot(mvx, mvz);
+    if (sp > 0.05) { const a = Math.atan2(mvx, mvz) - m.a0; let er = wrap(a - m.ang), dir = 1; if (Math.abs(er) > Math.PI / 2) { er = wrap(er + Math.PI); dir = -1; } m.ang += er * Math.min(1, dt * 20); m.dir = dir; }
+    m.st.rotation.y = m.ang; m.wheel.rotateOnAxis(m.axle, m.dir * sp / m.R * dt);
+  }
+}
+const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+// shooter exit for a hood angle (robot frame): fuel rides the hood arc around the flywheel axle
+function exitFor(lane, hood) { const phi = (90 - hood) * DEG, r = 0.11, f = RIG.hoodPivot;
+  return { p: new THREE.Vector3(LANES[lane], f[1] + r * Math.sin(phi), f[2] + r * Math.cos(phi)), d: new THREE.Vector3(0, Math.cos(phi), -Math.sin(phi)) }; }
+
+
+// ================================================================== robot occupancy -> signed distance fields
+function chamfer3(src, nx, ny, nz, cell) {
+  const n = nx * ny * nz, d = new Float32Array(n); for (let i = 0; i < n; i++) d[i] = src[i] ? 0 : 1e9;
+  const fw = []; for (let dz = -1; dz <= 1; dz++) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dz < 0 || (dz === 0 && (dy < 0 || (dy === 0 && dx < 0)))) fw.push([dx, dy, dz, Math.hypot(dx, dy, dz) * cell]);
+  const pass = (sgn) => { const zs = sgn > 0 ? 0 : nz - 1, ze = sgn > 0 ? nz : -1, ys = sgn > 0 ? 0 : ny - 1, ye = sgn > 0 ? ny : -1, xs = sgn > 0 ? 0 : nx - 1, xe = sgn > 0 ? nx : -1;
+    for (let z = zs; z !== ze; z += sgn) for (let y = ys; y !== ye; y += sgn) for (let x = xs; x !== xe; x += sgn) { const o = (z * ny + y) * nx + x; let v = d[o];
+      for (const [dx, dy, dz, w] of fw) { const X = x + sgn * dx, Y = y + sgn * dy, Z = z + sgn * dz; if (X < 0 || Y < 0 || Z < 0 || X >= nx || Y >= ny || Z >= nz) continue; const c = d[(Z * ny + Y) * nx + X] + w; if (c < v) v = c; }
+      d[o] = v; } };
+  pass(1); pass(-1); return d;
+}
+function buildSDF(g, cell) {
+  const [nx, ny, nz] = g.dims, n = nx * ny * nz; const bits = Uint8Array.from(atob(g.bits), (c) => c.charCodeAt(0));
+  const occ = new Uint8Array(n); for (let i = 0; i < n; i++) occ[i] = (bits[i >> 3] >> (7 - (i & 7))) & 1;
+  const out = chamfer3(occ, nx, ny, nz, cell), ins = chamfer3(occ.map((v) => 1 - v), nx, ny, nz, cell);
+  for (let i = 0; i < n; i++) out[i] = occ[i] ? -(ins[i] - cell / 2) : out[i] - cell / 2;
+  return { lo: g.lo, nx, ny, nz, cell, d: out };
+}
+function sdS(G, x, y, z) {
+  const fx = (x - G.lo[0]) / G.cell - 0.5, fy = (y - G.lo[1]) / G.cell - 0.5, fz = (z - G.lo[2]) / G.cell - 0.5;
+  const i = Math.floor(fx), j = Math.floor(fy), k = Math.floor(fz);
+  if (i < 0 || j < 0 || k < 0 || i >= G.nx - 1 || j >= G.ny - 1 || k >= G.nz - 1) return 1;
+  const tx = fx - i, ty = fy - j, tz = fz - k, nx = G.nx, nxy = G.nx * G.ny, d = G.d, o = k * nxy + j * nx + i;
+  const c00 = d[o] * (1 - tx) + d[o + 1] * tx, c10 = d[o + nx] * (1 - tx) + d[o + nx + 1] * tx, c01 = d[o + nxy] * (1 - tx) + d[o + nxy + 1] * tx, c11 = d[o + nxy + nx] * (1 - tx) + d[o + nxy + nx + 1] * tx;
+  return (c00 * (1 - ty) + c10 * ty) * (1 - tz) + (c01 * (1 - ty) + c11 * ty) * tz;
+}
+function sdGrad(G, x, y, z, out) { const e = 0.01; out[0] = sdS(G, x + e, y, z) - sdS(G, x - e, y, z); out[1] = sdS(G, x, y + e, z) - sdS(G, x, y - e, z); out[2] = sdS(G, x, y, z + e) - sdS(G, x, y, z - e);
+  const l = Math.hypot(out[0], out[1], out[2]) || 1; out[0] /= l; out[1] /= l; out[2] /= l; return out; }
+
+// ================================================================== fuel inside the robot: soft foam spheres, robot frame
+// collision radius is smaller than the 75 mm ball, so fuel squeezes between rollers and against itself; the overlap is drawn as squash
+const HS = { MAX: 64, n: 0 };
+HS.p = new Float32Array(HS.MAX * 3); HS.v = new Float32Array(HS.MAX * 3); HS.q = new Float32Array(HS.MAX * 3); HS.sq = new Float32Array(HS.MAX * 3); HS.sv = new Float32Array(HS.MAX * 3);
+HS.fid = new Int32Array(HS.MAX); HS.cv = new Float32Array(HS.MAX).fill(-1); HS.cdir = new Int8Array(HS.MAX); HS.arm = new Uint8Array(HS.MAX); HS.flo = new Uint8Array(HS.MAX); HS.age = new Float32Array(HS.MAX);
+const RC = 0.070, SURF = 0.01, SQK = 3.2; // squash comes from how hard a ball is pressed (penetration before it is pushed out)
+function hsAdd(x, y, z, vx, vy, vz, fid) { if (HS.n >= HS.MAX) return -1; const i = HS.n++, o = i * 3;
+  HS.p.set([x, y, z], o); HS.v.set([vx, vy, vz], o); HS.sq.fill(0, o, o + 3); HS.sv.fill(0, o, o + 3); HS.fid[i] = fid; HS.age[i] = 0; HS.cv[i] = -1; return i; }
+function hsRemove(i) { const j = --HS.n; if (i !== j) { for (const A of [HS.p, HS.v, HS.q, HS.sq, HS.sv]) { A[i * 3] = A[j * 3]; A[i * 3 + 1] = A[j * 3 + 1]; A[i * 3 + 2] = A[j * 3 + 2]; } HS.fid[i] = HS.fid[j]; HS.age[i] = HS.age[j]; HS.arm[i] = HS.arm[j]; HS.flo[i] = HS.flo[j]; HS.cv[i] = HS.cv[j]; HS.cdir[i] = HS.cdir[j]; } }
+const nearestLane = (x) => { let b = 0; for (let l = 1; l < 3; l++) if (Math.abs(x - LANES[l]) < Math.abs(x - LANES[b])) b = l; return b; };
+const _g = [0, 0, 0];
+// the intake rollers grip fuel at the lip and drag it up over the bumper into the hopper; the path rides with the arm
+let CONV = null;
+function convPath() { // robot frame at the current arm angle, (y, z) pairs
+  if (!CONV) { const piv = RIG.armPivot, g0 = RIG.armDeployDeg * DEG, c = Math.cos(g0), s = Math.sin(g0), r = RIG.armReachZ;
+    CONV = [[0.075, r + 0.04], [0.11, r - 0.06], [0.2, r - 0.13], [0.31, r - 0.2], [0.4, r - 0.29]].map(([y, z]) => { const ly = y - piv[1], lz = z - piv[2]; return [ly * c + lz * s, -ly * s + lz * c]; }); }
+  const piv = RIG.armPivot, g = (RIG.armDeployDeg - M.arm) * DEG, c = Math.cos(g), s = Math.sin(g);
+  return CONV.map(([ay, az]) => [ay * c - az * s + piv[1], ay * s + az * c + piv[2]]);
+}
+function convAt(path, u) { const f = THREE.MathUtils.clamp(u, 0, 0.9999) * (path.length - 1), k = Math.floor(f), t = f - k; return [path[k][0] + (path[k + 1][0] - path[k][0]) * t, path[k][1] + (path[k + 1][1] - path[k][1]) * t, path[k + 1][0] - path[k][0], path[k + 1][1] - path[k][1]]; }
+function convNearest(path, y, z) { let best = 0, bd = 1e9; for (let u = 0; u <= 1; u += 0.05) { const [py, pz] = convAt(path, u); const d = Math.hypot(py - y, pz - z); if (d < bd) { bd = d; best = u; } } return [best, bd]; }
+function hsStep(dt, C) {
+  const O = robot.occ, P = HS.p, V = HS.v, Q = HS.q, SQ = HS.sq, piv = RIG.armPivot, ga = (RIG.armDeployDeg - M.arm) * DEG, ca = Math.cos(ga), sa = Math.sin(ga);
+  const reach = RIG.armReachZ, sub = 2, h = dt / sub, softArm = C.roll > 0.2 && M.arm < 30, path = convPath(), plen = 0.42;
+  for (let it = 0; it < sub; it++) {
+    for (let i = 0; i < HS.n; i++) { const o = i * 3; HS.age[i] += h;
+      // gripped by the rollers: carried along the intake path (in or out)
+      if (Math.abs(C.roll) > 0.2 && M.arm < 30) {
+        if (HS.cv[i] < 0) { const [u, d] = convNearest(path, P[o + 1], P[o + 2]);
+          if (C.roll > 0 && HS.arm[i] && P[o + 2] > reach - 0.2 && d < 0.09 && u < 0.6) { HS.cv[i] = u; HS.cdir[i] = 1; }
+          else if (C.roll < 0 && P[o + 2] > 0.18 && P[o + 1] < 0.6 && d < 0.16) { HS.cv[i] = Math.max(u, 0.7); HS.cdir[i] = -1; } }
+      } else if (HS.cv[i] >= 0) HS.cv[i] = -1;
+      if (HS.cv[i] >= 0) { HS.cv[i] += HS.cdir[i] * Math.abs(C.roll) * 1.7 * h / plen; const [py, pz, ty, tz] = convAt(path, HS.cv[i]); const tl = Math.hypot(ty, tz) || 1, sp = 1.7 * Math.abs(C.roll) * HS.cdir[i];
+        Q[o] = P[o]; Q[o + 1] = P[o + 1]; Q[o + 2] = P[o + 2]; P[o] += (LANES[nearestLane(P[o])] * 0.9 - P[o]) * Math.min(1, 6 * h); P[o + 1] = py; P[o + 2] = pz;
+        V[o] = 0; V[o + 1] = ty / tl * sp; V[o + 2] = tz / tl * sp;
+        if (HS.cv[i] >= 1) { HS.cv[i] = -1; V[o + 2] -= 0.3; } else if (HS.cv[i] <= 0) { HS.cv[i] = -1; V[o + 2] = 2.2; V[o + 1] = 0.2; }
+        continue; }
+      V[o] -= C.ax * h; V[o + 1] -= G * h; V[o + 2] -= C.az * h;
+      // rollers and belts drag fuel along by friction
+      if (C.roll < -0.2 && (HS.arm[i] || P[o + 2] > 0.25)) { const dy = 0.22 - P[o + 1], dz = reach + 0.35 - P[o + 2], l = Math.hypot(dy, dz) || 1, k = Math.min(1, 12 * h);
+        V[o + 1] += (dy / l * 2.4 - V[o + 1]) * k; V[o + 2] += (dz / l * 2.4 - V[o + 2]) * k; }
+      if (C.idx !== 0 && HS.flo[i] && P[o + 1] < 0.4) { const k = Math.min(1, 14 * h); V[o + 2] += (-1.35 * C.idx - V[o + 2]) * k; if (C.idx > 0 && P[o + 2] < 0.1) V[o] += (LANES[nearestLane(P[o])] - P[o]) * 6 * h; }
+      Q[o] = P[o]; Q[o + 1] = P[o + 1]; Q[o + 2] = P[o + 2];
+      P[o] += V[o] * h; P[o + 1] += V[o + 1] * h; P[o + 2] += V[o + 2] * h;
+    }
+    for (let i = 0; i < HS.n; i++) { HS.arm[i] = 0; HS.flo[i] = 0; if (it === 0) SQ[i * 3] = SQ[i * 3 + 1] = SQ[i * 3 + 2] = 0; }
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < HS.n; i++) { const o = i * 3; let x = P[o], y = P[o + 1], z = P[o + 2];
+        if (HS.cv[i] >= 0) { if (pass === 0) { const d = clearance(x, y, z, true); if (d < FUEL_R) { sdGradAll(x, y, z, _g); const c = Math.min(FUEL_R - d, 0.026) * (it === 0 ? 1 : 0); SQ[o] += _g[0] * c; SQ[o + 1] += _g[1] * c; SQ[o + 2] += _g[2] * c; } } continue; }
+        const hit = (d, nx, ny, nz, tag) => { if (tag === 1 && d < RC + 0.035) HS.arm[i] = 1; if (d >= RC) return; let push = RC - d; if (ny > 0.55) HS.flo[i] = 1;
+          const c = Math.min(push, 0.03) * SQK / (2 * sub); SQ[o] += nx * c; SQ[o + 1] += ny * c; SQ[o + 2] += nz * c;
+          if (tag === 1 && softArm && Math.abs(x) < 0.31) push *= 0.22; // spinning rollers: fuel squeezes past them instead of bouncing off
+          x += nx * push; y += ny * push; z += nz * push; };
+        let d = sdS(O.stat, x, y, z) - SURF; if (d < FUEL_R) { sdGrad(O.stat, x, y, z, _g); hit(d, _g[0], _g[1], _g[2], 0); }
+        d = sdS(O.ext, x, y, z - M.ext) - SURF; if (d < FUEL_R) { sdGrad(O.ext, x, y, z - M.ext, _g); hit(d, _g[0], _g[1], _g[2], 0); }
+        const ly = y - piv[1], lz = z - piv[2], ay = ly * ca + lz * sa, az = -ly * sa + lz * ca; // into the arm frame (CAD pose)
+        d = sdS(O.arm, x, ay, az) - SURF; if (d < RC + 0.035) { sdGrad(O.arm, x, ay, az, _g); const ny = _g[1] * ca - _g[2] * sa, nz = _g[1] * sa + _g[2] * ca; hit(d, _g[0], ny, nz, 1); }
+        // bumpers (generated) and the floor
+        if (y < BUMPER.y1 + RC && Math.abs(x) < BOX.hx + RC && Math.abs(z - BOX.cz) < BOX.hz + RC && (Math.abs(x) > BOX.hx - 0.085 || Math.abs(z - BOX.cz) > BOX.hz - 0.085)) hit(y - BUMPER.y1, 0, 1, 0, 0);
+        if (y < FUEL_R) hit(y, 0, 1, 0, 0);
+        // hopper walls as solid planes (the 3 mm plates are too thin for the 2 cm grid): sides, moving front plate, back wall ahead of the shooter
+        const zf = 0.335 + M.ext;
+        if (y < 0.56 && z > -0.05 && z < zf + 0.05) { if (x > 0.345 - RC) hit(0.345 - x, -1, 0, 0, 0); if (x < -0.345 + RC) hit(x + 0.345, 1, 0, 0, 0); }
+        if (y > 0.1 && y < 0.52 && Math.abs(x) < 0.35 && z > zf - RC && z < zf + 0.03) hit(zf - z, 0, 0, -1, 0);
+        if (y < 0.95 && Math.abs(x) < 0.36 && z < RC && z > -0.1) hit(z, 0, 0, 1, 0);
+        P[o] = x; P[o + 1] = y; P[o + 2] = z; }
+      for (let i = 0; i < HS.n; i++) for (let j = i + 1; j < HS.n; j++) { const a = i * 3, b = j * 3;
+        const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], d2 = dx * dx + dy * dy + dz * dz; if (d2 >= 4 * FUEL_R * FUEL_R || d2 < 1e-10) continue;
+        const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d;
+        if (d < 2 * RC) { const push = (2 * RC - d) / 2; P[a] -= nx * push; P[a + 1] -= ny * push; P[a + 2] -= nz * push; P[b] += nx * push; P[b + 1] += ny * push; P[b + 2] += nz * push; }
+        if (d < 2 * RC) { const c = (2 * RC - d) / 2 * SQK / (2 * sub); SQ[a] -= nx * c; SQ[a + 1] -= ny * c; SQ[a + 2] -= nz * c; SQ[b] += nx * c; SQ[b + 1] += ny * c; SQ[b + 2] += nz * c; } }
+    }
+    for (let i = 0; i < HS.n; i++) { const o = i * 3; if (HS.cv[i] >= 0) continue; const damp = HS.flo[i] || HS.arm[i] ? 0.992 : 0.999;
+      for (let k = 0; k < 3; k++) V[o + k] = (P[o + k] - Q[o + k]) / h * damp;
+      const sp = Math.hypot(V[o], V[o + 1], V[o + 2]); if (sp > 3.2) { const f = 3.2 / sp; V[o] *= f; V[o + 1] *= f; V[o + 2] *= f; } }
+  }
+  // hand-offs: injectors take fuel into the shooter; fuel that leaves over the front drops onto the field
+  for (let i = HS.n - 1; i >= 0; i--) { const o = i * 3, x = P[o], y = P[o + 1], z = P[o + 2];
+    if (C.feeding && z < 0.14 && y < 0.40) { const l = nearestLane(x); if (Math.abs(x - LANES[l]) < 0.13 && C.laneReady(l)) { C.onCapture(i, l); continue; } } // back of the HtH floor: the injectors take it
+    const outside = Math.abs(x) > BOX.hx + 0.02 || z < BOX.cz - BOX.hz - 0.02 || (M.arm > 40 && z > 0.335 + M.ext + 0.08);
+    if ((z > reach + 0.12 && V[o + 2] > 0.3) || (outside && y < 0.3) || Math.abs(x) > 0.9 || z > reach + 0.6 || z < -0.9 || y < -0.1) { C.onExit(i); continue; } }
+  for (let i = 0; i < HS.n * 3; i++) HS.sv[i] += (HS.sq[i] - HS.sv[i]) * Math.min(1, dt * 30);
+}
+const _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0), _n = new THREE.Vector3(), _s = new THREE.Vector3(), _pv = new THREE.Vector3(), _m = new THREE.Matrix4();
+function squashMatrix(x, y, z, sx, sy, sz, m) { const a = Math.min(0.34, Math.hypot(sx, sy, sz) / FUEL_R); _pv.set(x, y, z);
+  if (a < 0.01) { _q.identity(); _s.set(1, 1, 1); } else { _n.set(sx, sy, sz).normalize(); _q.setFromUnitVectors(_up, _n); const k = 1 + a * 0.45; _s.set(k, 1 - a, k); }
+  return m.compose(_pv, _q, _s); }
+function drawInner() {
+  let n = 0; const mesh = robot.inner, M4 = _m;
+  for (let i = 0; i < HS.n && n < 96; i++) { const o = i * 3; mesh.setMatrixAt(n++, squashMatrix(HS.p[o], HS.p[o + 1], HS.p[o + 2], HS.sv[o], HS.sv[o + 1], HS.sv[o + 2], M4)); }
+  for (const tr of transits) { if (n >= 96) break; const path = typeof tr.path === "function" ? tr.path() : tr.path; const u = Math.min(tr.t / tr.dur, 0.9999) * (path.length - 1), k = Math.floor(u), f = u - k;
+    const x = path[k].x + (path[k + 1].x - path[k].x) * f, y = path[k].y + (path[k + 1].y - path[k].y) * f, z = path[k].z + (path[k + 1].z - path[k].z) * f;
+    // squeezed between flywheel and hood (~25 %) on the last stretch
+    const sqz = tr.squeeze ? 0.25 * Math.sin(Math.PI * THREE.MathUtils.clamp((tr.t / tr.dur - 0.55) / 0.45, 0, 1)) * FUEL_R : 0; const f0 = RIG.hoodPivot, ry = y - f0[1], rz = z - f0[2], rl = Math.hypot(ry, rz) || 1;
+    mesh.setMatrixAt(n++, squashMatrix(x, y, z, 0, ry / rl * sqz, rz / rl * sqz, M4)); }
+  if (S.view === "show") for (const fb of showFlying) { if (n >= 96) break; mesh.setMatrixAt(n++, squashMatrix(fb.p.x, fb.p.y, fb.p.z, 0, fb.sq || 0, 0, M4)); }
+  mesh.count = n; mesh.instanceMatrix.needsUpdate = true;
+}
+function sdGradAll(x, y, z, out) { const e = 0.01; out[0] = clearance(x + e, y, z, true) - clearance(x - e, y, z, true); out[1] = clearance(x, y + e, z, true) - clearance(x, y - e, z, true); out[2] = clearance(x, y, z + e, true) - clearance(x, y, z - e, true);
+  const l = Math.hypot(out[0], out[1], out[2]) || 1; out[0] /= l; out[1] /= l; out[2] /= l; return out; }
+function clearance(x, y, z, robotOnly) { // distance from a ball center to the robot (and to other fuel)
+  const O = robot.occ, piv = RIG.armPivot, ga = (RIG.armDeployDeg - M.arm) * DEG, ca = Math.cos(ga), sa = Math.sin(ga), ly = y - piv[1], lz = z - piv[2];
+  let d = Math.min(sdS(O.stat, x, y, z), sdS(O.ext, x, y, z - M.ext), sdS(O.arm, x, ly * ca + lz * sa, -ly * sa + lz * ca)) - SURF;
+  if (!robotOnly) for (let i = 0; i < HS.n; i++) { const o = i * 3; d = Math.min(d, Math.hypot(HS.p[o] - x, HS.p[o + 1] - y, HS.p[o + 2] - z) - RC); }
+  return d;
+}
+function slotsInto(n, fids) { // drop fuel into free space in the hopper; physics settles it
+  let k = 0;
+  for (let y = 0.3; y < 1.2 && k < n; y += 0.05) for (let z = 0.04; z < 0.45 && k < n; z += 0.06) for (const x of [-0.2, 0, 0.2]) { if (k >= n) break; if (clearance(x, y, z) > RC + 0.004) { hsAdd(x, y, z, 0, 0, 0, fids ? fids[k] : -1); k++; } }
+}
+
+// fuel moving through the robot along a path in the robot frame
+const transits = [];
+function addTransit(path, dur, done, squeeze) { transits.push({ path, dur, t: 0, done, squeeze }); }
+function stepTransits(dt) { for (let i = transits.length - 1; i >= 0; i--) { const tr = transits[i]; tr.t += dt; if (tr.t >= tr.dur) { transits.splice(i, 1); tr.done && tr.done(); } } }
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+function rollerPoint() { robot.arm.updateMatrix(); return robot.rollerLocal.clone().applyMatrix4(robot.arm.matrix); }
+function shotPath(lane, from) { const x = LANES[lane]; const ex = exitFor(lane, M.hood).p;
+  return [from || V3(x, 0.16, -0.06), V3(x, 0.2, -0.2), V3(x, 0.33, -0.12), ex]; }
+
+// ================================================================== field
+let F, fieldScene; const grid = {};
+async function loadField() {
+  F = await (await fetch("field.json")).json();
+  const g = F.grid; Object.assign(grid, g);
+  const raw = Uint8Array.from(atob(g.heights), (c) => c.charCodeAt(0));
+  const n = g.nx * g.nz; grid.h = new Float32Array(n); grid.solid = new Uint8Array(n);
+  for (let i = 0; i < n; i++) { if (raw[i] === 255) grid.solid[i] = 1; else grid.h[i] = raw[i] / 1000; }
+  for (const hb of F.hubs) fill(hb.min[0], hb.min[2], hb.max[0], hb.max[2]);
+  grid.sdf = sdfOf(grid.solid);
+  const fb = b64(await fetchProgress("field.b64.txt", (p) => { pField = p; setLoad(); }));
+  const gl = await new GLTFLoader().parseAsync(fb.buffer, "");
+  gl.scene.traverse((o) => { if (o.isMesh) { o.receiveShadow = true; o.castShadow = false; if (o.material && o.material.transparent) o.renderOrder = 2; } });
+  fieldScene = gl.scene; scene.add(fieldScene); pField = 1; setLoad();
+}
+function cellOf(x, z) { return [Math.floor((x - grid.x0) / grid.cell), Math.floor((z - grid.z0) / grid.cell)]; }
+function fill(xa, za, xb, zb) { const [ia, ka] = cellOf(xa, za), [ib, kb] = cellOf(xb, zb);
+  for (let k = Math.max(0, ka); k <= Math.min(grid.nz - 1, kb); k++) for (let i = Math.max(0, ia); i <= Math.min(grid.nx - 1, ib); i++) grid.solid[k * grid.nx + i] = 1; }
+function chamfer(src) {
+  const { nx, nz, cell } = grid; const d = new Float32Array(nx * nz); const D = cell, E = cell * Math.SQRT2;
+  for (let i = 0; i < d.length; i++) d[i] = src[i] ? 0 : 1e9;
+  for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) { const o = k * nx + i; let v = d[o];
+    if (i > 0) v = Math.min(v, d[o - 1] + D); if (k > 0) { v = Math.min(v, d[o - nx] + D); if (i > 0) v = Math.min(v, d[o - nx - 1] + E); if (i < nx - 1) v = Math.min(v, d[o - nx + 1] + E); } d[o] = v; }
+  for (let k = nz - 1; k >= 0; k--) for (let i = nx - 1; i >= 0; i--) { const o = k * nx + i; let v = d[o];
+    if (i < nx - 1) v = Math.min(v, d[o + 1] + D); if (k < nz - 1) { v = Math.min(v, d[o + nx] + D); if (i < nx - 1) v = Math.min(v, d[o + nx + 1] + E); if (i > 0) v = Math.min(v, d[o + nx - 1] + E); } d[o] = v; }
+  return d;
+}
+function sdfOf(solid) { const out = chamfer(solid); const ins = chamfer(solid.map((v) => 1 - v)); const h = grid.cell / 2;
+  for (let i = 0; i < out.length; i++) out[i] = solid[i] ? -(ins[i] - h) : out[i] - h; return out; }
+function sdf(x, z) {
+  const fx = (x - grid.x0) / grid.cell - 0.5, fz = (z - grid.z0) / grid.cell - 0.5; const i = Math.floor(fx), k = Math.floor(fz);
+  if (i < 0 || k < 0 || i >= grid.nx - 1 || k >= grid.nz - 1) return -0.2;
+  const tx = fx - i, tz = fz - k, o = k * grid.nx + i, s = grid.sdf;
+  return (s[o] * (1 - tx) + s[o + 1] * tx) * (1 - tz) + (s[o + grid.nx] * (1 - tx) + s[o + grid.nx + 1] * tx) * tz;
+}
+function grad(x, z) { const e = 0.03; const gx = sdf(x + e, z) - sdf(x - e, z), gz = sdf(x, z + e) - sdf(x, z - e); const l = Math.hypot(gx, gz) || 1; return [gx / l, gz / l]; }
+function floorH(x, z) { const [i, k] = cellOf(x, z); if (i < 0 || k < 0 || i >= grid.nx || k >= grid.nz) return 0; const o = k * grid.nx + i; return grid.solid[o] ? 0 : grid.h[o]; }
+const inField = (x, z) => Math.abs(x) < F.carpet.length / 2 - 0.02 && Math.abs(z) < F.carpet.width / 2 - 0.02;
+
+// ================================================================== fuel
+const fuel = { n: 0 };
+function initFuel() {
+  const list = F.fuel.filter((p) => p[1] < 0.3); const n = list.length; fuel.n = n;
+  fuel.pos = new Float32Array(n * 3); fuel.vel = new Float32Array(n * 3); fuel.st = new Uint8Array(n); fuel.t = new Float32Array(n); fuel.hub = new Int8Array(n); fuel.init = list; fuel.sq = new Float32Array(n); fuel.sqa = new Float32Array(n * 3);
+  fuel.mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 16, 12), fuelMat, n); fuel.mesh.castShadow = true; fuel.mesh.receiveShadow = true; fuel.mesh.frustumCulled = false; scene.add(fuel.mesh);
+  resetFuel();
+}
+// st: 0 on the field, 1 stored in the robot, 2 inside a hub (timer), 3 moving through the robot
+function resetFuel() { for (let i = 0; i < fuel.n; i++) { const p = fuel.init[i]; fuel.pos.set([p[0], floorH(p[0], p[2]) + FUEL_R, p[2]], i * 3); fuel.vel.fill(0, i * 3, i * 3 + 3); fuel.st[i] = 0; fuel.t[i] = 0; } }
+const HC = 0.16; let hnx, hnz, head, next;
+function hashInit() { hnx = Math.ceil(17.2 / HC); hnz = Math.ceil(8.8 / HC); head = new Int32Array(hnx * hnz); next = new Int32Array(fuel.n); }
+const hcell = (x, z) => { const i = Math.min(hnx - 1, Math.max(0, Math.floor((x + 8.6) / HC))), k = Math.min(hnz - 1, Math.max(0, Math.floor((z + 4.4) / HC))); return k * hnx + i; };
+function takeStored() { for (let k = 0; k < fuel.n; k++) if (fuel.st[k] === 1) return k; return -1; }
+
+// ================================================================== sim state
+const S = {
+  view: "menu", alliance: "blue", mode: "free", running: false, paused: true, loaded: false,
+  x: 0, z: 0, yaw: 0, vx: 0, vz: 0, w: 0, y: 0, pitch: 0, roll: 0,
+  hopper: 0, aim: true, field: true, spinOutside: false, intakeLatch: false, laneT: [0, 0.09, 0.18], chortle: 0, outT: 0,
+  score: 0, total: 0, timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
+};
+let redHub = 0, blueHub = 1;
+resize();
+const myHub = () => (S.alliance === "red" ? redHub : blueHub);
+const side = () => Math.sign(F.hubs[myHub()].center[0]);
+function startPose() { const s = side(); S.x = s * (HUB.cx + 1.9); S.z = 0; S.yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2; S.vx = S.vz = S.w = 0; }
+
+// ================================================================== input
+const keys = new Set();
+const touch = { lx: 0, ly: 0, rx: 0, shoot: false };
+addEventListener("keydown", (e) => {
+  if (S.view === "show" && e.code === "Escape") { $("showBack").onclick(); return; }
+  if (S.view !== "drive" || e.target.tagName === "INPUT") return;
+  if (e.repeat) { if (["Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault(); return; }
+  keys.add(e.code); if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault();
+  if (e.code === "Escape") { setPaused(!S.paused); return; }
+  if (S.paused) return;
+  if (e.code === "KeyF") S.intakeLatch = !S.intakeLatch;
+  if (e.code === "KeyC") { S.intakeLatch = false; M.armT = ARM.carry; }
+  if (e.code === "KeyZ") { S.intakeLatch = false; M.armT = ARM.retract; }
+  if (e.code === "KeyB") toggleSpin();
+  if (e.code === "KeyG") toggleField();
+  if (e.code === "KeyT") toggleAim();
+  if (e.code === "KeyV") cycleCam();
+  if (e.code === "KeyR") resetRound();
+});
+addEventListener("keyup", (e) => keys.delete(e.code));
+addEventListener("blur", () => keys.clear());
+function toggleSpin() { S.spinOutside = !S.spinOutside; toast(S.spinOutside ? "Flywheel on" : "Flywheel off", "#e9edf2"); }
+function toggleField() { S.field = !S.field; $("fieldBtn").textContent = S.field ? "Field-oriented" : "Robot-oriented"; $("fieldBtn").setAttribute("aria-pressed", S.field); toast(S.field ? "Field-oriented drive" : "Robot-oriented drive", "#e9edf2"); }
+function toggleAim() { S.aim = !S.aim; toast(S.aim ? "Auto-aim on" : "Auto-aim off", "#e9edf2"); }
+function cycleCam() { S.cam = { driver: "chase", chase: "top", top: "driver" }[S.cam]; $("camBtn").textContent = "View: " + S.cam[0].toUpperCase() + S.cam.slice(1); }
+$("fieldBtn").onclick = toggleField; $("camBtn").onclick = cycleCam; $("menuBtn").onclick = () => setPaused(true);
+function stick(el, cb) {
+  let id = null; const knob = el.querySelector("i");
+  const move = (e) => { for (const t of e.changedTouches) if (t.identifier === id) { const r = el.getBoundingClientRect(); let dx = (t.clientX - r.left - r.width / 2) / (r.width / 2), dy = (t.clientY - r.top - r.height / 2) / (r.height / 2); const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } knob.style.transform = `translate(${dx * 36}px,${dy * 36}px)`; cb(dx, dy); e.preventDefault(); } };
+  el.addEventListener("touchstart", (e) => { id = e.changedTouches[0].identifier; move(e); }, { passive: false });
+  el.addEventListener("touchmove", move, { passive: false });
+  const end = (e) => { for (const t of e.changedTouches) if (t.identifier === id) { id = null; knob.style.transform = ""; cb(0, 0); } };
+  el.addEventListener("touchend", end); el.addEventListener("touchcancel", end);
+}
+stick($("stL"), (x, y) => { touch.lx = x; touch.ly = y; }); stick($("stR"), (x) => { touch.rx = x; });
+const tS = $("tShoot");
+tS.addEventListener("touchstart", (e) => { touch.shoot = true; tS.classList.add("act"); e.preventDefault(); }, { passive: false });
+tS.addEventListener("touchend", () => { touch.shoot = false; tS.classList.remove("act"); });
+$("tIntake").addEventListener("touchstart", (e) => { S.intakeLatch = !S.intakeLatch; e.preventDefault(); }, { passive: false });
+$("tCarry").addEventListener("touchstart", (e) => { S.intakeLatch = false; M.armT = ARM.carry; e.preventDefault(); }, { passive: false });
+addEventListener("touchstart", () => { $("touch").classList.add("show"); document.body.classList.add("touching"); }, { once: true });
+let padPrev = {}, padSeen = false;
+const shape = (v, e, dz) => { const a = Math.abs(v); if (a < dz) return 0; return Math.sign(v) * Math.pow((a - dz) / (1 - dz), e); };
+const getPad = () => (navigator.getGamepads ? [...navigator.getGamepads()].find((q) => q && q.connected) : null);
+function readInput() {
+  let mx = 0, my = 0, rot = 0, shoot = keys.has("Space") || touch.shoot, intake = S.intakeLatch, outtake = keys.has("KeyX"), slow = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  if (keys.has("KeyW") || keys.has("ArrowUp")) my += 1; if (keys.has("KeyS") || keys.has("ArrowDown")) my -= 1; if (keys.has("KeyD")) mx += 1; if (keys.has("KeyA")) mx -= 1;
+  if (keys.has("KeyQ") || keys.has("ArrowLeft")) rot += 1; if (keys.has("KeyE") || keys.has("ArrowRight")) rot -= 1;
+  mx += touch.lx; my -= touch.ly; rot -= touch.rx;
+  const p = getPad();
+  if (p) {
+    if (!padSeen) { padSeen = true; toast("Controller connected", "#e9edf2"); }
+    const b = (i) => !!(p.buttons[i] && (p.buttons[i].pressed || p.buttons[i].value > 0.5));
+    mx += shape(p.axes[0] || 0, DRIVE.expo, DRIVE.dead); my -= shape(p.axes[1] || 0, DRIVE.expo, DRIVE.dead); rot -= shape(p.axes[2] || 0, DRIVE.rexpo, DRIVE.dead);
+    if (b(7)) shoot = true; if (b(6)) intake = true; if (b(0)) outtake = true; if (b(5)) slow = true;
+    const now = { lb: b(4), b: b(1), x: b(2), y: b(3), back: b(8), start: b(9), ls: b(10), dd: b(13), a: b(0) };
+    if (now.lb) { S.intakeLatch = false; M.armT = ARM.carry; }
+    if (now.dd) { S.intakeLatch = false; M.armT = ARM.retract; }
+    if (now.b && !padPrev.b) toggleSpin(); if (now.x && !padPrev.x) { startPose(); toast("Pose reset", "#e9edf2"); }
+    if (now.y && !padPrev.y) cycleCam(); if (now.back && !padPrev.back) toggleField(); if (now.ls && !padPrev.ls) toggleAim();
+    if (now.start && !padPrev.start) setPaused(true);
+    padPrev = now;
+  }
+  const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
+  const k = slow ? 0.25 : 1;
+  return { mx: mx * k, my: my * k, rot: THREE.MathUtils.clamp(rot, -1, 1) * k, shoot, intake, outtake };
+}
+function pollPadMenu() { // Start / A on a controller from the menu
+  const p = getPad(); if (!p) return; const st = !!(p.buttons[9] && p.buttons[9].pressed), a = !!(p.buttons[0] && p.buttons[0].pressed);
+  if (S.loaded && (S.view === "menu" || (S.view === "drive" && S.paused))) { if ((st && !padPrev.start) || (a && !padPrev.a)) { if (S.view === "drive") setPaused(false); else start("free"); } }
+  padPrev = { ...padPrev, start: st, a };
+}
+
+// ================================================================== shooting
+function interpTable(d) { const T = SHOT_TABLE; if (d <= T[0][0]) return { hood: T[0][1], rps: T[0][2] }; if (d >= T[T.length - 1][0]) return { hood: T[T.length - 1][1], rps: T[T.length - 1][2] };
+  for (let i = 1; i < T.length; i++) if (d <= T[i][0]) { const f = (d - T[i - 1][0]) / (T[i][0] - T[i - 1][0]); return { hood: T[i - 1][1] + f * (T[i][1] - T[i - 1][1]), rps: T[i - 1][2] + f * (T[i][2] - T[i - 1][2]) }; } }
+function heightAt(s, th, d) { let x = 0, y = 0, vx = s * Math.cos(th), vy = s * Math.sin(th); const dt = 1 / 240;
+  for (let i = 0; i < 3000; i++) { const v = Math.hypot(vx, vy); vx -= DRAG_K * v * vx * dt; vy -= (G + DRAG_K * v * vy) * dt; x += vx * dt; y += vy * dt; if (x >= d) return y; if (y < -4) break; } return -99; }
+function solveSpeed(d, th, dh) { let lo = 1, hi = 30; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (heightAt(m, th, d) < dh) lo = m; else hi = m; } return hi; }
+function local2world(lx, lz) { const c = Math.cos(S.yaw), s = Math.sin(S.yaw); return [S.x + lx * c + lz * s, S.z - lx * s + lz * c]; }
+function target() { // own hub, or a pass back into the alliance zone from outside it
+  if (S.inZone) { const c = F.hubs[myHub()].center; return { x: c[0], z: c[2], y: HUB.rim + 0.18, pass: false }; }
+  const s = side(); return { x: s * 6.3, z: THREE.MathUtils.clamp(S.z, -2.6, 2.6), y: 0.4, pass: true };
+}
+function solve() {
+  S.inZone = side() * S.x >= ZONE_LINE - ZONE_BUMPER;
+  const ex = exitFor(1, M.hood).p; const [px, pz] = local2world(0, ex.z); const T = target();
+  const dx = T.x - px, dz = T.z - pz, d = Math.hypot(dx, dz) || 0.01; S.dist = d;
+  S.sol = T.pass ? { hood: 40, rps: 95 } : interpTable(d);
+  const th = THREE.MathUtils.clamp(S.sol.hood, HOOD_MIN, HOOD_MAX) * DEG, dh = T.y - (S.y + ex.y);
+  const den = 2 * Math.cos(th) ** 2 * (d * Math.tan(th) - dh); const sp = den > 0 ? Math.sqrt(G * d * d / den) * 1.06 : 12; // drag-free estimate, for aiming
+  const L = [sp * Math.cos(th) * dx / d - S.vx, sp * Math.cos(th) * dz / d - S.vz];
+  S.aimYaw = Math.atan2(L[0], L[1]) + Math.PI; // shooter on the back (pyrebuilt rotates the shot heading by 180°)
+  S.T = T; S.th = th; S.dh = dh;
+}
+function launch(fid, lane) { // fuel leaves the hood toward the target
+  const ex = exitFor(lane, M.hood); const [px, pz] = local2world(ex.p.x, ex.p.z);
+  const dx = S.T.x - px, dz = S.T.z - pz, d = Math.hypot(dx, dz) || 0.01;
+  const sp = solveSpeed(d, S.th, S.dh); const ch = Math.cos(S.th) * sp;
+  const L = [ch * dx / d - S.vx, sp * Math.sin(S.th), ch * dz / d - S.vz];
+  const jit = () => (Math.random() + Math.random() + Math.random() - 1.5) * 0.8;
+  const lh = Math.hypot(L[0], L[2]), back = S.yaw + Math.PI + 0.6 * DEG * jit(), k = 1 + 0.012 * jit(), pitch = Math.atan2(L[1], lh) + 0.6 * DEG * jit(), mag = Math.hypot(lh, L[1]) * k;
+  fuel.pos.set([px, S.y + ex.p.y, pz], fid * 3);
+  fuel.vel.set([Math.sin(back) * Math.cos(pitch) * mag + S.vx, Math.sin(pitch) * mag, Math.cos(back) * Math.cos(pitch) * mag + S.vz], fid * 3);
+  fuel.st[fid] = 0; fuel.t[fid] = -0.35; fuel.sq[fid] = 0.2; fuel.sqa.set([0, 1, 0], fid * 3); S.shots.push(performance.now());
+}
+const driveCtx = {
+  laneReady: (l) => S.laneT[l] <= 0,
+  onCapture: (i, l) => { const o = i * 3, fid = HS.fid[i], from = V3(HS.p[o], HS.p[o + 1], HS.p[o + 2]); hsRemove(i); S.laneT[l] = LANE_PERIOD; if (fid >= 0) fuel.st[fid] = 3;
+    addTransit(() => shotPath(l, from), 0.2, () => { if (fid >= 0) launch(fid, l); }, true); },
+  onExit: (i) => { const o = i * 3, fid = HS.fid[i]; const c = Math.cos(S.yaw), s = Math.sin(S.yaw); const [wx, wz] = local2world(HS.p[o], HS.p[o + 2]);
+    const lvx = HS.v[o], lvz = HS.v[o + 2]; hsRemove(i); if (fid < 0) return;
+    fuel.pos.set([wx, S.y + Math.max(HS.p[o + 1], FUEL_R), wz], fid * 3); fuel.vel.set([lvx * c + lvz * s + S.vx, HS.v[o + 1], -lvx * s + lvz * c + S.vz], fid * 3); fuel.st[fid] = 0; fuel.t[fid] = -0.25; },
+};
+// ================================================================== step
+function stepRobot(inp, dt) {
+  let tx, tz;
+  if (S.field) { const cy = camYaw(); tx = (-inp.mx * Math.cos(cy) + inp.my * Math.sin(cy)) * DRIVE.vmax; tz = (inp.mx * Math.sin(cy) + inp.my * Math.cos(cy)) * DRIVE.vmax; } // stick right = the driver's right
+  else { const c = Math.cos(S.yaw), s = Math.sin(S.yaw); tx = (-inp.mx * c + inp.my * s) * DRIVE.vmax; tz = (inp.mx * s + inp.my * c) * DRIVE.vmax; } // robot-oriented: stick up = intake forward
+  const ax = tx - S.vx, az = tz - S.vz, al = Math.hypot(ax, az), amax = DRIVE.acc * dt;
+  if (al > amax) { S.vx += ax / al * amax; S.vz += az / al * amax; } else { S.vx = tx; S.vz = tz; }
+  let wt = inp.rot * DRIVE.wmax;
+  if (S.aim && inp.shoot && S.hopper > 0 && Math.abs(inp.rot) < 0.1) wt = THREE.MathUtils.clamp(wrap(S.aimYaw - S.yaw) * 8, -DRIVE.wmax, DRIVE.wmax); // heading PID, kP = 8
+  const dw = wt - S.w, wm = DRIVE.wacc * dt; S.w += Math.abs(dw) > wm ? Math.sign(dw) * wm : dw;
+  { const c = Math.cos(S.yaw), s = Math.sin(S.yaw), ax = (S.vx - (S.pvx || 0)) / dt, az = (S.vz - (S.pvz || 0)) / dt; S.ax = ax * c - az * s; S.az = ax * s + az * c; S.pvx = S.vx; S.pvz = S.vz; }
+  S.x += S.vx * dt; S.z += S.vz * dt; S.yaw = wrap(S.yaw + S.w * dt);
+  for (let it = 0; it < 3; it++) {
+    let px = 0, pz = 0, n = 0;
+    for (let k = 0; k < 28; k++) { const t = k / 28 * 4; let lx, lz;
+      if (t < 1) { lx = -BOX.hx + 2 * BOX.hx * t; lz = BOX.hz; } else if (t < 2) { lx = BOX.hx; lz = BOX.hz - 2 * BOX.hz * (t - 1); } else if (t < 3) { lx = BOX.hx - 2 * BOX.hx * (t - 2); lz = -BOX.hz; } else { lx = -BOX.hx; lz = -BOX.hz + 2 * BOX.hz * (t - 3); }
+      const [wx, wz] = local2world(lx, lz + BOX.cz); const d = sdf(wx, wz);
+      if (d < 0.005) { const [gx, gz] = grad(wx, wz); px += gx * (0.005 - d); pz += gz * (0.005 - d); n++; } }
+    if (!n) break; px /= Math.sqrt(n); pz /= Math.sqrt(n); S.x += px; S.z += pz;
+    const l = Math.hypot(px, pz); if (l > 0) { const nx = px / l, nz = pz / l, vn = S.vx * nx + S.vz * nz; if (vn < 0) { S.vx -= vn * nx * 1.1; S.vz -= vn * nz * 1.1; } }
+  }
+  const hs = robot.modules.map((m) => { const [wx, wz] = local2world(m.r[0], m.r[1]); return floorH(wx, wz); });
+  const avg = (a) => (a.length ? a.reduce((p, c) => p + c, 0) / a.length : 0); const fr = [], bk = [], lf = [], rt = [];
+  robot.modules.forEach((m, i) => { (m.r[1] > 0 ? fr : bk).push(hs[i]); (m.r[0] > 0 ? rt : lf).push(hs[i]); });
+  const k = 1 - Math.exp(-dt * 18); S.y += (avg(hs) - S.y) * k; S.pitch += (-Math.atan2(avg(bk) - avg(fr), 0.53) - S.pitch) * k; S.roll += (Math.atan2(avg(rt) - avg(lf), 0.58) - S.roll) * k;
+}
+function controlMech(inp, dt) { // mirrors pyrebuilt teleopPeriodic + ShooterController
+  if (inp.intake) M.armT = 0;
+  M.flyT = (inp.shoot || S.inZone || S.spinOutside) ? S.sol.rps : 0;
+  M.hoodT = THREE.MathUtils.clamp(S.inZone ? S.sol.hood : inp.shoot ? 40 : HOOD_MAX - 1, HOOD_MIN, HOOD_MAX);
+  const atSpeed = M.flyT > 0 && Math.abs(M.fly - M.flyT) < 5;
+  S.aligned = Math.abs(wrap(S.aimYaw - S.yaw)) < 3.5 * DEG;
+  S.feeding = inp.shoot && atSpeed && HS.n > 0 && (!S.aim || S.aligned);
+  if (S.feeding) { M.idx = 1; M.roll = inp.intake ? 1 : 0.5;
+    if (!inp.intake) { S.chortle = (S.chortle + dt) % 1.2; M.armT = S.chortle > 0.7 ? ARM.retract : ARM.carry; } } // intake.feed(): chortle between carry and retract
+  else if (inp.outtake) { M.idx = -1; M.roll = -1; }
+  else { M.idx = 0; M.roll = inp.intake ? 1 : 0; S.chortle = 0; }
+  for (let l = 0; l < 3; l++) S.laneT[l] = Math.max(0, S.laneT[l] - dt);
+}
+function stepFuel(dt) {
+  const { pos, vel, st, t } = fuel, n = fuel.n, r = FUEL_R; const c = Math.cos(S.yaw), s = Math.sin(S.yaw);
+  const deployed = M.arm < 25, armOut = M.arm < 60, reach = RIG.armReachZ - BOX.cz, collecting = deployed && M.roll > 0.3 && HS.n < CAP;
+  head.fill(-1);
+  for (let i = 0; i < n; i++) {
+    if (st[i] === 2) { t[i] -= dt; if (t[i] <= 0) exitHub(i); continue; }
+    if (st[i] !== 0) continue;
+    const o = i * 3; let x = pos[o], y = pos[o + 1], z = pos[o + 2], vx = vel[o], vy = vel[o + 1], vz = vel[o + 2];
+    t[i] += dt;
+    const fl = floorH(x, z); const onGround = y - r <= fl + 0.002;
+    if (!(onGround && Math.abs(vx) + Math.abs(vz) < 0.01 && Math.abs(vy) < 0.05)) {
+      const v = Math.hypot(vx, vy, vz); vx -= DRAG_K * v * vx * dt; vy -= (G + DRAG_K * v * vy) * dt; vz -= DRAG_K * v * vz * dt;
+      const py = y; x += vx * dt; y += vy * dt; z += vz * dt;
+      for (let h = 0; h < 2; h++) {
+        const [cx, , cz] = F.hubs[h].center; const dx = x - cx, dz = z - cz, dh = Math.hypot(dx, dz);
+        if (py >= HUB.rim && y < HUB.rim && dh < HUB.open) { score(i, h); break; }
+        if (Math.abs(dx) < HUB.half + r && Math.abs(dz) < HUB.half + r && y < HUB.rim + r && y > 0) {
+          if (dh < HUB.open && y > HUB.body) { /* open top: the crossing test above scores it */ }
+          else if (py >= HUB.rim + r - 0.02) { y = HUB.rim + r; if (vy < 0) vy = -vy * 0.45; const k = 1 / (dh || 1); vx += dx * k * 1.2; vz += dz * k * 1.2; }
+          else { const ox = HUB.half + r - Math.abs(dx), oz = HUB.half + r - Math.abs(dz);
+            if (ox < oz) { x = cx + Math.sign(dx) * (HUB.half + r); if (vx * dx < 0) vx = -vx * 0.4; } else { z = cz + Math.sign(dz) * (HUB.half + r); if (vz * dz < 0) vz = -vz * 0.4; } }
+        }
+        const nxp = cx + (cx < 0 ? 1 : -1) * HUB.netOff, s0 = Math.sign(pos[o] - nxp), s1 = Math.sign(x - nxp);
+        if (s0 !== s1 && y > HUB.netY0 && y < HUB.netY1 && Math.abs(z - cz) < HUB.netZ) { x = nxp + s0 * 0.02; vx = -vx * 0.08; vy *= 0.4; vz *= 0.4; }
+      }
+      if (st[i] !== 0) continue;
+      const f2 = floorH(x, z);
+      if (y - r < f2) { y = f2 + r; if (vy < -0.6) { const a = Math.min(0.3, -vy * 0.05); if (a > fuel.sq[i]) { fuel.sq[i] = a; fuel.sqa.set([0, 1, 0], o); } } if (vy < 0) vy = vy < -0.6 ? -vy * 0.5 : 0;
+        const hv = Math.hypot(vx, vz); if (hv > 0) { const dec = (0.72 + 0.28 * hv) * dt; const k = Math.max(0, hv - dec) / hv; vx *= k; vz *= k; } }
+      const inHub = F.hubs.some((hb) => x > hb.min[0] - 0.1 && x < hb.max[0] + 0.1 && z > hb.min[2] - 0.1 && z < hb.max[2] + 0.1);
+      if (!inHub) { const d = sdf(x, z); const top = inField(x, z) ? 1.1 : 4;
+        if (d < r && y < top) { const [gx, gz] = grad(x, z); x += gx * (r - d); z += gz * (r - d); const vn = vx * gx + vz * gz; if (vn < 0) { vx -= 1.5 * vn * gx; vz -= 1.5 * vn * gz; if (vn < -0.8) { fuel.sq[i] = Math.min(0.3, -vn * 0.05); fuel.sqa.set([gx, 0, gz], o); } } } }
+    }
+    if (t[i] > 0 && y < S.y + BOX.top + r) { // robot body and the deployed intake
+      const rx = x - S.x, rz = z - S.z; const lx = rx * c - rz * s, lz = rx * s + rz * c - BOX.cz;
+      const front = armOut ? reach : BOX.hz;
+      if (Math.abs(lx) < BOX.hx + r && lz > -BOX.hz - r && lz < front + r) {
+        if (collecting && lz > reach - 0.14 && Math.abs(lx) < 0.33 && y - S.y < 0.3) {
+          const rvx = vx - S.vx, rvz = vz - S.vz; // into the robot frame; the rollers grab it
+          if (hsAdd(lx, Math.max(y - S.y, FUEL_R), lz + BOX.cz, rvx * c - rvz * s, Math.max(vy, 0.6), rvx * s + rvz * c - 0.8, i) >= 0) { st[i] = 1; continue; }
+        }
+        let nlx = 0, nlz = 0;
+        if (lz > BOX.hz) { if (Math.abs(lx) < 0.36 && y - S.y < 0.35) nlz = 1; }
+        else { const ox = BOX.hx + r - Math.abs(lx), oz = BOX.hz + r - Math.abs(lz);
+          if (y > S.y + BOX.top - 0.02 && vy <= 0) { y = S.y + BOX.top + r; vy = Math.max(0, -vy * 0.3); } else if (ox < oz) nlx = Math.sign(lx); else nlz = Math.sign(lz); }
+        if (nlx || nlz) {
+          const pen = nlx ? BOX.hx + r - Math.abs(lx) : nlz > 0 ? front + r - lz : BOX.hz + r + lz;
+          const wx = nlx * c + nlz * s, wz = -nlx * s + nlz * c; x += wx * pen; z += wz * pen;
+          const svx = S.vx + S.w * rz, svz = S.vz - S.w * rx; const rel = (vx - svx) * wx + (vz - svz) * wz;
+          if (rel < 0) { vx -= rel * wx * 1.35; vz -= rel * wz * 1.35; }
+        }
+      }
+    }
+    pos[o] = x; pos[o + 1] = y; pos[o + 2] = z; vel[o] = vx; vel[o + 1] = vy; vel[o + 2] = vz;
+    const hc = hcell(x, z); next[i] = head[hc]; head[hc] = i;
+  }
+  for (let i = 0; i < n; i++) {
+    if (st[i] !== 0) continue; const o = i * 3; const ci = Math.floor((pos[o] + 8.6) / HC), ck = Math.floor((pos[o + 2] + 4.4) / HC);
+    for (let dk = -1; dk <= 1; dk++) for (let di = -1; di <= 1; di++) {
+      const ii = ci + di, kk = ck + dk; if (ii < 0 || kk < 0 || ii >= hnx || kk >= hnz) continue;
+      for (let j = head[kk * hnx + ii]; j !== -1; j = next[j]) {
+        if (j <= i || st[j] !== 0) continue; const p = j * 3;
+        const dx = pos[p] - pos[o], dy = pos[p + 1] - pos[o + 1], dz = pos[p + 2] - pos[o + 2]; const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 >= 4 * r * r || d2 < 1e-10) continue;
+        const d = Math.sqrt(d2), nx = dx / d, ny = dy / d, nz = dz / d, pen = (2 * r - d) / 2;
+        pos[o] -= nx * pen; pos[o + 1] -= ny * pen; pos[o + 2] -= nz * pen; pos[p] += nx * pen; pos[p + 1] += ny * pen; pos[p + 2] += nz * pen;
+        const rv = (vel[p] - vel[o]) * nx + (vel[p + 1] - vel[o + 1]) * ny + (vel[p + 2] - vel[o + 2]) * nz;
+        if (rv < -0.8) { const a = Math.min(0.25, -rv * 0.045); if (a > fuel.sq[i]) { fuel.sq[i] = a; fuel.sqa.set([nx, ny, nz], o); } if (a > fuel.sq[j]) { fuel.sq[j] = a; fuel.sqa.set([nx, ny, nz], p); } }
+        if (rv < 0) { const jn = -1.45 * rv / 2; vel[o] -= jn * nx; vel[o + 1] -= jn * ny; vel[o + 2] -= jn * nz; vel[p] += jn * nx; vel[p + 1] += jn * ny; vel[p + 2] += jn * nz; }
+      }
+    }
+    const fh = floorH(pos[o], pos[o + 2]) + r; if (pos[o + 1] < fh) pos[o + 1] = fh;
+  }
+}
+function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fuel.hub[i] = h; if (S.running && h === myHub()) { S.score++; pulse(); } S.total++; }
+function exitHub(i) { const h = fuel.hub[i]; const [cx, , cz] = F.hubs[h].center; const s = cx < 0 ? 1 : -1; const lane = [-0.45, -0.15, 0.15, 0.45][Math.floor(Math.random() * 4)];
+  fuel.pos.set([cx + s * (HUB.half + FUEL_R + 0.03), 0.2, cz + lane], i * 3); fuel.vel.set([s * (1.6 + Math.random() * 1.2), 0, (Math.random() - 0.5) * 1.2], i * 3); fuel.st[i] = 0; fuel.t[i] = 0; }
+function tick(inp) {
+  solve(); stepRobot(inp, STEP); controlMech(inp, STEP); stepMech(STEP);
+  hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: S.ax || 0, az: S.az || 0 })); S.hopper = HS.n;
+  stepTransits(STEP); stepFuel(STEP);
+  if (S.running && S.mode === "timed") { S.timeLeft -= STEP; if (S.timeLeft <= 0) { S.timeLeft = 0; endRun(); return false; } }
+  return true;
+}
+
+// ================================================================== cameras
+const camState = { pos: new THREE.Vector3(), look: new THREE.Vector3(), yawS: 0, init: false };
+function camYaw() { if (S.cam === "chase") return camState.yawS; return side() < 0 ? Math.PI / 2 : -Math.PI / 2; }
+function updateDriveCamera(dt) {
+  const k = 1 - Math.exp(-dt * 6); let p, l; const s = side();
+  if (S.cam === "driver") { p = V3(s * 10.2, 5.4, S.z * 0.35); l = V3(Math.min(Math.abs(S.x - s * 2.2), 7) * s, 0.2, S.z * 0.75); }
+  else if (S.cam === "chase") { camState.yawS += wrap(S.yaw - camState.yawS) * (1 - Math.exp(-dt * 3)); const f = [Math.sin(camState.yawS), Math.cos(camState.yawS)];
+    p = V3(THREE.MathUtils.clamp(S.x - f[0] * 3.2, -8.1, 8.1), S.y + 1.9, THREE.MathUtils.clamp(S.z - f[1] * 3.2, -3.9, 3.9)); l = V3(S.x + f[0] * 1.5, S.y + 0.4, S.z + f[1] * 1.5); }
+  else { const cx = THREE.MathUtils.clamp(S.x - s * 1.5, -6.5, 6.5); p = V3(cx - s * 0.01, 11, S.z * 0.6 + 0.01); l = V3(cx, 0, S.z * 0.6); }
+  if (window.__camO) { p = V3(...window.__camO[0]); l = V3(...window.__camO[1]); camState.pos.copy(p); camState.look.copy(l); }
+  if (!camState.init) { camState.pos.copy(p); camState.look.copy(l); camState.init = true; }
+  camState.pos.lerp(p, k); camState.look.lerp(l, k); camera.position.copy(camState.pos);
+  camera.up.set(0, 1, 0); if (S.cam === "top") camera.up.set(-s, 0, 0); camera.lookAt(camState.look);
+  sun.position.set(S.x + 3, 9, S.z + 2); sun.target.position.set(S.x, 0, S.z);
+}
+
+// ================================================================== hud
+let toastT = 0;
+function toast(msg, color) { ui.toast.textContent = msg; ui.toast.style.color = color || "var(--fuel)"; ui.toast.style.opacity = 1; toastT = 1.2; }
+function pulse() { ui.score.animate?.([{ transform: "scale(1.25)" }, { transform: "scale(1)" }], { duration: 220 }); }
+function armLabel() { const a = M.arm; if (a < 4) return "deployed"; if (Math.abs(a - ARM.carry) < 4) return "carry"; if (Math.abs(a - ARM.retract) < 4) return "retracted"; if (a > 110) return "stowed"; return "moving"; }
+function hud() {
+  ui.score.textContent = S.score; ui.time.textContent = S.mode === "timed" ? Math.ceil(Math.max(0, S.timeLeft)) : "∞";
+  ui.hop.innerHTML = S.hopper + "<span>/" + CAP + "</span>"; ui.hopbar.style.width = (100 * S.hopper / CAP) + "%";
+  const now = performance.now(); S.shots = S.shots.filter((t) => now - t < 1000); ui.rate.textContent = S.shots.length;
+  ui.rps.textContent = Math.round(M.fly); ui.hood.textContent = M.hood.toFixed(0); ui.dist.textContent = S.dist.toFixed(1);
+  const intakeOn = M.roll > 0.3 && M.arm < 25;
+  ui.cIntake.className = "chip" + (intakeOn ? " on" : ""); ui.cIntake.textContent = S.hopper >= CAP ? "Hopper full" : "Intake " + armLabel() + (intakeOn ? " · rollers" : "");
+  ui.cAim.className = "chip" + (S.aim ? (S.aligned ? " on" : " warnc") : ""); ui.cAim.textContent = S.aim ? (S.aligned ? "On target" : "Auto-aim") : "Auto-aim off";
+  ui.cShot.className = "chip" + (M.flyT > 0 && Math.abs(M.fly - M.flyT) < 5 ? " on" : M.flyT > 0 ? " warnc" : "");
+  const inRange = S.inZone && S.dist >= SHOT_TABLE[0][0] - 0.1 && S.dist <= SHOT_TABLE[SHOT_TABLE.length - 1][0] + 0.3;
+  ui.cDist.className = "chip " + (inRange ? "on" : "warnc"); ui.cDist.firstChild.textContent = S.inZone ? "Hub " : "Pass ";
+}
+
+// ================================================================== modes
+function setAlliance(a) { S.alliance = a; $("aRed").setAttribute("aria-pressed", a === "red"); $("aBlue").setAttribute("aria-pressed", a === "blue");
+  ui.board.classList.toggle("blue", a === "blue"); if (robot.bumperMat) robot.bumperMat.color.set(a === "red" ? 0xd8333a : 0x2f6df0); try { localStorage.setItem("tt-alliance", a); } catch {} }
+$("aRed").onclick = () => setAlliance("red"); $("aBlue").onclick = () => setAlliance("blue");
+try { const a = localStorage.getItem("tt-alliance"); if (a === "red" || a === "blue") setAlliance(a); } catch {}
+function preload(n) { HS.n = 0; const ids = []; for (let i = fuel.n - 1; i >= 0 && ids.length < n; i--) if (fuel.st[i] === 0) { fuel.st[i] = 1; ids.push(i); } slotsInto(ids.length, ids); S.hopper = HS.n; }
+function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); S.score = 0; S.total = 0; S.timeLeft = 60; S.running = true; camState.init = false;
+  Object.assign(M, { arm: ARM.carry, armT: ARM.carry, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, ext: 0 }); S.intakeLatch = false; S.spinOutside = false; }
+function setView(v) {
+  S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; ui.menu.hidden = !(v === "menu" || (v === "drive" && S.paused));
+  const show = v === "show"; if (fieldScene) fieldScene.visible = !show; if (fuel.mesh) fuel.mesh.visible = !show; studio.visible = show;
+  scene.background = show ? BG_SHOW : BG_FIELD; scene.fog.color.set(show ? 0x161b22 : 0x0f141a);
+  controls.enabled = show; fill2.visible = show; resize(); if (robot.parts.length) applyMaterials();
+}
+function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); toast(mode === "timed" ? "Go! 60 seconds" : "Practice", mode === "timed" ? "var(--fuel)" : "#e9edf2"); }
+$("goFree").onclick = () => start("free"); $("goTimed").onclick = () => start("timed"); $("goShow").onclick = () => enterShow();
+function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; if (p) keys.clear(); }
+function enterMenu() { S.paused = true; setView("menu"); }
+function endRun() { S.running = false; const sc = S.score;
+  if (sc > best) { best = sc; try { localStorage.setItem("tt-best", String(best)); } catch {} $("best").textContent = best + " fuel"; toast("New best: " + sc); } else toast("Time! " + sc + " fuel");
+  setTimeout(() => setPaused(true), 1800); }
+
+// ================================================================== showcase
+const studio = new THREE.Group(); studio.visible = false; scene.add(studio);
+{ const floor = new THREE.Mesh(new THREE.CircleGeometry(3.2, 64), new THREE.MeshStandardMaterial({ color: 0x232a33, roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; studio.add(floor);
+  const gridH = new THREE.PolarGridHelper(3.0, 12, 6, 64, 0x3a4552, 0x2c3540); gridH.position.y = 0.001; studio.add(gridH); }
+const SV = { labels: true, explode: 0, cycle: null, sel: null, iso: null, driveT: 0, chortle: false, chT: 0, glass: true };
+const glassMats = new Map();
+function glassMat(i) { if (!glassMats.has(i)) { const m = palMat(i).clone(); m.transparent = true; m.opacity = 0.22; m.depthWrite = false; m.color.lerp(new THREE.Color(0x9fc6ff), 0.35); glassMats.set(i, m); } return glassMats.get(i); }
+const HOTS = [
+  { label: "Intake", sub: "intake", at: () => rollerPoint() },
+  { label: "Intake pivot", sub: "intake", at: () => V3(...RIG.armPivot).add(V3(0.37, 0, 0)), desc: "The pivot axle: a 24T plate sprocket on MotionX hubs, chained 24:12 from the 27:1 MAXPlanetary. Fused CANcoder, soft limits 0 to 0.34 rotations." },
+  { label: "HtH indexer", sub: "indexer", at: () => V3(0, 0.16, 0.12) },
+  { label: "Triple Threat", sub: "shooter", at: () => V3(0.32, 0.52, -0.26) },
+  { label: "Adjustable hood", sub: "shooter", at: () => { robot.hood.updateMatrix(); return V3(0, 0.07, 0.17).applyMatrix4(robot.hood.matrix); }, desc: "A geared arc that rotates around the flywheel axle: 205:24 to the hood motor through a 24:12 stage. 48° to 70° from horizontal; 70° is the CAD pose and the mechanism zero." },
+  { label: "Injectors", sub: "shooter", at: () => V3(-0.36, 0.33, -0.1), desc: "2 in Stealth wheels push fuel up the injector ramps into the flywheels. They turn with the shooter wheel train." },
+  { label: "MK5n swerve", sub: "drivetrain", at: () => V3(-0.29, 0.12, -0.26) },
+];
+function buildShowUI() {
+  const counts = {}; for (const P of robot.parts) counts[P.sub] = (counts[P.sub] || 0) + 1;
+  const box = $("subs"); box.innerHTML = "";
+  for (const [k, s] of Object.entries(SUBS)) { if (!counts[k]) continue;
+    const row = document.createElement("div"); row.className = "subrow"; row.dataset.sub = k;
+    row.innerHTML = `<span class="sw" style="background:${s.color}"></span><span class="nm">${s.name}</span><span class="ct">${counts[k]} parts</span><button class="eye" type="button" aria-pressed="true" aria-label="Show or hide ${s.name}">Show</button>`;
+    row.addEventListener("click", (e) => { if (e.target.classList.contains("eye")) return; focusSub(k); });
+    row.querySelector(".eye").addEventListener("click", (e) => { const on = e.target.getAttribute("aria-pressed") !== "true"; e.target.setAttribute("aria-pressed", on); setSubVisible(k, on); });
+    box.appendChild(row); }
+  const hots = $("hots"); hots.innerHTML = "";
+  for (const h of HOTS) { const el = document.createElement("div"); el.className = "hot"; el.innerHTML = `<i></i><span>${h.label}</span>`; el.onclick = () => focusSub(h.sub, h); h.el = el; hots.appendChild(el); }
+}
+function setSubVisible(k, on) { for (const P of robot.parts) if (P.sub === k) P.obj.visible = on; if (k === "drivetrain") robot.bumpers.visible = on; }
+function applyMaterials() {
+  for (const P of robot.parts) { const sel = SV.sel === P, ghost = SV.iso && P.sub !== SV.iso;
+    const glass = SV.glass && S.view === "show" && P.sub === "hopper" && !sel && !ghost;
+    P.mesh.material = P.h.groups.map(([ci], k) => (sel ? hiMat(ci) : ghost ? ghostMat(ci) : glass ? glassMat(ci) : P.mats[k])); P.mesh.castShadow = !ghost && !glass; }
+  robot.bumpers.visible = !SV.iso || SV.iso === "drivetrain";
+}
+function focusSub(k, hot) {
+  document.querySelectorAll(".subrow").forEach((r) => r.classList.toggle("sel", r.dataset.sub === k));
+  SV.sel = null; applyMaterials();
+  showInfo(hot && hot.desc ? hot.label : SUBS[k].name, hot && hot.desc ? SUBS[k].name : "Subsystem", hot && hot.desc ? hot.desc : SUBS[k].desc, k);
+  flyTo(hot ? hot.at() : subCenter(k));
+}
+function subCenter(k) { const c = new THREE.Vector3(); let n = 0; for (const P of robot.parts) if (P.sub === k) { c.add(P.center); n++; } return n ? c.divideScalar(n) : V3(0, 0.3, 0); }
+let fly = null;
+function flyTo(p) { const dir = camera.position.clone().sub(controls.target).normalize(); const dist = Math.min(camera.position.distanceTo(controls.target), 1.9);
+  fly = { t: 0, fromT: controls.target.clone(), toT: p.clone(), fromP: camera.position.clone(), toP: p.clone().add(dir.multiplyScalar(dist)) }; }
+function showInfo(name, kind, desc, sub) { $("info").hidden = false; $("infoName").textContent = name; $("infoSub").textContent = kind; $("infoDesc").textContent = desc; $("info").dataset.sub = sub || ""; $("infoHide").hidden = !SV.sel;
+  $("infoIso").textContent = SV.iso === sub ? "Show everything" : "Isolate subsystem"; }
+$("infoClose").onclick = () => { $("info").hidden = true; SV.sel = null; applyMaterials(); document.querySelectorAll(".subrow").forEach((r) => r.classList.remove("sel")); };
+$("infoHide").onclick = () => { if (SV.sel) { SV.sel.obj.visible = false; SV.sel = null; applyMaterials(); $("info").hidden = true; } };
+$("infoIso").onclick = () => { const k = $("info").dataset.sub; SV.iso = SV.iso === k ? null : k; $("infoIso").textContent = SV.iso ? "Show everything" : "Isolate subsystem"; applyMaterials(); };
+$("showAll").onclick = () => { for (const P of robot.parts) P.obj.visible = true; robot.bumpers.visible = true; SV.iso = null; applyMaterials(); document.querySelectorAll(".eye").forEach((e) => e.setAttribute("aria-pressed", "true")); $("infoIso").textContent = "Isolate subsystem"; };
+const ray = new THREE.Raycaster(); let downAt = null;
+canvas.addEventListener("pointerdown", (e) => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener("pointerup", (e) => {
+  if (S.view !== "show" || !downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  const r = canvas.getBoundingClientRect(); ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+  const meshes = robot.parts.filter((P) => P.obj.visible && (!SV.iso || P.sub === SV.iso)).map((P) => P.mesh);
+  const hit = ray.intersectObjects(meshes, false)[0];
+  if (!hit) { $("infoClose").onclick(); return; }
+  const P = hit.object.userData.part; SV.sel = P; applyMaterials();
+  const role = { spin: "Spins with the " + ({ intake: "intake rollers", indexer: "indexer", shooter: "shooter wheels", deploy: "intake pivot drive", hood: "hood drive" }[P.h.chan] || "mechanism"), belt: "A belt that runs with the " + P.h.chan, wheel: "Swerve wheel", steer: "Swerve steering, turns with the module" }[P.h.role] || (P.h.group === "arm" ? "Moves with the intake pivot" : P.h.group === "hood" ? "Moves with the hood" : "Fixed part");
+  showInfo(P.h.name, SUBS[P.sub].name, role + ".", P.sub);
+});
+document.querySelectorAll("[data-arm]").forEach((b) => b.onclick = () => { stopCycle(); M.armT = b.dataset.arm === "stow" ? RIG.armDeployDeg : +b.dataset.arm; SV.chortle = false; $("vChortle").setAttribute("aria-pressed", false); });
+const togg = (id, fn) => { $(id).onclick = () => { stopCycle(); const on = $(id).getAttribute("aria-pressed") !== "true"; $(id).setAttribute("aria-pressed", on); fn(on); }; };
+togg("vRoll", (on) => { M.roll = on ? 1 : 0; }); togg("vIdx", (on) => { M.idx = on ? 1 : 0; }); togg("vDrive", (on) => { M.drive = on; });
+togg("vChortle", (on) => { SV.chortle = on; if (!on) M.armT = ARM.carry; });
+$("vDrop").onclick = () => { stopCycle(); for (let k = 0; k < 4; k++) hsAdd((k - 1.5) * 0.14, FUEL_R + k * 0.01, RIG.armReachZ + 0.3 + k * 0.17, 0, 0, -2.2, -1); };
+$("vGlass").onclick = () => { SV.glass = !SV.glass; $("vGlass").setAttribute("aria-pressed", SV.glass); applyMaterials(); };
+$("vFly").oninput = () => { stopCycle(); M.flyT = +$("vFly").value; };
+$("vHood").oninput = () => { stopCycle(); M.hoodT = +$("vHood").value; };
+$("vExplode").oninput = () => { SV.explode = +$("vExplode").value; };
+$("showLabels").onclick = () => { SV.labels = !SV.labels; $("showLabels").setAttribute("aria-pressed", SV.labels); };
+$("showReset").onclick = () => { fly = null; camera.position.set(1.7, 1.15, 1.9); controls.target.set(0, 0.26, 0.05); };
+$("showBack").onclick = () => { stopCycle(); enterMenu(); };
+$("showCycle").onclick = () => { if (SV.cycle) stopCycle(); else runCycle(); };
+function enterShow() { S.paused = true; resetShowcase(); robot.root.position.set(0, 0, 0); robot.root.rotation.set(0, 0, 0); sun.position.set(2.5, 6, 3); sun.target.position.set(0, 0, 0); setView("show"); $("showReset").onclick(); toast("Click a part or a label", "#e9edf2"); }
+function resetShowcase() {
+  transits.length = 0; showFlying.length = 0; HS.n = 0; SV.cycle = null; $("showCycle").textContent = "Run shot cycle";
+  Object.assign(M, { arm: RIG ? RIG.armDeployDeg : 122.4, armT: RIG ? RIG.armDeployDeg : 122.4, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, drive: false, ext: 0 });
+  SV.explode = 0; $("vExplode").value = 0; $("vFly").value = 0; $("vHood").value = 70; SV.chortle = false;
+  ["vRoll", "vIdx", "vDrive", "vChortle"].forEach((id) => $(id).setAttribute("aria-pressed", false));
+  for (const P of robot.parts) { P.obj.visible = true; P.obj.position.copy(P.base); }
+  for (const m of robot.modules) m.st.position.copy(m.base);
+  if (robot.bumpers) { robot.bumpers.visible = true; robot.bumpers.position.set(0, 0, 0); robot.bumpers.scale.setScalar(1); }
+  SV.sel = null; SV.iso = null; if (robot.parts.length) applyMaterials(); $("info").hidden = true;
+  document.querySelectorAll(".eye").forEach((e) => e.setAttribute("aria-pressed", "true"));
+}
+// demo: deploy, intake fuel, carry, spin up, feed with chortle, shoot out the back
+const showFlying = [];
+function stopCycle() { if (!SV.cycle) return; SV.cycle = null; $("showCycle").textContent = "Run shot cycle"; transits.length = 0; }
+function runCycle() { stopCycle(); HS.n = 0; showFlying.length = 0; SV.cycle = { t: 0, fed: 0, nextIn: 0, laneT: [0, 0.09, 0.18], phase: "deploy" }; $("showCycle").textContent = "Stop cycle";
+  SV.explode = 0; $("vExplode").value = 0; SV.iso = null; applyMaterials(); }
+const showCtx = {
+  laneReady: (l) => SV.cycle && SV.cycle.laneT[l] <= 0,
+  onCapture: (i, l) => { const o = i * 3, from = V3(HS.p[o], HS.p[o + 1], HS.p[o + 2]); hsRemove(i); SV.cycle.laneT[l] = LANE_PERIOD;
+    addTransit(() => shotPath(l, from), 0.2, () => { const ex = exitFor(l, M.hood); showFlying.push({ p: ex.p.clone(), v: ex.d.clone().multiplyScalar(8.5), t: 0, sq: 0.018 }); }, true); },
+  onExit: (i) => hsRemove(i),
+};
+// demo: deploy, roll fuel into the intake, carry, spin up, feed with the chortle, shoot out the back
+function stepCycle(dt) {
+  const C = SV.cycle; if (!C) return; C.t += dt; for (let l = 0; l < 3; l++) C.laneT[l] = Math.max(0, C.laneT[l] - dt);
+  if (C.phase === "deploy") { M.armT = 0; M.flyT = 0; M.hoodT = 70; M.idx = 0; M.roll = M.arm < 30 ? 1 : 0;
+    if (M.arm < 30) { C.nextIn -= dt; if (C.nextIn <= 0 && C.fed < 16) { C.fed++; C.nextIn = 0.28; hsAdd((Math.random() - 0.5) * 0.45, FUEL_R, RIG.armReachZ + 0.32, 0, 0, -2.2, -1); } }
+    if (C.fed >= 16 && C.t > 5.2) { C.phase = "carry"; C.t = 0; } }
+  else if (C.phase === "carry") { M.armT = ARM.carry; M.roll = 0.3; M.flyT = 69; M.hoodT = 64; if (C.t > 1.3) { C.phase = "shoot"; C.t = 0; } }
+  else if (C.phase === "shoot") { M.flyT = 69; M.hoodT = 64; const at = Math.abs(M.fly - M.flyT) < 5;
+    if (at) { M.idx = 1; M.roll = 0.5; C.ch = ((C.ch || 0) + dt) % 1.2; M.armT = C.ch > 0.7 ? ARM.retract : ARM.carry; }
+    if ((HS.n === 0 && !transits.length) || C.t > 9) { C.phase = "done"; C.t = 0; } }
+  else { M.idx = 0; M.roll = 0; M.flyT = 0; M.armT = ARM.carry; if (C.t > 1.2) stopCycle(); }
+  C.feeding = C.phase === "shoot" && Math.abs(M.fly - M.flyT) < 5;
+}
+function stepShowFlying(dt) { for (let i = showFlying.length - 1; i >= 0; i--) { const f = showFlying[i]; f.t += dt; f.sq *= Math.exp(-dt * 12); f.v.y -= G * dt; f.p.addScaledVector(f.v, dt);
+  if (f.p.y < FUEL_R) { f.p.y = FUEL_R; if (f.v.y < -1) { f.sq = Math.min(0.022, -f.v.y * 0.004); f.v.y *= -0.45; f.v.x *= 0.7; f.v.z *= 0.7; } else f.v.y = 0; }
+  if (f.t > 3.5 || f.p.length() > 6) showFlying.splice(i, 1); } }
+const EXPLODE_OFF = { intake: V3(0, 0.05, 0.55), indexer: V3(0, 0.3, 0.05), shooter: V3(0, 0.38, -0.55), hopper: V3(0, 0.12, 0), drivetrain: V3(0, -0.02, 0), electrical: V3(0, -0.02, 0) };
+function poseExplode() {
+  const e = SV.explode; const rc = V3(0, 0.25, 0);
+  for (const P of robot.parts) { if (P.inModule) continue;
+    const radial = P.center.clone().sub(rc); radial.y *= 0.4;
+    const off = EXPLODE_OFF[P.sub].clone().add(radial.multiplyScalar(P.sub === "hopper" || P.sub === "drivetrain" ? 0.9 : 0.35));
+    P.obj.position.copy(P.base).addScaledVector(off, e); }
+  for (const m of robot.modules) m.st.position.copy(m.base).add(V3(Math.sign(m.r[0]) * 0.25, 0, Math.sign(m.r[1]) * 0.25).multiplyScalar(e));
+  robot.bumpers.position.set(0, -0.02 * e, 0); robot.bumpers.scale.set(1 + 0.6 * e, 1, 1 + 0.6 * e);
+}
+function updateHots() {
+  const show = SV.labels && S.view === "show"; const r = canvas.getBoundingClientRect();
+  for (const h of HOTS) { if (!h.el) continue; const p = h.at().applyMatrix4(robot.root.matrixWorld).project(camera);
+    const vis = show && p.z < 1 && Math.abs(p.x) < 1.05 && Math.abs(p.y) < 1.05 && robot.parts.some((P) => P.sub === h.sub && P.obj.visible) && (!SV.iso || SV.iso === h.sub);
+    h.el.hidden = !vis; if (vis) h.el.style.transform = `translate(${(p.x * 0.5 + 0.5) * r.width - 6}px, ${(-p.y * 0.5 + 0.5) * r.height - 9}px)`; }
+}
+
+// ================================================================== main loop
+let last = performance.now(), acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (S.loaded) {
+    let vxl = 0, vzl = 0, w = 0, mdt = dt;
+    if (S.view === "drive") {
+      if (!S.paused) { const inp = readInput(); acc += dt; while (acc >= STEP) { acc -= STEP; if (!tick(inp)) break; } } else { pollPadMenu(); mdt = 0; }
+      robot.root.position.set(S.x, S.y, S.z); robot.root.rotation.set(S.pitch, S.yaw, S.roll, "YXZ");
+      const c = Math.cos(S.yaw), s = Math.sin(S.yaw); vxl = S.vx * c - S.vz * s; vzl = S.vx * s + S.vz * c; w = S.w;
+      const Mx = new THREE.Matrix4(), hide = new THREE.Matrix4().makeScale(0, 0, 0);
+      const dec = Math.exp(-dt * 14);
+      for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3, a = fuel.sq[i] * FUEL_R; fuel.sq[i] *= dec; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], fuel.sqa[o] * a, fuel.sqa[o + 1] * a, fuel.sqa[o + 2] * a, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
+      fuel.mesh.instanceMatrix.needsUpdate = true;
+      updateDriveCamera(dt); hud(); drawInner();
+    } else if (S.view === "show") {
+      if (SV.chortle && !SV.cycle) { SV.chT = (SV.chT + dt) % 1.2; M.armT = SV.chT > 0.7 ? ARM.retract : ARM.carry; }
+      stepCycle(dt); stepMech(dt);
+      hsStep(dt, Object.assign(showCtx, { roll: M.roll, idx: M.idx, feeding: !!(SV.cycle && SV.cycle.feeding), ax: 0, az: 0 }));
+      stepTransits(dt); stepShowFlying(dt);
+      if (M.drive) { SV.driveT += dt; vxl = Math.sin(SV.driveT * 0.7) * 1.2; vzl = Math.cos(SV.driveT * 0.7) * 1.2; w = Math.sin(SV.driveT * 0.31) * 1.5; }
+      poseExplode();
+      if (fly) { fly.t = Math.min(1, fly.t + dt * 1.6); const e = 1 - Math.pow(1 - fly.t, 3); controls.target.lerpVectors(fly.fromT, fly.toT, e); camera.position.lerpVectors(fly.fromP, fly.toP, e); if (fly.t >= 1) fly = null; }
+      controls.update(); drawInner(); robot.root.updateMatrixWorld(); updateHots();
+      $("vArm").textContent = Math.max(0, M.arm).toFixed(0) + "° · " + armLabel(); $("vFlyV").textContent = Math.round(M.fly) + " rps"; $("vHoodV").textContent = M.hood.toFixed(1) + "°";
+    } else { pollPadMenu(); mdt = 0; }
+    poseMech(mdt, vxl, vzl, w);
+    if (toastT > 0) { toastT -= dt; if (toastT <= 0) ui.toast.style.opacity = 0; }
+  }
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(frame);
+
+(async () => {
+  try {
+    await Promise.all([loadRobot(), loadField()]);
+    redHub = F.hubs[0].center[0] < 0 ? 0 : 1; blueHub = 1 - redHub; HUB.cx = Math.abs(F.hubs[0].center[0]); // red is the -x side in this field model
+    initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
+    robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
+    S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow"].forEach((id) => $(id).disabled = false); $("goFree").focus();
+    window.__sim = { sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+      run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
+  } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
+})();
+</script>
+
+</html>
