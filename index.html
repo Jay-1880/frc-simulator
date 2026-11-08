@@ -788,6 +788,14 @@ const driveCtx = {
 const PERIM = []; for (let k = 0; k < 32; k++) { const t = k / 32 * 4; let lx, lz;
   if (t < 1) { lx = -BOX.hx + 2 * BOX.hx * t; lz = BOX.hz; } else if (t < 2) { lx = BOX.hx; lz = BOX.hz - 2 * BOX.hz * (t - 1); } else if (t < 3) { lx = BOX.hx - 2 * BOX.hx * (t - 2); lz = -BOX.hz; } else { lx = -BOX.hx; lz = -BOX.hz + 2 * BOX.hz * (t - 3); }
   PERIM.push([lx, lz + BOX.cz]); }
+// the deployed intake sticks out past the front bumper; add it to the player's outline
+function perimOf(b) {
+  if (b !== S || !RIG || M.arm > 70) return PERIM;
+  const f = BOX.cz + BOX.hz + (RIG.armReachZ - BOX.cz - BOX.hz) * THREE.MathUtils.clamp(1 - M.arm / 70, 0, 1), w = 0.37, out = PERIM.slice();
+  for (let k = 0; k <= 8; k++) out.push([-w + 2 * w * k / 8, f]);
+  for (let k = 1; k <= 3; k++) { const z = BOX.cz + BOX.hz + (f - BOX.cz - BOX.hz) * k / 3; out.push([w, z], [-w, z]); }
+  return out;
+}
 function bodyPt(b, lx, lz) { const c = Math.cos(b.yaw), s = Math.sin(b.yaw); return [b.x + lx * c + lz * s, b.z - lx * s + lz * c]; }
 function impulse(b, rx, rz, nx, nz, e) { // b hits something fixed at offset r with normal n; returns impact speed
   const k = rz * nx - rx * nz, vn = (b.vx + b.w * rz) * nx + (b.vz - b.w * rx) * nz; if (vn >= 0) return 0;
@@ -800,7 +808,7 @@ function collideField(b) {
   let hit = 0;
   for (let it = 0; it < 3; it++) {
     let best = null;
-    for (const [lx, lz] of PERIM) { const [wx, wz] = bodyPt(b, lx, lz); const d = sdf(wx, wz); if (d < 0.004 && (!best || d < best.d)) best = { d, wx, wz }; }
+    for (const [lx, lz] of perimOf(b)) { const [wx, wz] = bodyPt(b, lx, lz); const d = sdf(wx, wz); if (d < 0.004 && (!best || d < best.d)) best = { d, wx, wz }; }
     if (!best) break; const [gx, gz] = grad(best.wx, best.wz);
     hit = Math.max(hit, impulse(b, best.wx - b.x, best.wz - b.z, gx, gz, BODY.eWall));
     const pen = 0.004 - best.d; b.x += gx * pen; b.z += gz * pen;
@@ -810,7 +818,7 @@ function collideField(b) {
 function collideBots(A, B) { // A's bumper points against B's bumper box
   const cB = Math.cos(B.yaw), sB = Math.sin(B.yaw); let best = null;
   if (Math.hypot(A.x - B.x, A.z - B.z) > 1.4) return 0;
-  for (const [lx, lz] of PERIM) { const [wx, wz] = bodyPt(A, lx, lz); const rx = wx - B.x, rz = wz - B.z; const bx = rx * cB - rz * sB, bz = rx * sB + rz * cB - BOX.cz;
+  for (const [lx, lz] of perimOf(A)) { const [wx, wz] = bodyPt(A, lx, lz); const rx = wx - B.x, rz = wz - B.z; const bx = rx * cB - rz * sB, bz = rx * sB + rz * cB - BOX.cz;
     const ox = BOX.hx - Math.abs(bx), oz = BOX.hz - Math.abs(bz); if (ox <= 0 || oz <= 0) continue;
     let nlx = 0, nlz = 0, pen; if (ox < oz) { nlx = Math.sign(bx); pen = ox; } else { nlz = Math.sign(bz); pen = oz; }
     if (!best || pen > best.pen) best = { pen, wx, wz, nx: nlx * cB + nlz * sB, nz: -nlx * sB + nlz * cB }; }
