@@ -31,7 +31,8 @@ Opponents (none, scorer, scorer + defender), drive speed and turn speed are in t
 | Flywheel on/off | B | B |
 | Reset pose | X | R (resets the field) |
 | Field / robot-oriented | View | G |
-| Camera / auto-aim | Y / left stick click | V / T |
+| Camera (driver, 3rd person, 3rd person close, orbit, top, stands) / auto-aim | Y / left stick click | V / T |
+| Follow next robot while spectating | | N |
 | Slow mode | RB | Shift |
 | Run selected auto (practice) | | P |
 | Agitate intake while shooting | | H |
