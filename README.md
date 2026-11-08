@@ -24,6 +24,7 @@ A browser simulator for FRC 1880's HtH V2 robot in the 2026 game, REBUILT.
 | Field / robot-oriented | View | G |
 | Camera / auto-aim | Y / left stick click | V / T |
 | Slow mode | RB | Shift |
+| Agitate intake while shooting | | H |
 
 ## Notes
 

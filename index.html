@@ -142,7 +142,7 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
     <div class="cell" id="hopper"><div class="lbl">Hopper</div><div class="big" id="hop">0<span>/30</span></div><div class="fuelbar"><i id="hopbar"></i></div></div>
     <div class="cell"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
   </div></div>
-  <div class="hud tr"><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
+  <div class="hud tr"><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
   <div class="hud bl">
     <div class="chips">
       <div class="chip" id="cIntake">Intake</div>
@@ -233,6 +233,7 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
         <div><span>Field / robot-oriented</span><kbd>G</kbd></div>
         <div><span>Auto-aim / camera</span><kbd>T / V</kbd></div>
         <div><span>Slow mode</span><kbd>Shift hold</kbd></div>
+        <div><span>Agitate while shooting</span><kbd>H</kbd></div>
         <div><span>Reset field / menu</span><kbd>R / Esc</kbd></div>
       </div>
     </details>
@@ -403,6 +404,7 @@ const M = { arm: 122.4, armT: 122.4, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, 
 function stepMech(dt) {
   const e = M.armT - M.arm, vmax = 330, amax = 2400; const vt = Math.sign(e) * Math.min(vmax, Math.sqrt(2 * amax * Math.abs(e)));
   M.armV += THREE.MathUtils.clamp(vt - M.armV, -amax * dt, amax * dt); M.arm += M.armV * dt;
+  if (M.arm < 0) { M.arm = 0; M.armV = Math.max(0, M.armV); } // hard stop at deployed
   if (Math.abs(M.armT - M.arm) < 0.05 && Math.abs(M.armV) < 5) { M.arm = M.armT; M.armV = 0; }
   const hv = THREE.MathUtils.clamp((M.hoodT - M.hood) * 12, -140, 140); M.hoodV = hv; M.hood += hv * dt;
   M.fly += (M.flyT - M.fly) * (1 - Math.exp(-dt / 0.32));
@@ -636,7 +638,7 @@ function takeStored() { for (let k = 0; k < fuel.n; k++) if (fuel.st[k] === 1) r
 const S = {
   view: "menu", alliance: "blue", mode: "free", running: false, paused: true, loaded: false,
   x: 0, z: 0, yaw: 0, vx: 0, vz: 0, w: 0, y: 0, pitch: 0, roll: 0,
-  hopper: 0, aim: true, field: true, spinOutside: false, intakeLatch: false, laneT: [0, 0.09, 0.18], chortle: 0, outT: 0,
+  hopper: 0, aim: true, field: true, agitate: false, spinOutside: false, intakeLatch: false, laneT: [0, 0.09, 0.18], chortle: 0, outT: 0,
   score: 0, total: 0, timeLeft: 0, shots: [], cam: "driver", dist: 0, inZone: true, aligned: false, aimYaw: 0, sol: { hood: 70, rps: 53 },
 };
 let redHub = 0, blueHub = 1;
@@ -660,6 +662,7 @@ addEventListener("keydown", (e) => {
   if (e.code === "KeyZ") { S.intakeLatch = false; M.armT = ARM.retract; }
   if (e.code === "KeyB") toggleSpin();
   if (e.code === "KeyG") toggleField();
+  if (e.code === "KeyH") toggleAgitate();
   if (e.code === "KeyT") toggleAim();
   if (e.code === "KeyV") cycleCam();
   if (e.code === "KeyR") resetRound();
@@ -670,7 +673,8 @@ function toggleSpin() { S.spinOutside = !S.spinOutside; toast(S.spinOutside ? "F
 function toggleField() { S.field = !S.field; $("fieldBtn").textContent = S.field ? "Field-oriented" : "Robot-oriented"; $("fieldBtn").setAttribute("aria-pressed", S.field); toast(S.field ? "Field-oriented drive" : "Robot-oriented drive", "#e9edf2"); }
 function toggleAim() { S.aim = !S.aim; toast(S.aim ? "Auto-aim on" : "Auto-aim off", "#e9edf2"); }
 function cycleCam() { S.cam = { driver: "chase", chase: "top", top: "driver" }[S.cam]; $("camBtn").textContent = "View: " + S.cam[0].toUpperCase() + S.cam.slice(1); }
-$("fieldBtn").onclick = toggleField; $("camBtn").onclick = cycleCam; $("menuBtn").onclick = () => setPaused(true);
+function toggleAgitate() { S.agitate = !S.agitate; $("agiBtn").textContent = "Agitate: " + (S.agitate ? "on" : "off"); $("agiBtn").setAttribute("aria-pressed", S.agitate); if (!S.agitate && M.armT === ARM.retract) M.armT = ARM.carry; toast(S.agitate ? "Intake agitates while shooting" : "Agitate off", "#e9edf2"); }
+$("agiBtn").onclick = toggleAgitate; $("fieldBtn").onclick = toggleField; $("camBtn").onclick = cycleCam; $("menuBtn").onclick = () => setPaused(true);
 function stick(el, cb) {
   let id = null; const knob = el.querySelector("i");
   const move = (e) => { for (const t of e.changedTouches) if (t.identifier === id) { const r = el.getBoundingClientRect(); let dx = (t.clientX - r.left - r.width / 2) / (r.width / 2), dy = (t.clientY - r.top - r.height / 2) / (r.height / 2); const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } knob.style.transform = `translate(${dx * 36}px,${dy * 36}px)`; cb(dx, dy); e.preventDefault(); } };
@@ -793,7 +797,7 @@ function controlMech(inp, dt) { // mirrors pyrebuilt teleopPeriodic + ShooterCon
   S.aligned = Math.abs(wrap(S.aimYaw - S.yaw)) < 3.5 * DEG;
   S.feeding = inp.shoot && atSpeed && HS.n > 0 && (!S.aim || S.aligned);
   if (S.feeding) { M.idx = 1; M.roll = inp.intake ? 1 : 0.5;
-    if (!inp.intake) { S.chortle = (S.chortle + dt) % 1.2; M.armT = S.chortle > 0.7 ? ARM.retract : ARM.carry; } } // intake.feed(): chortle between carry and retract
+    if (!inp.intake && S.agitate) { S.chortle = (S.chortle + dt) % 1.2; M.armT = S.chortle > 0.7 ? ARM.retract : ARM.carry; } } // intake.feed(): chortle between carry and retract (optional)
   else if (inp.outtake) { M.idx = -1; M.roll = -1; }
   else { M.idx = 0; M.roll = inp.intake ? 1 : 0; S.chortle = 0; }
   for (let l = 0; l < 3; l++) S.laneT[l] = Math.max(0, S.laneT[l] - dt);
