@@ -6,6 +6,8 @@ A browser simulator for FRC 1880's HtH V2 robot in the 2026 game, REBUILT.
 
 ## What it does
 
+- **Competitions:** play the 2026 FIRST Long Island Regional, Gotham Regional or Championship Daly Division with their real team lists. Every robot's speed, accuracy, fire rate and hopper size scale with its 2026 Statbotics EPA. Generated qualification schedule, match list, rankings by ranking points, serpentine alliance selection (captains pick by EPA; your value comes from how you score in the sim), and the double-elimination playoff bracket with best-of-3 finals. Play your own matches live with AI partners, watch other matches (1×/2×/4×), sim them instantly, or skip to your next match. Progress is saved in your browser.
+- **LEDs from pyrebuilt `leds.py`:** green when in range, red when not, flashing near shift changes, pulsing in transition if you lost auto, rainbow when disabled.
 - **Full matches:** 20 s auto, then 2:20 teleop with REBUILT hub shifts (timing from pyrebuilt's `game.py`; the auto winner's hub goes inactive first). Red and blue scores, with fuel in an inactive hub not counting.
 - **Opponent robots:** an AI scorer that collects fuel and shoots into its hub, and an optional defender that blocks you. Robots are 63 kg rigid bodies: hits bounce and spin, and pushing fights wheel traction.
 - **Autos from pyrebuilt:** Shoot, Shoot + Gobbler (left / right) and Gobbler only (left / right), with the same waypoints, headings and state machines as `autonomous/routines.py`, flipped for red and mirrored for left. Pick one in the menu; it runs in the match's auto period, or press P in practice.
@@ -39,6 +41,12 @@ Opponents (none, scorer, scorer + defender), drive speed and turn speed are in t
 - Physics is a demo, not calibrated to the real robot.
 - The CAD has no bumpers, so the simulator draws them.
 - Everything runs in the browser from static files; three.js loads from the jsDelivr CDN.
+
+## Notes on the competition model
+
+- Ranking points approximate REBUILT: win 3, tie 1, +1 for 100 alliance fuel, +1 for 50 tower points.
+- AI robots score roughly 0.6 × EPA in fuel; instant sims use the same scale so played and simmed matches rank fairly.
+- Team EPAs: [Statbotics](https://www.statbotics.io/). Event entries: [FIRST](https://frc-events.firstinspires.org/2026/team/1880).
 
 ## Credits
 

@@ -134,6 +134,49 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
   #info{width:auto;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(46% + 12px)}
   .hot span{display:none}
 }
+/* ---------- competition */
+.go button.wide{grid-column:1/-1}
+.tl{font-size:10px;color:var(--dim);letter-spacing:.02em;white-space:nowrap}
+#comp{position:fixed;inset:0;z-index:6;background:rgba(6,8,11,.72);backdrop-filter:blur(4px);overflow:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(16px + env(safe-area-inset-top,0px)) 16px}
+.compwrap{max-width:1100px;margin:0 auto;background:var(--solid);border:1px solid var(--line);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;position:relative}
+#compBody{display:flex;flex-direction:column;gap:12px}
+#compBody h2{font-family:var(--display);font-size:32px;margin:2px 0;line-height:1}
+#compBody h3{font-family:var(--display);font-size:18px;margin:8px 0 4px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
+.chead{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.mycard{display:flex;flex-direction:column;gap:2px;background:#1a222d;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:200px}
+.mycard b{font-family:var(--display);font-size:34px;line-height:1;color:var(--fuel)}
+.mycard span{font-size:13px;color:var(--dim)}
+.cacts .btn{font-size:14px}.btn.primary{background:var(--fuel);color:#1a1405;border-color:var(--fuel)}
+.btn.mini{padding:3px 8px;font-size:12px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{font-family:var(--display);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:14px;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);padding:8px 10px;cursor:pointer}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--fuel)}
+.tablewrap{overflow-x:auto;max-height:52vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px}
+table.ct{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+table.ct th{position:sticky;top:0;background:#151c25;text-align:left;font-family:var(--display);letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--dim);padding:6px 8px}
+table.ct td{padding:5px 8px;border-top:1px solid var(--line);white-space:nowrap}
+table.ct tr.mine td{background:rgba(245,197,24,.08)}
+table.ct.onlymine tbody tr:not(.mine){display:none}
+td.red .tn{background:rgba(229,72,77,.18)}td.blue .tn{background:rgba(62,123,250,.2)}
+.tn{display:inline-block;min-width:38px;text-align:center;padding:1px 4px;margin-right:3px;border-radius:4px;font-weight:600;background:rgba(255,255,255,.06)}
+.tn.me{outline:1.5px solid var(--fuel);color:var(--fuel)}
+td.sc b.w{color:var(--fuel)}
+.evgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.evcard{display:flex;flex-direction:column;gap:3px;text-align:left;background:#1a222d;border:1px solid var(--line);border-radius:10px;padding:14px;color:var(--ink);cursor:pointer;font:inherit}
+.evcard:hover{border-color:var(--fuel)}.evcard b{font-family:var(--display);font-size:24px}.evcard span{font-size:13px;color:var(--dim)}
+.alist{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px}
+.alli-row{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:8px}
+.alli-row b{font-family:var(--display);font-size:18px;width:20px;color:var(--dim)}
+.alli-row.cur{border-color:var(--fuel)}.alli-row.mine{background:rgba(245,197,24,.08)}
+.bracket{display:grid;grid-template-columns:repeat(6,minmax(150px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px}
+.bcol{display:flex;flex-direction:column;gap:8px;justify-content:space-around}
+.pm{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#151c25}
+.pm.mine{border-color:var(--fuel)}
+.pside{display:grid;grid-template-columns:30px minmax(0,1fr) 30px;gap:4px;align-items:center;font-size:13px}
+.pside .fine{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pside.w b,.pside.w span:first-child{color:var(--fuel)}
+#compResult{position:sticky;bottom:0;background:#1d2733;border:1px solid var(--fuel);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+#compResult h3{margin:0;font-family:var(--display);font-size:26px}
 @media (max-width:1100px){#driveUI .tr{top:calc(78px + env(safe-area-inset-top,0px))}body.touching .bl{top:calc(130px + env(safe-area-inset-top,0px))}}
 @media (max-width:640px){.board .cell{padding:5px 9px;min-width:52px}.big{font-size:23px}.card h1{font-size:30px}.kgrid{grid-template-columns:1fr}.bl .note{display:none}.go{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
@@ -144,13 +187,13 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
 <div id="driveUI" hidden>
   <div class="hud top"><div class="board" id="board">
     <div class="cell alli"></div>
-    <div class="cell sred"><div class="lbl">Red</div><div class="big" id="ptsR">0</div></div>
+    <div class="cell sred"><div class="lbl">Red</div><div class="big" id="ptsR">0</div><div class="tl" id="teamsR"></div></div>
     <div class="cell"><div class="lbl" id="phase">Practice</div><div class="big" id="time">--</div></div>
-    <div class="cell sblue"><div class="lbl">Blue</div><div class="big" id="ptsB">0</div></div>
+    <div class="cell sblue"><div class="lbl">Blue</div><div class="big" id="ptsB">0</div><div class="tl" id="teamsB"></div></div>
     <div class="cell" id="hopper"><div class="lbl">Hopper</div><div class="big" id="hop">0<span>/30</span></div><div class="fuelbar"><i id="hopbar"></i></div></div>
     <div class="cell"><div class="lbl">Shots/s</div><div class="big" id="rate">0</div></div>
   </div></div>
-  <div class="hud tr"><button class="btn" id="autoBtn" type="button">Run auto</button><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
+  <div class="hud tr"><button class="btn" id="specSkip" type="button" hidden>Skip (sim result)</button><button class="btn" id="specSpeed" type="button" hidden>Speed 1×</button><button class="btn" id="autoBtn" type="button">Run auto</button><button class="btn" id="agiBtn" type="button" aria-pressed="false">Agitate: off</button><button class="btn" id="fieldBtn" type="button" aria-pressed="true">Field-oriented</button><button class="btn" id="camBtn" type="button">View: Driver</button><button class="btn" id="menuBtn" type="button">Menu</button></div>
   <div class="hud bl">
     <div class="chips">
       <div class="chip" id="cHub" hidden>Hub</div>
@@ -200,6 +243,8 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
 
 <div id="toast"></div>
 
+<div id="comp" hidden><div class="compwrap"><div id="compBody"></div><div id="compResult" hidden></div></div></div>
+
 <div id="menu">
   <div class="card">
     <div>
@@ -236,6 +281,8 @@ input[type=range]{width:100%;accent-color:var(--fuel)}
       <button class="primary" id="goFree" type="button" disabled>Practice<small>Free drive, no clock</small></button>
       <button id="goTimed" type="button" disabled>Full match<small>Auto + teleop, hub shifts · best <span id="best">none yet</span></small></button>
       <button id="goShow" type="button" disabled>Explore robot<small>Parts, mechanisms, explode</small></button>
+      <button id="goComp" class="wide" type="button" disabled>Competition<small>Long Island, Gotham or Daly: quals, alliance selection, playoffs</small></button>
+      <button id="goBack" class="wide" type="button" hidden>Back to the event<small>Leave this match; it is simmed from EPA</small></button>
     </div>
     <details class="keys" open><summary>Controls</summary>
       <div class="kgrid">
@@ -427,6 +474,7 @@ async function loadRobot() {
   add(2 * fx, th, 0, fz - th / 2); add(2 * fx, th, 0, -fz + th / 2); add(th, 2 * fz - 2 * th, fx - th / 2, 0); add(th, 2 * fz - 2 * th, -fx + th / 2, 0);
   robot.bumperMat = bm;
   // fuel inside the robot (physics particles) and fuel moving through the shooter
+  buildLeds(vis);
   robot.inner = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 16, 12), fuelMat, 96); robot.inner.castShadow = true; robot.inner.count = 0; robot.inner.frustumCulled = false; vis.add(robot.inner);
   const roller = robot.parts.find((p) => p.h.name === "Roller") || robot.parts.find((p) => p.h.group === "arm" && /Sushi/.test(p.h.name));
   robot.rollerLocal = roller ? roller.base.clone() : new THREE.Vector3(0, 0.3, 0.3);
@@ -656,12 +704,12 @@ const inField = (x, z) => Math.abs(x) < F.carpet.length / 2 - 0.02 && Math.abs(z
 const fuel = { n: 0 };
 function initFuel() {
   const list = F.fuel.filter((p) => p[1] < 0.3); const n = list.length; fuel.n = n;
-  fuel.pos = new Float32Array(n * 3); fuel.vel = new Float32Array(n * 3); fuel.st = new Uint8Array(n); fuel.t = new Float32Array(n); fuel.hub = new Int8Array(n); fuel.init = list; fuel.sq = new Float32Array(n); fuel.sqa = new Float32Array(n * 3);
+  fuel.pos = new Float32Array(n * 3); fuel.vel = new Float32Array(n * 3); fuel.st = new Uint8Array(n); fuel.t = new Float32Array(n); fuel.hub = new Int8Array(n); fuel.init = list; fuel.sq = new Float32Array(n); fuel.sqa = new Float32Array(n * 3); fuel.own = new Int8Array(n).fill(-1);
   fuel.mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 16, 12), fuelMat, n); fuel.mesh.castShadow = true; fuel.mesh.receiveShadow = true; fuel.mesh.frustumCulled = false; scene.add(fuel.mesh);
   resetFuel();
 }
 // st: 0 on the field, 1 stored in the robot, 2 inside a hub (timer), 3 moving through the robot
-function resetFuel() { for (let i = 0; i < fuel.n; i++) { const p = fuel.init[i]; fuel.pos.set([p[0], floorH(p[0], p[2]) + FUEL_R, p[2]], i * 3); fuel.vel.fill(0, i * 3, i * 3 + 3); fuel.st[i] = 0; fuel.t[i] = 0; } }
+function resetFuel() { if (fuel.own) fuel.own.fill(-1); for (let i = 0; i < fuel.n; i++) { const p = fuel.init[i]; fuel.pos.set([p[0], floorH(p[0], p[2]) + FUEL_R, p[2]], i * 3); fuel.vel.fill(0, i * 3, i * 3 + 3); fuel.st[i] = 0; fuel.t[i] = 0; } }
 const HC = 0.16; let hnx, hnz, head, next;
 function hashInit() { hnx = Math.ceil(17.2 / HC); hnz = Math.ceil(8.8 / HC); head = new Int32Array(hnx * hnz); next = new Int32Array(fuel.n); }
 const hcell = (x, z) => { const i = Math.min(hnx - 1, Math.max(0, Math.floor((x + 8.6) / HC))), k = Math.min(hnz - 1, Math.max(0, Math.floor((z + 4.4) / HC))); return k * hnx + i; };
@@ -708,7 +756,7 @@ addEventListener("blur", () => keys.clear());
 function toggleSpin() { S.spinOutside = !S.spinOutside; toast(S.spinOutside ? "Flywheel on" : "Flywheel off", "#e9edf2"); }
 function toggleField() { S.field = !S.field; $("fieldBtn").textContent = S.field ? "Field-oriented" : "Robot-oriented"; $("fieldBtn").setAttribute("aria-pressed", S.field); toast(S.field ? "Field-oriented drive" : "Robot-oriented drive", "#e9edf2"); }
 function toggleAim() { S.aim = !S.aim; toast(S.aim ? "Auto-aim on" : "Auto-aim off", "#e9edf2"); }
-function cycleCam() { S.cam = { driver: "chase", chase: "top", top: "driver" }[S.cam]; $("camBtn").textContent = "View: " + S.cam[0].toUpperCase() + S.cam.slice(1); }
+function cycleCam() { S.cam = S.spectate ? ({ stands: "top", top: "stands" }[S.cam] || "stands") : ({ driver: "chase", chase: "top", top: "stands", stands: "driver" }[S.cam] || "driver"); $("camBtn").textContent = "View: " + S.cam[0].toUpperCase() + S.cam.slice(1); }
 function toggleAgitate() { S.agitate = !S.agitate; $("agiBtn").textContent = "Agitate: " + (S.agitate ? "on" : "off"); $("agiBtn").setAttribute("aria-pressed", S.agitate); if (!S.agitate && M.armT === ARM.retract) M.armT = ARM.carry; toast(S.agitate ? "Intake agitates while shooting" : "Agitate off", "#e9edf2"); }
 function runAutoPractice() { if (S.mode === "match") return; if (SET.auto === "none") { toast("Pick an auto in the menu first", "#e9edf2"); return; }
   autoBegin(SET.auto); preload(8); M.arm = M.armT = ARM.carry; camState.init = false; toast("Auto: " + autoName(SET.auto)); }
@@ -792,7 +840,7 @@ function launch(fid, lane) { // fuel leaves the hood toward the target
   const lh = Math.hypot(L[0], L[2]), back = S.yaw + Math.PI + 0.6 * DEG * jit(), k = 1 + 0.012 * jit(), pitch = Math.atan2(L[1], lh) + 0.6 * DEG * jit(), mag = Math.hypot(lh, L[1]) * k;
   fuel.pos.set([px, S.y + ex.p.y, pz], fid * 3);
   fuel.vel.set([Math.sin(back) * Math.cos(pitch) * mag + S.vx, Math.sin(pitch) * mag, Math.cos(back) * Math.cos(pitch) * mag + S.vz], fid * 3);
-  fuel.st[fid] = 0; fuel.t[fid] = -0.35; fuel.sq[fid] = 0.2; fuel.sqa.set([0, 1, 0], fid * 3); S.shots.push(performance.now());
+  fuel.st[fid] = 0; fuel.t[fid] = -0.35; fuel.own[fid] = 0; fuel.sq[fid] = 0.2; fuel.sqa.set([0, 1, 0], fid * 3); S.shots.push(performance.now());
 }
 const driveCtx = {
   laneReady: (l) => S.laneT[l] <= 0,
@@ -859,28 +907,68 @@ function driveToward(b, tx, tz, wt, dt, wacc) {
 
 // ================================================================== opponent robots (AI)
 const BOTS = [];
-function makeBotMesh(color) {
-  const g = new THREE.Group(); const m = (c, r = 0.7) => new THREE.MeshStandardMaterial({ color: c, roughness: r });
+// team colors and robot designs are picked from the team number so every robot looks the same each time
+const hashN = (n) => { let h = Math.imul(n, 2654435761) >>> 0; h = (h ^ (h >>> 15)) >>> 0; return h; };
+const numTex = new Map();
+function bumperTexture(team, color) {
+  const key = team + "|" + color; if (numTex.has(key)) return numTex.get(key);
+  const c = document.createElement("canvas"); c.width = 256; c.height = 64; const g = c.getContext("2d");
+  g.fillStyle = color; g.fillRect(0, 0, 256, 64); g.fillStyle = "#fff"; g.font = "bold 50px Barlow Condensed, Arial Narrow, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(String(team), 128, 35);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; numTex.set(key, t); return t;
+}
+function makeBotMesh(team, alliance, style) {
+  const g = new THREE.Group(); const m = (c, r = 0.7, met = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: met });
   const add = (geo, mat, x, y, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; g.add(o); return o; };
-  const th = 0.085, h = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2, bm = m(color, 0.85);
-  add(new THREE.BoxGeometry(2 * BOX.hx, h, th), bm, 0, yc, BOX.hz - th / 2 + BOX.cz); add(new THREE.BoxGeometry(2 * BOX.hx, h, th), bm, 0, yc, -BOX.hz + th / 2 + BOX.cz);
-  add(new THREE.BoxGeometry(th, h, 2 * BOX.hz - 2 * th), bm, BOX.hx - th / 2, yc, BOX.cz); add(new THREE.BoxGeometry(th, h, 2 * BOX.hz - 2 * th), bm, -BOX.hx + th / 2, yc, BOX.cz);
-  add(new THREE.BoxGeometry(0.72, 0.09, 0.7), m(0x2a2f36), 0, 0.11, BOX.cz);
-  const frame = m(0x8d96a1, 0.45); for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.36, 0.62), frame, x, 0.34, 0.02);
-  add(new THREE.BoxGeometry(0.62, 0.2, 0.22), m(0x30353d), 0, 0.5, -0.24); // shooter
-  for (const x of [-0.18, 0.18]) { const w = add(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 14), m(0xd4a514, 0.5), x, 0.5, -0.24); w.rotation.z = Math.PI / 2; }
+  const acol = alliance === "red" ? "#d8333a" : "#2f6df0", h = hashN(team);
+  const th = 0.085, hgt = BUMPER.y1 - BUMPER.y0, yc = (BUMPER.y0 + BUMPER.y1) / 2;
+  const plain = m(acol, 0.85), num = new THREE.MeshStandardMaterial({ map: bumperTexture(team, acol), roughness: 0.85 });
+  const box = (w, d, x, z, face) => { const mats = [plain, plain, plain, plain, plain, plain]; if (face) mats[face] = num; const o = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), mats); o.position.set(x, yc, z); o.castShadow = true; g.add(o); };
+  box(2 * BOX.hx, th, 0, BOX.hz - th / 2 + BOX.cz, 4); box(2 * BOX.hx, th, 0, -BOX.hz + th / 2 + BOX.cz, 5);
+  box(th, 2 * BOX.hz - 2 * th, BOX.hx - th / 2, BOX.cz, 0); box(th, 2 * BOX.hz - 2 * th, -BOX.hx + th / 2, BOX.cz, 1);
+  const frameCol = [0x8d96a1, 0x3a3f47, 0xc9a227, 0x6c2bd9, 0x1f8a5b, 0xd96b2b, 0xb8c2cc][h % 7], frame = m(frameCol, 0.45, 0.4), dark = m(0x23272d), accent = m([0xd4a514, 0xe33, 0x2bd, 0xeee][(h >> 4) % 4], 0.5);
+  add(new THREE.BoxGeometry(0.72, 0.09, 0.7), dark, 0, 0.11, BOX.cz);
+  if (style === 0) { // classic: open hopper, rear shooter
+    for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.36, 0.62), frame, x, 0.34, 0.02);
+    add(new THREE.BoxGeometry(0.62, 0.2, 0.22), dark, 0, 0.5, -0.24);
+    for (const x of [-0.18, 0.18]) add(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 14), accent, x, 0.5, -0.24).rotation.z = Math.PI / 2;
+  } else if (style === 1) { // turret on a tall hopper
+    for (const x of [-0.33, 0.33]) for (const z of [-0.28, 0.3]) add(new THREE.BoxGeometry(0.03, 0.6, 0.03), frame, x, 0.42, z);
+    add(new THREE.BoxGeometry(0.68, 0.03, 0.62), frame, 0, 0.72, 0.01);
+    const tur = add(new THREE.CylinderGeometry(0.16, 0.18, 0.12, 20), dark, 0, 0.8, -0.1); add(new THREE.BoxGeometry(0.14, 0.12, 0.3), accent, 0, 0.9, -0.2);
+    void tur;
+  } else if (style === 2) { // low bot with a wide flywheel bank
+    add(new THREE.BoxGeometry(0.66, 0.16, 0.5), frame, 0, 0.24, 0.05);
+    add(new THREE.BoxGeometry(0.7, 0.14, 0.18), dark, 0, 0.38, -0.25);
+    for (const x of [-0.24, -0.08, 0.08, 0.24]) add(new THREE.CylinderGeometry(0.045, 0.045, 0.1, 12), accent, x, 0.39, -0.25).rotation.z = Math.PI / 2;
+  } else { // tall tower with a hooded shooter on top
+    for (const x of [-0.3, 0.3]) add(new THREE.BoxGeometry(0.04, 0.85, 0.08), frame, x, 0.5, -0.22);
+    add(new THREE.BoxGeometry(0.64, 0.14, 0.28), dark, 0, 0.92, -0.2);
+    const hood = add(new THREE.CylinderGeometry(0.16, 0.16, 0.6, 18, 1, true, 0, Math.PI), accent, 0, 0.98, -0.2); hood.rotation.z = Math.PI / 2;
+    for (const x of [-0.33, 0.33]) add(new THREE.BoxGeometry(0.03, 0.3, 0.45), frame, x, 0.3, 0.1);
+  }
   add(new THREE.CylinderGeometry(0.03, 0.03, 0.64, 10), m(0x1e5aa8, 0.6), 0, 0.17, BOX.hz + 0.06).rotation.z = Math.PI / 2; // intake roller
-  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 14); balls.count = 0; g.add(balls);
-  const tmp = new THREE.Matrix4(); for (let k = 0; k < 14; k++) { tmp.makeTranslation(-0.2 + (k % 3) * 0.2, 0.26 + Math.floor(k / 6) * 0.13, 0.02 + (Math.floor(k / 3) % 2) * 0.15); balls.setMatrixAt(k, tmp); }
+  const balls = new THREE.InstancedMesh(new THREE.SphereGeometry(FUEL_R, 12, 9), fuelMat, 18); balls.count = 0; g.add(balls);
+  const tmp = new THREE.Matrix4(); for (let k = 0; k < 18; k++) { tmp.makeTranslation(-0.2 + (k % 3) * 0.2, 0.26 + Math.floor(k / 6) * 0.13, 0.02 + (Math.floor(k / 3) % 2) * 0.15); balls.setMatrixAt(k, tmp); }
   g.userData.balls = balls; scene.add(g); return g;
 }
-function setupBots(n) {
-  for (const b of BOTS) scene.remove(b.mesh); BOTS.length = 0; const s = -side(), opp = S.alliance === "red" ? "blue" : "red";
-  const col = opp === "red" ? 0xd8333a : 0x2f6df0;
-  if (n >= 1) BOTS.push({ role: "score", x: s * 5.6, z: 1.6, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 });
-  if (n >= 2) BOTS.push({ role: "defend", x: s * 5.6, z: -1.6, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 });
-  for (const b of BOTS) Object.assign(b, { alliance: opp, vx: 0, vz: 0, w: 0, store: [], state: "collect", tgt: -1, think: 0, shootT: 0, stuckT: 0, unstick: 0, mesh: makeBotMesh(col) });
-  for (const b of BOTS) if (b.role === "score") for (let i = fuel.n - 1, k = 0; i >= 0 && k < 8; i--) if (fuel.st[i] === 0) { fuel.st[i] = 6; b.store.push(i); k++; }
+// skill from EPA: faster, more accurate, quicker cycling robots for higher EPA
+function skillOf(epa) { const e = THREE.MathUtils.clamp((epa || 30) / 120, 0.05, 3.2);
+  return { vmax: 2.4 + 1.7 * Math.min(e, 1.4), period: 0.5 / (0.35 + e * 1.7), acc: 6 / (0.6 + e), sj: 0.05 / (0.6 + e), cap: Math.round(8 + 24 * Math.min(e, 1.8)), climb: e }; }
+function clearBots() { for (const b of BOTS) scene.remove(b.mesh); BOTS.length = 0; }
+// entries: [{ team, alliance, epa, role, x, z, yaw }]
+function setupMatchBots(entries) {
+  clearBots();
+  for (const e of entries) {
+    const b = Object.assign({ vx: 0, vz: 0, w: 0, store: [], state: "collect", tgt: -1, think: Math.random() * 0.3, shootT: 0, stuckT: 0, unstick: 0, role: "score", scored: 0 }, e, skillOf(e.epa));
+    b.mesh = makeBotMesh(e.team, e.alliance, hashN(e.team) % 4); BOTS.push(b);
+    for (let i = fuel.n - 1, k = 0; i >= 0 && k < 8; i--) if (fuel.st[i] === 0) { fuel.st[i] = 6; b.store.push(i); k++; }
+  }
+}
+function setupBots(n) { // practice / quick match: generic opponents
+  const s = -side(), opp = S.alliance === "red" ? "blue" : "red", yaw = s > 0 ? Math.PI / 2 : -Math.PI / 2, list = [];
+  if (n >= 1) list.push({ team: 9999, alliance: opp, epa: 90, role: "score", x: s * 5.6, z: 1.6, yaw });
+  if (n >= 2) list.push({ team: 9998, alliance: opp, epa: 70, role: "defend", x: s * 5.6, z: -1.6, yaw });
+  setupMatchBots(list);
 }
 function routeAround(b, gx, gz) { // detour past either side of a hub instead of driving into it
   for (const h of F.hubs) { const hx = h.center[0]; if (Math.sign(b.x - hx) === Math.sign(gx - hx)) continue;
@@ -889,28 +977,35 @@ function routeAround(b, gx, gz) { // detour past either side of a hub instead of
   return [gx, gz];
 }
 function botHub(b) { return b.alliance === "red" ? redHub : blueHub; }
+function defendTarget(b) { // the player if they're on the other alliance, else the opposing robot carrying the most fuel
+  if (!S.spectate && S.alliance !== b.alliance) return { x: S.x, z: S.z, hub: myHub() };
+  let best = null; for (const o of BOTS) if (o.alliance !== b.alliance && (!best || o.store.length > best.store.length)) best = o;
+  return best ? { x: best.x, z: best.z, hub: botHub(best) } : null;
+}
 function stepBots(dt) {
   for (const b of BOTS) {
-    const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]); let tx = 0, tz = 0, wantYaw = b.yaw, vmax = 3.4;
+    const hb = F.hubs[botHub(b)].center, hs = Math.sign(hb[0]); let tx = 0, tz = 0, wantYaw = b.yaw, vmax = b.vmax;
     b.think -= dt;
-    if (b.role === "defend") { // stay between the player and the player's hub
-      const ph = F.hubs[myHub()].center; const dx = ph[0] - S.x, dz = ph[2] - S.z, d = Math.hypot(dx, dz) || 1;
-      const [gx, gz] = routeAround(b, S.x + dx / d * 1.0, S.z + dz / d * 1.0); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(S.x - b.x, S.z - b.z); vmax = 3.6;
+    if (b.role === "defend" && defendTarget(b)) { const T = defendTarget(b); const ph = F.hubs[T.hub].center; const dx = ph[0] - T.x, dz = ph[2] - T.z, d = Math.hypot(dx, dz) || 1;
+      const [gx, gz] = routeAround(b, T.x + dx / d * 1.0, T.z + dz / d * 1.0); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(T.x - b.x, T.z - b.z); vmax = b.vmax + 0.3;
     } else if (b.state === "collect") {
-      if (b.store.length >= 12 || (b.think < 0 && b.tgt < 0 && b.store.length >= 1)) b.state = "score";
-      if (b.think < 0) { b.think = 0.4; let best = -1, bd = 1e9; // nearest loose fuel on the floor
-        for (let k = 0; k < 120; k++) { const i = (Math.random() * fuel.n) | 0; if (fuel.st[i] !== 0 || (b.skip && b.skip.has(i))) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2 || !inField(fuel.pos[o], fuel.pos[o + 2]) || sdf(fuel.pos[o], fuel.pos[o + 2]) < 0.5) continue; // the robot must fit there
+      const waiting = S.mode === "match" && !hubActive(b.alliance) && b.climb > 0.6;
+      if ((b.store.length >= b.cap && !waiting) || (b.store.length >= b.cap && waiting && shiftRemaining() < 4) || (b.think < 0 && b.tgt < 0 && b.store.length >= 1 && !waiting)) b.state = "score";
+      if (b.think < 0) { b.think = 0.4; let best = -1, bd = 1e9;
+        for (let k = 0; k < 120; k++) { const i = (Math.random() * fuel.n) | 0; if (fuel.st[i] !== 0 || (b.skip && b.skip.has(i))) continue; const o = i * 3; if (fuel.pos[o + 1] > 0.2 || !inField(fuel.pos[o], fuel.pos[o + 2]) || sdf(fuel.pos[o], fuel.pos[o + 2]) < 0.5) continue;
           const d = Math.hypot(fuel.pos[o] - b.x, fuel.pos[o + 2] - b.z) + (Math.sign(fuel.pos[o]) === hs ? 0 : 1.5); if (d < bd) { bd = d; best = i; } }
         if (best >= 0 && (b.tgt < 0 || b.tgtT === 0 || fuel.st[b.tgt] !== 0 || bd < Math.hypot(fuel.pos[b.tgt * 3] - b.x, fuel.pos[b.tgt * 3 + 2] - b.z) - 0.5)) b.tgt = best; }
-      if (b.tgt >= 0 && fuel.st[b.tgt] === 0) { const o = b.tgt * 3; const [gx, gz] = routeAround(b, fuel.pos[o], fuel.pos[o + 2]); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(tx, tz); vmax = Math.min(3.2, 0.8 + Math.hypot(tx, tz) * 1.5); } else b.tgt = -1;
-    } else { // score: drive into the alliance zone, put the shooter toward the hub, fire
+      if (b.tgt >= 0 && fuel.st[b.tgt] === 0) { const o = b.tgt * 3; const [gx, gz] = routeAround(b, fuel.pos[o], fuel.pos[o + 2]); tx = gx - b.x; tz = gz - b.z; wantYaw = Math.atan2(tx, tz); vmax = Math.min(b.vmax, 1.2 + Math.hypot(tx, tz) * (1.5 + b.climb)); } else b.tgt = -1;
+    } else {
       const [gx, gz] = routeAround(b, hb[0] + hs * 2.4, THREE.MathUtils.clamp(b.z, -1.5, 1.5)); tx = gx - b.x; tz = gz - b.z;
       const dh = Math.hypot(hb[0] - b.x, hb[2] - b.z); wantYaw = Math.atan2(hb[0] - b.x, hb[2] - b.z) + Math.PI;
       if (Math.hypot(tx, tz) < 0.5 || (hs * b.x > HUB.cx + 1.4 && hs * b.x < HUB.cx + 3.4)) { tx = tz = 0;
-        if (Math.abs(wrap(wantYaw - b.yaw)) < 0.08 && b.store.length) { b.shootT -= dt; if (b.shootT <= 0) { b.shootT = 0.32; botShoot(b, dh); } } }
+        // good teams hold fire while their hub is inactive
+        const hold = S.mode === "match" && !hubActive(b.alliance) && b.climb > 0.6;
+        if (hold && b.store.length < b.cap) { b.state = "collect"; b.think = 0; }
+        if (Math.abs(wrap(wantYaw - b.yaw)) < 0.08 && b.store.length && !hold) { b.shootT -= dt; if (b.shootT <= 0) { b.shootT = b.period; botShoot(b, dh); } } }
       if (!b.store.length) { b.state = "collect"; b.think = 0; }
     }
-    // steer around walls and the hub
     const dc = sdf(b.x, b.z); if (dc < 1.0) { const [gx, gz] = grad(b.x, b.z); tx += gx * (1.0 - dc) * 2.5; tz += gz * (1.0 - dc) * 2.5; }
     const l = Math.hypot(tx, tz); if (l > 1e-3) { const v = Math.min(vmax, l * 2.2); tx = tx / l * v; tz = tz / l * v; }
     if (b.unstick > 0) { b.unstick -= dt; tx = -Math.sin(b.yaw) * 1.5; tz = -Math.cos(b.yaw) * 1.5; }
@@ -920,13 +1015,14 @@ function stepBots(dt) {
     b.x += b.vx * dt; b.z += b.vz * dt; b.yaw = wrap(b.yaw + b.w * dt);
   }
 }
-function botShoot(b, d) {
+function botShoot(b) {
   const i = b.store.pop(); const th = 62 * DEG, back = b.yaw + Math.PI, px = b.x + Math.sin(back) * 0.3, pz = b.z + Math.cos(back) * 0.3;
-  const hb = F.hubs[botHub(b)].center, dd = Math.hypot(hb[0] - px, hb[2] - pz), sp = solveSpeed(dd, th, HUB.rim + 0.18 - 0.55) * (1 + (Math.random() - 0.5) * 0.05);
-  const yaw = Math.atan2(hb[0] - px, hb[2] - pz) + (Math.random() - 0.5) * 3 * DEG;
-  fuel.pos.set([px, 0.55, pz], i * 3); fuel.vel.set([Math.sin(yaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(yaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4; fuel.owner = fuel.owner || new Int8Array(fuel.n); fuel.owner[i] = 1;
+  const hb = F.hubs[botHub(b)].center, dd = Math.hypot(hb[0] - px, hb[2] - pz), sp = solveSpeed(dd, th, HUB.rim + 0.18 - 0.55) * (1 + (Math.random() - 0.5) * 2 * b.sj);
+  const yaw = Math.atan2(hb[0] - px, hb[2] - pz) + (Math.random() - 0.5) * 2 * b.acc * DEG;
+  fuel.pos.set([px, 0.55, pz], i * 3); fuel.vel.set([Math.sin(yaw) * Math.cos(th) * sp + b.vx, Math.sin(th) * sp, Math.cos(yaw) * Math.cos(th) * sp + b.vz], i * 3); fuel.st[i] = 0; fuel.t[i] = -0.4;
+  fuel.own[i] = 1 + BOTS.indexOf(b);
 }
-function drawBots() { for (const b of BOTS) { b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; b.mesh.userData.balls.count = Math.min(14, b.store.length); } }
+function drawBots() { for (const b of BOTS) { b.mesh.position.set(b.x, floorH(b.x, b.z), b.z); b.mesh.rotation.y = b.yaw; b.mesh.userData.balls.count = Math.min(18, b.store.length); } }
 
 // ================================================================== autonomous routines (ported from pyrebuilt autonomous/routines.py)
 // Paths are written in WPILib blue-alliance field coordinates (m, deg) like the robot code, then flipped for red and mirrored for "Left".
@@ -1083,7 +1179,7 @@ function stepFuel(dt) {
     for (const b of BOTS) { if (t[i] <= 0 || y > BOX.top + r) continue; const rx = x - b.x, rz = z - b.z; if (rx * rx + rz * rz > 0.7) continue;
       const cb = Math.cos(b.yaw), sb = Math.sin(b.yaw), lx = rx * cb - rz * sb, lz = rx * sb + rz * cb - BOX.cz;
       if (Math.abs(lx) > BOX.hx + r || Math.abs(lz) > BOX.hz + r) continue;
-      if (b.role === "score" && b.state === "collect" && lz > BOX.hz - 0.04 && Math.abs(lx) < 0.32 && b.store.length < 14) { st[i] = 6; b.store.push(i); break; }
+      if (b.role === "score" && b.state === "collect" && lz > BOX.hz - 0.06 && Math.abs(lx) < 0.3 + 0.06 * Math.min(b.climb, 2) && b.store.length < b.cap) { st[i] = 6; b.store.push(i); break; }
       const ox = BOX.hx + r - Math.abs(lx), oz = BOX.hz + r - Math.abs(lz); const nlx = ox < oz ? Math.sign(lx) : 0, nlz = ox < oz ? 0 : Math.sign(lz), pen = Math.min(ox, oz);
       const wx = nlx * cb + nlz * sb, wz = -nlx * sb + nlz * cb; x += wx * pen; z += wz * pen;
       const rel = (vx - (b.vx + b.w * rz)) * wx + (vz - (b.vz - b.w * rx)) * wz; if (rel < 0) { vx -= rel * wx * 1.35; vz -= rel * wz * 1.35; } }
@@ -1116,6 +1212,7 @@ function hubActive(a) { // pyrebuilt utilities/game.py shift schedule; the allia
 }
 function score(i, h) { fuel.st[i] = 2; fuel.t[i] = 0.9 + Math.random() * 0.4; fuel.hub[i] = h; S.total++; if (!S.running) return;
   const a = h === redHub ? "red" : "blue"; if (!hubActive(a)) return; S.pts[a]++; if (S.phase === "auto") S.autoPts[a]++;
+  if (fuel.own[i] === 0 && a === S.alliance) S.myFuel++; else if (fuel.own[i] > 0 && BOTS[fuel.own[i] - 1]) BOTS[fuel.own[i] - 1].scored++;
   if (a === S.alliance) { S.score++; pulse(); } }
 function exitHub(i) { const h = fuel.hub[i]; const [cx, , cz] = F.hubs[h].center; const s = cx < 0 ? 1 : -1; const lane = [-0.45, -0.15, 0.15, 0.45][Math.floor(Math.random() * 4)];
   fuel.pos.set([cx + s * (HUB.half + FUEL_R + 0.03), 0.2, cz + lane], i * 3); fuel.vel.set([s * (1.6 + Math.random() * 1.2), 0, (Math.random() - 0.5) * 1.2], i * 3); fuel.st[i] = 0; fuel.t[i] = 0; }
@@ -1123,6 +1220,9 @@ function tick(inp) {
   if (AU && (S.phase === "auto" || S.mode !== "match")) { const touched = Math.abs(inp.mx) + Math.abs(inp.my) + Math.abs(inp.rot) > 0.15 && S.mode !== "match";
     if (touched) { AU = null; toast("Auto cancelled", "#e9edf2"); } else { inp = autoStep(STEP); if (AU && AU.st === "done") AU = null; } }
   else if (AU && S.phase !== "auto") AU = null;
+  if (S.spectate) { stepBots(STEP); for (let i = 0; i < BOTS.length; i++) { collideField(BOTS[i]); for (let j = i + 1; j < BOTS.length; j++) { collideBots(BOTS[i], BOTS[j]); collideBots(BOTS[j], BOTS[i]); } } stepFuel(STEP);
+    if (S.running) { S.timeLeft -= STEP; if (S.timeLeft <= 0) { if (S.phase === "auto") { S.phase = "teleop"; S.timeLeft = MATCH.teleop; const r = S.autoPts.red, b = S.autoPts.blue; S.autoWinner = r === b ? (Math.random() < 0.5 ? "red" : "blue") : r > b ? "red" : "blue"; } else { S.timeLeft = 0; endRun(); return false; } } }
+    return true; }
   solve(); stepRobot(inp, STEP); controlMech(inp, STEP); stepMech(STEP);
   hsStep(STEP, Object.assign(driveCtx, { roll: M.roll, idx: M.idx, feeding: S.feeding, ax: S.ax || 0, az: S.az || 0 })); S.hopper = HS.n;
   stepTransits(STEP); stepFuel(STEP);
@@ -1139,15 +1239,16 @@ const camState = { pos: new THREE.Vector3(), look: new THREE.Vector3(), yawS: 0,
 function camYaw() { if (S.cam === "chase") return camState.yawS; return side() < 0 ? Math.PI / 2 : -Math.PI / 2; }
 function updateDriveCamera(dt) {
   const k = 1 - Math.exp(-dt * 6); let p, l; const s = side();
-  if (S.cam === "driver") { p = V3(s * 10.2, 5.4, S.z * 0.35); l = V3(Math.min(Math.abs(S.x - s * 2.2), 7) * s, 0.2, S.z * 0.75); }
+  if (S.cam === "stands") { p = V3(0, 7.5, -11.5); l = V3(0, 0, 0.5); }
+  else if (S.cam === "driver") { p = V3(s * 10.2, 5.4, S.z * 0.35); l = V3(Math.min(Math.abs(S.x - s * 2.2), 7) * s, 0.2, S.z * 0.75); }
   else if (S.cam === "chase") { camState.yawS += wrap(S.yaw - camState.yawS) * (1 - Math.exp(-dt * 3)); const f = [Math.sin(camState.yawS), Math.cos(camState.yawS)];
     p = V3(THREE.MathUtils.clamp(S.x - f[0] * 3.2, -8.1, 8.1), S.y + 1.9, THREE.MathUtils.clamp(S.z - f[1] * 3.2, -3.9, 3.9)); l = V3(S.x + f[0] * 1.5, S.y + 0.4, S.z + f[1] * 1.5); }
-  else { const cx = THREE.MathUtils.clamp(S.x - s * 1.5, -6.5, 6.5); p = V3(cx - s * 0.01, 11, S.z * 0.6 + 0.01); l = V3(cx, 0, S.z * 0.6); }
+  else { const cx = S.spectate ? 0 : THREE.MathUtils.clamp(S.x - s * 1.5, -6.5, 6.5), cz = S.spectate ? 0 : S.z * 0.6; p = V3(cx - s * 0.01, S.spectate ? 17 : 11, cz + 0.01); l = V3(cx, 0, cz); }
   if (window.__camO) { p = V3(...window.__camO[0]); l = V3(...window.__camO[1]); camState.pos.copy(p); camState.look.copy(l); }
   if (!camState.init) { camState.pos.copy(p); camState.look.copy(l); camState.init = true; }
   camState.pos.lerp(p, k); camState.look.lerp(l, k); camera.position.copy(camState.pos);
   camera.up.set(0, 1, 0); if (S.cam === "top") camera.up.set(-s, 0, 0); camera.lookAt(camState.look);
-  sun.position.set(S.x + 3, 9, S.z + 2); sun.target.position.set(S.x, 0, S.z);
+  const fx = S.spectate || S.cam === "stands" ? 0 : S.x, fz = S.spectate || S.cam === "stands" ? 0 : S.z; sun.position.set(fx + 3, 9, fz + 2); sun.target.position.set(fx, 0, fz);
 }
 
 // ================================================================== hud
@@ -1158,9 +1259,10 @@ function armLabel() { const a = M.arm; if (a < 4) return "deployed"; if (Math.ab
 function hud() {
   $("ptsR").textContent = S.pts.red; $("ptsB").textContent = S.pts.blue;
   $("phase").textContent = S.mode === "match" ? (S.phase === "auto" ? "Auto" : S.timeLeft <= 30 ? "Endgame" : "Teleop") : AU ? "Auto" : "Practice";
-  $("autoBtn").hidden = S.mode === "match";
+  $("autoBtn").hidden = S.mode === "match"; $("specSkip").hidden = !S.spectate; $("specSpeed").hidden = !S.spectate; $("agiBtn").hidden = !!S.spectate; $("fieldBtn").hidden = !!S.spectate;
   ui.time.textContent = S.mode === "match" ? (() => { const t = Math.ceil(Math.max(0, S.timeLeft)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); })() : "∞";
   document.querySelector(".sred").classList.toggle("mine", S.alliance === "red"); document.querySelector(".sblue").classList.toggle("mine", S.alliance === "blue");
+  if (!S.comp) { $("teamsR").textContent = ""; $("teamsB").textContent = ""; }
   const ch = $("cHub"); ch.hidden = S.mode !== "match";
   if (!ch.hidden) { const act = hubActive(S.alliance); let nxt = S.phase === "auto" ? S.timeLeft : S.timeLeft > 130 ? S.timeLeft - 130 : S.timeLeft > 30 ? (S.timeLeft - 30) % 25 : S.timeLeft;
     ch.className = "chip " + (act ? "on" : "warnc"); ch.textContent = (act ? "Hub active " : "Hub inactive ") + Math.ceil(nxt) + "s"; }
@@ -1185,7 +1287,7 @@ for (const [id, key] of [["spdDrive", "drive"], ["spdTurn", "turn"]]) { const el
 $("aRed").onclick = () => setAlliance("red"); $("aBlue").onclick = () => setAlliance("blue");
 try { const a = localStorage.getItem("tt-alliance"); if (a === "red" || a === "blue") setAlliance(a); } catch {}
 function preload(n) { HS.n = 0; const ids = []; for (let i = fuel.n - 1; i >= 0 && ids.length < n; i--) if (fuel.st[i] === 0) { fuel.st[i] = 1; ids.push(i); } slotsInto(ids.length, ids); S.hopper = HS.n; }
-function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); setupBots(SET.opp); S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
+function resetRound() { resetFuel(); transits.length = 0; HS.n = 0; startPose(); M.arm = M.armT = ARM.carry; M.ext = 0; preload(8); if (!S.comp) setupBots(SET.opp); S.myFuel = 0; S.score = 0; S.total = 0; S.pts = { red: 0, blue: 0 }; S.autoPts = { red: 0, blue: 0 }; S.autoWinner = null; S.lastActive = true; S.phase = S.mode === "match" ? "auto" : "practice"; S.timeLeft = MATCH.auto; S.running = true; camState.init = false;
   Object.assign(M, { arm: ARM.carry, armT: ARM.carry, armV: 0, roll: 0, idx: 0, fly: 0, flyT: 0, hood: 70, hoodT: 70, ext: 0 }); S.intakeLatch = false; S.spinOutside = false; }
 function setView(v) {
   S.view = v; $("driveUI").hidden = v !== "drive"; $("show").hidden = v !== "show"; ui.menu.hidden = !(v === "menu" || (v === "drive" && S.paused));
@@ -1195,10 +1297,14 @@ function setView(v) {
 }
 function start(mode) { S.mode = mode; resetShowcase(); resetRound(); S.paused = false; setView("drive"); AU = null; if (mode === "match" && SET.auto !== "none") autoBegin(SET.auto);
   toast(mode === "match" ? "Auto · " + (SET.auto !== "none" ? autoName(SET.auto) : "drive it yourself") : "Practice", mode === "match" ? "var(--fuel)" : "#e9edf2"); }
-$("goFree").onclick = () => start("free"); $("goTimed").onclick = () => start("match"); $("goShow").onclick = () => enterShow();
-function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; if (p) keys.clear(); }
+$("goComp").onclick = () => { COMP = COMP || null; openComp(); };
+$("goBack").onclick = () => { abandonLive(true); };
+$("specSkip").onclick = () => abandonLive(true);
+$("specSpeed").onclick = () => { S.timeScale = { 1: 2, 2: 4, 4: 1 }[S.timeScale || 1]; $("specSpeed").textContent = "Speed " + S.timeScale + "×"; };
+$("goFree").onclick = () => { S.comp = false; LIVE = null; start("free"); }; $("goTimed").onclick = () => { S.comp = false; LIVE = null; start("match"); }; $("goShow").onclick = () => enterShow();
+function setPaused(p) { if (!S.loaded || S.view !== "drive") return; S.paused = p; ui.menu.hidden = !p; $("goBack").hidden = !S.comp; if (p) keys.clear(); }
 function enterMenu() { S.paused = true; setView("menu"); }
-function endRun() { S.running = false; const sc = S.pts[S.alliance], op = S.pts[S.alliance === "red" ? "blue" : "red"];
+function endRun() { S.running = false; if (S.comp) { finishLive(); return; } const sc = S.pts[S.alliance], op = S.pts[S.alliance === "red" ? "blue" : "red"];
   const res = sc > op ? "You win " : sc < op ? "You lose " : "Tie "; toast(res + sc + "–" + op, sc >= op ? "var(--fuel)" : "#e9edf2");
   if (sc > best) { best = sc; try { localStorage.setItem("tt-best", String(best)); } catch {} $("best").textContent = best + " pts"; }
   setTimeout(() => setPaused(true), 2600); }
@@ -1335,6 +1441,237 @@ function updateHots() {
     h.el.hidden = !vis; if (vis) h.el.style.transform = `translate(${(p.x * 0.5 + 0.5) * r.width - 6}px, ${(-p.y * 0.5 + 0.5) * r.height - 9}px)`; }
 }
 
+// ================================================================== LEDs (pyrebuilt components/leds.py: CANdle, 38 LEDs, segments 0/7/14/21/30/36)
+const LED_N = 38;
+function buildLeds(vis) {
+  const mesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.016, 0.012, 0.02), new THREE.MeshBasicMaterial({ toneMapped: false }), LED_N);
+  const m = new THREE.Matrix4(); // a strip along the top of each hopper side plate
+  for (let i = 0; i < LED_N; i++) { const left = i < 19, k = left ? i : i - 19, z = -0.1 + (left ? k : 18 - k) * 0.024; m.makeTranslation(left ? -0.365 : 0.365, 0.537, z); mesh.setMatrixAt(i, m); mesh.setColorAt(i, new THREE.Color(0)); }
+  vis.add(mesh); robot.leds = mesh;
+}
+const LEDC = { green: new THREE.Color(0x00ff40), red: new THREE.Color(0xff1020), off: new THREE.Color(0x101010), tmp: new THREE.Color() };
+function shiftRemaining() { const t = S.timeLeft; if (S.phase === "auto") return t; if (t > 130) return t - 130; if (t > 30) return (t - 30) % 25 || 25; return t; }
+function ledPattern() {
+  if (S.view !== "drive" || S.spectate) return { kind: "rainbow" };
+  if (S.paused || !S.running) return { kind: "rainbow" }; // disabled
+  const active = hubActive(S.alliance), rem = shiftRemaining(), t = S.timeLeft, tele = S.mode === "match" && S.phase === "teleop";
+  const inRange = S.inZone && S.dist >= SHOT_TABLE[0][0] - 0.1 && S.dist <= SHOT_TABLE[SHOT_TABLE.length - 1][0] + 0.3;
+  const flash = tele && !active && rem < 5, inShift4 = t >= 30 && t <= 55, fast = tele && active && rem < 5 && !inShift4, pulse = tele && S.autoWinner !== S.alliance && t > 130;
+  if (!(active || flash)) return { kind: "off" };
+  return { kind: pulse ? "pulse" : fast ? "fast" : flash ? "flash" : "solid", color: inRange ? LEDC.green : LEDC.red };
+}
+function drawLeds(now) {
+  if (!robot.leds) return; const p = ledPattern(), c = LEDC.tmp;
+  for (let i = 0; i < LED_N; i++) {
+    if (p.kind === "rainbow") c.setHSL(((i / LED_N) + now * 0.0004) % 1, 1, 0.5);
+    else if (p.kind === "off") c.copy(LEDC.off);
+    else { let k = 1; if (p.kind === "flash") k = Math.floor(now / 200) % 2; if (p.kind === "fast") k = Math.floor(now / 62) % 2; if (p.kind === "pulse") k = 0.15 + 0.85 * (0.5 + 0.5 * Math.sin(now * 0.004)); c.copy(p.color).multiplyScalar(k || 0.05); }
+    robot.leds.setColorAt(i, c);
+  }
+  robot.leds.instanceColor.needsUpdate = true;
+}
+
+// ================================================================== competition: events, schedule, rankings, alliance selection, playoffs
+const EVENTS = {"nyli2":{"name":"FIRST Long Island Regional","short":"Long Island","dates":"March 18-21, 2026","teams":[[28,"Pierson Whalers",26.0],[263,"Aftershock",69.5],[287,"Floyd Robotics",91.3],[329,"Mohawks",29.4],[353,"POBots",59.8],[358,"Robotic Eagles",52.4],[496,"Royals",46.7],[514,"Entropy",9.2],[527,"Red Dragons",24.5],[533,"The PSIcotics",38.5],[545,"ROBO-DAWGS",15.2],[564,"Longwood RoboLions",22.1],[569,"Rambots 569",9.4],[601,"BayBots",5.4],[806,"The Brooklyn Blacksmiths",14.9],[810,"The Mechanical Bulls",74.3],[870,"TEAM R. I. C. E.",120.0],[871,"Robotechs",38.6],[884,"Mechanical Mules",16.0],[1468,"Hicksville J-Birds",43.6],[1546,"Chaos Inc.",33.6],[1554,"Oceanside Kraken",44.2],[1803,"Vikings",27.5],[1880,"Warriors of East Harlem",61.8],[2027,"Robotic Dragons",20.9],[2161,"Robocats",22.7],[2347,"Trial and Error",20.3],[2487,"Mechanical Animals",11.4],[2638,"Rebel Robotics",71.7],[2869,"Regal Eagles",45.1],[2872,"CyberCats",66.5],[2875,"CyberHawks",37.4],[3137,"T-Birds",23.5],[3171,"HURRICANES",4.4],[3624,"Soaring Colts",25.4],[3950,"RoboGym Robotics",56.6],[4458,"Infernobotix",43.7],[4567,"The Mechanized Mafia",11.7],[5016,"Huntington Robotics",33.2],[5736,"Kingsmen Robotics",210.8],[6423,"Ward Melville Iron Patriots",50.7],[6806,"Mineola Wild Reds",33.2],[7673,"Formosan Sika",18.4],[8267,"Riptide Robotics 8267",97.6],[9016,"Syosset SuperSonics",39.7],[9646,"The Marinators",38.4],[10621,"Crusaders",17.4],[11030,"Bonac Bots",46.8]]},"nyn2":{"name":"Gotham Regional","short":"Gotham","dates":"April 6-8, 2026","teams":[[334,"TechKnights",51.0],[335,"Skillz Tech Gear Botz",-14.3],[358,"Robotic Eagles",67.3],[516,"StuyPlus",45.5],[694,"StuyPulse",185.7],[1155,"SciBorgs",47.2],[1156,"Under Control",224.5],[1796,"RoboTigers",211.7],[1880,"Warriors of East Harlem",71.1],[2265,"Fe Maidens",40.0],[2869,"Regal Eagles",41.7],[2875,"CyberHawks",48.4],[3158,"PrepaTec - TECBOT",102.8],[3193,"Falco Tech",35.8],[3646,"INTEGRA BAHCESEHIR",30.4],[3760,"Robo Raccoons",10.8],[3950,"RoboGym Robotics",77.5],[4027,"Centre Punch",143.4],[4122,"Ossining OBOTS",83.8],[4571,"Rambots",31.4],[6024,"R Factor",16.7],[6348,"PrepaTec - HORUS",31.2],[6402,"GOKTURKLER",23.7],[6880,"Universal Serial Brawlers",7.3],[6911,"SO BOTZ",70.9],[7272,"Envirobots",15.3],[7551,"Extreme Mechanism",46.5],[7636,"Robomania",20.6],[7840,"EMONER ROBOTICS",116.2],[8011,"Wayi Guangzhou",120.5],[8267,"Riptide Robotics 8267",124.2],[8393,"The Giant Diencephalic BrainSTEM Robotics Team",117.6],[8739,"Redhawk Robotics",29.8],[9030,"Qarabagh MecHack",39.2],[9642,"I.N.T. Robotics",29.0],[10045,"Casque Robotics",2.8],[10262,"Bionic Buzzers",67.4],[10390,"GOOGIRL",25.8],[11313,"tROBOmakEr",11.4]]},"dal":{"name":"FIRST Championship - Daly Division","short":"Daly (Champs)","dates":"April 29-May 2, 2026","teams":[[11,"MORT",141.6],[176,"Aces High",199.2],[272,"Cyber Crusaders",146.4],[303,"The T.E.S.T. Team",66.8],[316,"LUNATECS",213.7],[340,"G.R.R. (Greater Rochester Robotics)",172.5],[469,"Las Guerrillas",163.8],[624,"CRyptonite",99.8],[972,"Iron Claw",136.6],[999,"MechaRAMS",41.5],[1058,"PVC Pirates",152.2],[1155,"SciBorgs",33.9],[1156,"Under Control",197.8],[1323,"MadTown Robotics",329.6],[1325,"Inverse Paradox",245.7],[1538,"The Holy Cows",140.0],[1629,"Garrett Coalition (GaCo)",101.5],[1676,"The Pascack PI-oneers",122.8],[1720,"PhyXTGears",118.5],[1727,"REX",104.0],[1741,"Red Alert",52.6],[1880,"Warriors of East Harlem",87.4],[1939,"THE KUHNIGHTS",109.9],[2073,"EagleForce",168.8],[2338,"Gear It Forward",160.5],[2399,"The Fighting Unicorns",120.1],[2429,"The Blockheads",94.5],[2472,"Centurions",133.9],[2530,"Inconceivable",81.0],[2718,"Team OKC e'possums",109.1],[2883,"F.R.E.D.",121.6],[3008,"Team Magma",37.3],[3100,"The Lightning Turtles",124.2],[3314,"Mechanical Mustangs",129.4],[3339,"BumbleB",142.5],[3478,"PrepaTec - LamBot",173.9],[3538,"RoboJackets",200.3],[3646,"INTEGRA BAHCESEHIR",41.9],[3656,"Dexter Dreadbots",163.3],[3880,"Tiki Techs",28.7],[3990,"Tech for Kids",105.1],[4028,"The Beak Squad",203.9],[4065,"Nerds of Prey",133.6],[4188,"Columbus Space Program",129.3],[4189,"Chargers",125.7],[4414,"HighTide",376.6],[4674,"RoboJacks",101.7],[4678,"CyberCavs",224.4],[5534,"Onaway Onabots",77.2],[5550,"BRONChO BOTS",68.6],[5557,"BB-R8ERS",45.1],[5813,"Morpheus",204.9],[5847,"Ironclad",149.2],[5937,"MI Robotics",149.3],[6017,"PrepaTec - Cyberius",140.2],[6106,"PrepaTec - TecGear",45.1],[6391,"Ursuline Bearbotics",82.4],[6696,"Cardinal Dynamics",131.1],[6919,"The Commodores",150.1],[6941,"IronPulse Robotics",158.9],[6998,"Unipards",70.9],[7520,"Team MineKee",178.3],[7632,"An Kang Robotics Maker",126.6],[7712,"ACCN UMOJA",104.6],[8393,"The Giant Diencephalic BrainSTEM Robotics Team",123.1],[8724,"Mayhem",101.2],[9094,"The Earthquakers",137.5],[9175,"BrainMachine-FRC",72.6],[9545,"Caracal Robotics",102.8],[10002,"BotBuilders",58.1],[10213,"BALTA",141.6],[10229,"Event Horizon",44.4],[10619,"Rana's Rivets",8.8],[11141,"AlphaZ",126.0],[11178,"Revelation",64.2]]}};
+const ME = 1880;
+let COMP = null;
+const cmpSave = () => { try { localStorage.setItem("tt-comp", JSON.stringify(COMP)); } catch {} };
+const cmpLoad = () => { try { return JSON.parse(localStorage.getItem("tt-comp") || "null"); } catch { return null; } };
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const tinfo = (n) => COMP.teams[n];
+const LIVE_K = 0.62; // live-sim fuel per EPA point (measured), so simmed and played matches line up
+function myValue() { const t = tinfo(ME); return t.simPlayed ? t.simPts / t.simPlayed / LIVE_K : t.epa; } // what you've shown in your live matches
+function teamValue(n) { return n === ME ? myValue() : tinfo(n).epa; }
+function newComp(evKey, perTeam = 8) {
+  const ev = EVENTS[evKey], teams = {};
+  for (const [num, name, epa] of ev.teams) teams[num] = { num, name, epa: Math.max(epa, 1), rp: 0, played: 0, w: 0, l: 0, t: 0, pts: 0, simPts: 0, simPlayed: 0 };
+  COMP = { ev: evKey, teams, quals: genSchedule(Object.keys(teams).map(Number), perTeam), phase: "quals", alliances: null, sel: null, playoffs: null, log: [] };
+  cmpSave();
+}
+function genSchedule(nums, per) { // every team plays `per` matches, spread out, red/blue balanced
+  const M = Math.ceil(nums.length * per / 6), count = {}, last = {}, red = {}, out = [];
+  for (const n of nums) { count[n] = 0; last[n] = -99; red[n] = 0; }
+  for (let m = 0; m < M; m++) {
+    const pool = nums.slice().sort((a, b) => (count[a] - count[b]) || ((m - last[b] < 3) - (m - last[a] < 3)) || (Math.random() - 0.5));
+    const six = []; for (const n of pool) { if (six.length === 6) break; if (m - last[n] >= 2 || pool.length < 18) six.push(n); }
+    for (const n of pool) { if (six.length === 6) break; if (!six.includes(n)) six.push(n); }
+    six.sort((a, b) => red[a] - red[b]); const r = six.slice(0, 3), b = six.slice(3);
+    for (const n of six) { count[n]++; last[n] = m; } for (const n of r) red[n]++;
+    out.push({ id: "Q" + (m + 1), red: r, blue: b, res: null });
+  }
+  return out;
+}
+function climbPts(epa) { const e = epa / 120, r = Math.random(); if (r < Math.min(0.85, 0.15 + e * 0.35)) return e > 1.3 && Math.random() < 0.6 ? 30 : e > 0.6 && Math.random() < 0.6 ? 20 : 10; return 0; }
+function simAlliance(nums) { let fuel = 0, climb = 0; for (const n of nums) { const v = teamValue(n); fuel += Math.max(0, v * LIVE_K * (1 + 0.25 * gauss())); climb += n === ME ? 0 : climbPts(v); } return { fuel: Math.round(fuel), climb }; }
+// ranking points (approximation of REBUILT): win 3, tie 1, +1 for 100 alliance fuel, +1 for 50 tower points
+function rpOf(fuel, climb, mine, theirs) { return (mine > theirs ? 3 : mine === theirs ? 1 : 0) + (fuel >= 100 ? 1 : 0) + (climb >= 50 ? 1 : 0); }
+function recordQual(q, r, b) { // r, b: { fuel, climb, my? }
+  const rs = r.fuel + r.climb, bs = b.fuel + b.climb; q.res = { r: rs, b: bs, rRP: rpOf(r.fuel, r.climb, rs, bs), bRP: rpOf(b.fuel, b.climb, bs, rs), rf: r.fuel, bf: b.fuel, live: !!r.live };
+  for (const [nums, me, them, rp] of [[q.red, rs, bs, q.res.rRP], [q.blue, bs, rs, q.res.bRP]]) for (const n of nums) { const t = tinfo(n); t.played++; t.rp += rp; t.pts += me; if (me > them) t.w++; else if (me < them) t.l++; else t.t++; }
+  cmpSave();
+}
+function simQual(q) { recordQual(q, simAlliance(q.red), simAlliance(q.blue)); }
+function rankings() { return Object.values(COMP.teams).sort((a, b) => (b.rp / Math.max(1, b.played)) - (a.rp / Math.max(1, a.played)) || (b.pts / Math.max(1, b.played)) - (a.pts / Math.max(1, a.played)) || b.epa - a.epa); }
+const nextQual = () => COMP.quals.find((q) => !q.res);
+const isMine = (q) => q.red.includes(ME) || q.blue.includes(ME);
+// ---------- alliance selection (serpentine, 2 rounds; captains may pick lower-ranked captains in round 1)
+function startSelection() { const rk = rankings(); COMP.phase = "selection"; COMP.alliances = rk.slice(0, 8).map((t) => [t.num]); COMP.sel = { round: 1, idx: 0, declined: [] }; cmpSave(); }
+function selOrder() { const s = COMP.sel; return s.round === 1 ? s.idx : 7 - s.idx; }
+function available() { const used = new Set(COMP.alliances.flat()); const cur = selOrder();
+  return rankings().filter((t) => !used.has(t.num) || (COMP.sel.round === 1 && COMP.alliances.findIndex((a) => a[0] === t.num) > cur && COMP.alliances.find((a) => a[0] === t.num).length === 1)); }
+function doPick(num) {
+  const cur = selOrder(); const capIdx = COMP.alliances.findIndex((a, i) => i > cur && a[0] === num && a.length === 1);
+  if (capIdx >= 0) { COMP.alliances.splice(capIdx, 1); const used = new Set(COMP.alliances.flat()); const nx = rankings().find((t) => !used.has(t.num) && t.num !== num); COMP.alliances.push([nx.num]); }
+  COMP.alliances[cur].push(num); COMP.log.push(`Alliance ${cur + 1} (${COMP.alliances[cur][0]}) picks ${num}`);
+  const s = COMP.sel; s.idx++; if (s.idx >= 8) { s.idx = 0; s.round++; }
+  if (s.round > 2) { COMP.phase = "playoffs"; COMP.playoffs = newBracket(); }
+  cmpSave();
+}
+function aiPick() { const cand = available(); cand.sort((a, b) => teamValue(b.num) - teamValue(a.num)); return cand[0].num; }
+const myTurn = () => COMP.phase === "selection" && COMP.alliances[selOrder()][0] === ME;
+// ---------- double-elimination playoffs (2023+ format) with best-of-3 finals
+function newBracket() {
+  const A = (n) => ["A", n], W = (m) => ["W", m], L = (m) => ["L", m];
+  const ms = [["M1", A(1), A(8)], ["M2", A(4), A(5)], ["M3", A(2), A(7)], ["M4", A(3), A(6)], ["M5", L("M1"), L("M2")], ["M6", L("M3"), L("M4")], ["M7", W("M1"), W("M2")], ["M8", W("M3"), W("M4")],
+    ["M9", L("M7"), W("M6")], ["M10", L("M8"), W("M5")], ["M11", W("M7"), W("M8")], ["M12", W("M10"), W("M9")], ["M13", L("M11"), W("M12")], ["F1", W("M11"), W("M13")], ["F2", W("M11"), W("M13")], ["F3", W("M11"), W("M13")]];
+  return { matches: ms.map(([id, r, b]) => ({ id, rs: r, bs: b, res: null })), champion: null };
+}
+function resolveSrc(src) { const P = COMP.playoffs; if (src[0] === "A") return src[1]; const m = P.matches.find((x) => x.id === src[1]); if (!m || !m.res) return null; return src[0] === "W" ? m.res.win : m.res.lose; }
+function pMatchReady(m) { if (m.res) return false; const r = resolveSrc(m.rs), b = resolveSrc(m.bs); if (r == null || b == null) return false;
+  if (m.id[0] === "F") { const f = COMP.playoffs.matches.filter((x) => x.id[0] === "F" && x.res); const wins = { [r]: 0, [b]: 0 }; for (const x of f) wins[x.res.win]++; if (wins[r] >= 2 || wins[b] >= 2) return false; if (m.id === "F2" && !COMP.playoffs.matches.find((x) => x.id === "F1").res) return false; if (m.id === "F3" && !COMP.playoffs.matches.find((x) => x.id === "F2").res) return false; }
+  return true; }
+const allianceTeams = (n) => COMP.alliances[n - 1];
+function recordPlayoff(m, r, b) { const ra = resolveSrc(m.rs), ba = resolveSrc(m.bs); let rs = r.fuel + r.climb, bs = b.fuel + b.climb; if (rs === bs) { if (Math.random() < 0.5) rs++; else bs++; }
+  m.res = { r: rs, b: bs, ra, ba, win: rs > bs ? ra : ba, lose: rs > bs ? ba : ra, live: !!r.live };
+  const fin = COMP.playoffs.matches.filter((x) => x.id[0] === "F" && x.res), wins = {}; for (const x of fin) wins[x.res.win] = (wins[x.res.win] || 0) + 1;
+  for (const [a, w] of Object.entries(wins)) if (w >= 2) { COMP.playoffs.champion = +a; COMP.phase = "done"; }
+  cmpSave(); }
+function simPlayoff(m) { recordPlayoff(m, simAlliance(allianceTeams(resolveSrc(m.rs))), simAlliance(allianceTeams(resolveSrc(m.bs)))); }
+const nextPlayoff = () => COMP.playoffs && COMP.playoffs.matches.find((m) => pMatchReady(m));
+const myAlliance = () => COMP.alliances ? COMP.alliances.findIndex((a) => a.includes(ME)) + 1 : 0;
+
+// ---------- live matches: you plus five AI robots, or six AI robots to spectate
+let LIVE = null; // { kind: "qual"|"playoff", m, spectate }
+function startLive(kind, m, spectate) {
+  const red = kind === "qual" ? m.red : allianceTeams(resolveSrc(m.rs)), blue = kind === "qual" ? m.blue : allianceTeams(resolveSrc(m.bs));
+  LIVE = { kind, id: m.id, red: red.slice(0, 3), blue: blue.slice(0, 3), spectate };
+  S.spectate = !!spectate; S.comp = true;
+  if (!spectate) setAlliance(red.includes(ME) ? "red" : "blue");
+  S.mode = "match"; resetShowcase(); resetRound(); AU = null;
+  const entries = []; const pos = [-2.1, 0, 2.1];
+  for (const [al, nums] of [["red", LIVE.red], ["blue", LIVE.blue]]) { const s = Math.sign(F.hubs[al === "red" ? redHub : blueHub].center[0]); let k = 0;
+    for (const n of nums) { if (n === ME && !spectate) continue; const z = pos[k++ % 3]; entries.push({ team: n, alliance: al, epa: teamValue(n), role: "score", x: s * (HUB.cx + 1.6 + (k === 2 ? 0.8 : 0)), z, yaw: s > 0 ? Math.PI / 2 : -Math.PI / 2 }); } }
+  // the weakest robot on an alliance sometimes plays defense, like at a real event
+  for (const al of ["red", "blue"]) { const mine = entries.filter((e) => e.alliance === al); if (mine.length >= 2) { const w = mine.reduce((a, b) => (a.epa < b.epa ? a : b)); if (w.epa < 35 && Math.random() < 0.5) w.role = "defend"; } }
+  if (!spectate) { HS.n = 0; preload(8); if (SET.auto !== "none") autoBegin(SET.auto); else startPose(); }
+  else { HS.n = 0; S.x = 0; S.z = -30; }
+  setupMatchBots(entries);
+  robot.root.visible = !spectate; S.paused = false; setView("drive"); $("comp").hidden = true; $("teamsR").textContent = LIVE.red.join(" · "); $("teamsB").textContent = LIVE.blue.join(" · ");
+  S.cam = spectate ? "stands" : "driver"; $("camBtn").textContent = "View: " + (spectate ? "Stands" : "Driver"); camState.init = false; S.timeScale = 1;
+  toast(m.id + (spectate ? " · spectating" : " · auto"), "var(--fuel)");
+}
+function finishLive() { // called when a live match ends
+  if (!LIVE) return; const L = LIVE; LIVE = null;
+  const tally = (al) => { let climb = 0; for (const b of BOTS) if (b.alliance === al) climb += climbPts(b.epa); return { fuel: S.pts[al], climb, live: true }; };
+  const r = tally("red"), b = tally("blue");
+  if (!L.spectate) { const t = tinfo(ME); t.simPts += S.myFuel; t.simPlayed++; }
+  if (L.kind === "qual") recordQual(COMP.quals.find((q) => q.id === L.id), r, b); else recordPlayoff(COMP.playoffs.matches.find((m) => m.id === L.id), r, b);
+  S.comp = false; S.spectate = false; robot.root.visible = true; clearBots();
+  showResult(L, r, b);
+}
+function abandonLive(simIt) { if (!LIVE) return; const L = LIVE; LIVE = null; S.running = false; S.comp = false; S.spectate = false; robot.root.visible = true; clearBots();
+  if (simIt) { if (L.kind === "qual") simQual(COMP.quals.find((q) => q.id === L.id)); else simPlayoff(COMP.playoffs.matches.find((m) => m.id === L.id)); }
+  openComp(); }
+
+// ---------- competition screens
+const CT = { tab: "matches" };
+function openComp() { S.paused = true; setView("comp"); $("comp").hidden = false; renderComp(); }
+function compButtons() { // the big "what's next" actions
+  if (!COMP) return "";
+  if (COMP.phase === "quals") { const q = nextQual(); if (!q) return `<button class="btn primary" data-act="startsel" type="button">Start alliance selection</button>`;
+    const my = COMP.quals.find((x) => !x.res && isMine(x));
+    return (isMine(q) ? `<button class="btn primary" data-act="play" data-id="${q.id}" type="button">Play ${q.id} (your match)</button><button class="btn" data-act="sim" data-id="${q.id}" type="button">Sim ${q.id}</button>`
+      : `<button class="btn primary" data-act="watch" data-id="${q.id}" type="button">Watch ${q.id}</button><button class="btn" data-act="sim" data-id="${q.id}" type="button">Sim ${q.id}</button>`)
+      + (my && my !== q ? `<button class="btn" data-act="skipto" type="button">Skip to ${my.id}</button>` : "") + `<button class="btn" data-act="simall" type="button">Sim rest of quals</button>`; }
+  if (COMP.phase === "selection") return myTurn() ? `<span class="fine">You're captain of Alliance ${selOrder() + 1}: pick a partner below.</span>` : `<button class="btn primary" data-act="nextpick" type="button">Next pick</button><button class="btn" data-act="allpicks" type="button">Finish selection</button>`;
+  if (COMP.phase === "playoffs") { const m = nextPlayoff(); if (!m) return ""; const mine = [resolveSrc(m.rs), resolveSrc(m.bs)].includes(myAlliance());
+    return (mine ? `<button class="btn primary" data-act="pplay" data-id="${m.id}" type="button">Play ${m.id}</button>` : `<button class="btn primary" data-act="pwatch" data-id="${m.id}" type="button">Watch ${m.id}</button>`) + `<button class="btn" data-act="psim" data-id="${m.id}" type="button">Sim ${m.id}</button><button class="btn" data-act="psimall" type="button">Sim rest of playoffs</button>`; }
+  return `<span class="fine">Event complete.</span>`;
+}
+function teamChip(n, extra = "") { const me = n === ME; return `<span class="tn${me ? " me" : ""}${extra}" title="${(tinfo(n) || {}).name || ""}">${n}</span>`; }
+function renderComp() {
+  const root = $("compBody");
+  if (!COMP) { // event picker
+    const saved = cmpLoad();
+    root.innerHTML = `<h2>Choose a competition</h2><p class="sub">Team lists and robot strength come from each event's 2026 Statbotics EPA. Higher-EPA robots drive faster, shoot more accurately and cycle quicker.</p>
+      <div class="evgrid">${Object.entries(EVENTS).map(([k, e]) => { const me = e.teams.find((t) => t[0] === ME); const rank = e.teams.slice().sort((a, b) => b[2] - a[2]).findIndex((t) => t[0] === ME) + 1;
+        return `<button class="evcard" data-ev="${k}" type="button"><b>${e.short}</b><span>${e.name}</span><span>${e.dates}</span><span>${e.teams.length} teams · 1880 EPA ${me ? me[2] : "-"} (#${rank} of ${e.teams.length})</span></button>`; }).join("")}</div>
+      ${saved ? `<div class="row"><button class="btn primary" data-act="resume" type="button">Continue ${EVENTS[saved.ev].short} (${saved.phase})</button></div>` : ""}
+      <div class="row"><label class="lbl" for="qper">Matches per team</label><select id="qper" class="sel"><option>6</option><option selected>8</option><option>10</option><option>12</option></select></div>`;
+    return; }
+  const ev = EVENTS[COMP.ev], me = tinfo(ME), rk = rankings(), myRank = rk.findIndex((t) => t.num === ME) + 1, done = COMP.quals.filter((q) => q.res).length;
+  const status = COMP.phase === "quals" ? `Qualifications · ${done} of ${COMP.quals.length} played` : COMP.phase === "selection" ? "Alliance selection" : COMP.phase === "playoffs" ? "Playoffs" : `Event winner: Alliance ${COMP.playoffs.champion} (${allianceTeams(COMP.playoffs.champion).join(", ")})`;
+  root.innerHTML = `<div class="chead"><div><div class="lbl">${ev.dates}</div><h2>${ev.name}</h2><div class="sub">${status}</div></div>
+    <div class="mycard"><div class="lbl">Team 1880</div><b>#${myRank}</b><span>${me.w}-${me.l}-${me.t} · ${me.played ? (me.rp / me.played).toFixed(2) : "0.00"} RP/match</span><span>Your sim EPA ${me.simPlayed ? myValue().toFixed(1) : "–"} (real ${me.epa})</span></div></div>
+    <div class="row cacts">${compButtons()}</div>
+    <nav class="tabs">${["matches", "rankings", "alliances", "playoffs"].map((t) => `<button type="button" data-tab="${t}" aria-pressed="${CT.tab === t}">${{ matches: "Matches", rankings: "Rankings", alliances: "Alliance selection", playoffs: "Playoffs" }[t]}</button>`).join("")}</nav>
+    <div class="tabbody">${renderTab()}</div>
+    <div class="row"><button class="btn" data-act="newevent" type="button">Change event</button><button class="btn" data-act="exit" type="button">Main menu</button></div>`;
+}
+function renderTab() {
+  if (CT.tab === "matches") {
+    const rows = COMP.quals.map((q) => { const mine = isMine(q), r = q.res;
+      const act = r ? "" : mine ? `<button class="btn mini" data-act="play" data-id="${q.id}" type="button">Play</button>` : `<button class="btn mini" data-act="watch" data-id="${q.id}" type="button">Watch</button>`;
+      const sim = r ? "" : `<button class="btn mini" data-act="sim" data-id="${q.id}" type="button">Sim</button>`;
+      return `<tr class="${mine ? "mine" : ""}${r ? "" : " todo"}"><td>${q.id}</td><td class="red">${q.red.map((n) => teamChip(n)).join("")}</td><td class="blue">${q.blue.map((n) => teamChip(n)).join("")}</td>
+        <td class="sc">${r ? `<b class="${r.r > r.b ? "w" : ""}">${r.r}</b>–<b class="${r.b > r.r ? "w" : ""}">${r.b}</b>${r.live ? " ●" : ""}` : "–"}</td><td class="rp">${r ? r.rRP + " / " + r.bRP : ""}</td><td>${act}${sim}</td></tr>`; }).join("");
+    return `<label class="fine"><input type="checkbox" id="onlyMine" ${CT.onlyMine ? "checked" : ""}> Only my matches</label><div class="tablewrap"><table class="ct${CT.onlyMine ? " onlymine" : ""}"><thead><tr><th>Match</th><th>Red</th><th>Blue</th><th>Score</th><th>RP</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><p class="fine">● played live. Ranking points: win 3, tie 1, +1 for 100 alliance fuel, +1 for 50 tower points (an approximation of the REBUILT rules).</p>`;
+  }
+  if (CT.tab === "rankings") return `<div class="tablewrap"><table class="ct"><thead><tr><th>#</th><th>Team</th><th>RP avg</th><th>W-L-T</th><th>Avg score</th><th>EPA</th></tr></thead><tbody>${rankings().map((t, i) => `<tr class="${t.num === ME ? "mine" : ""}"><td>${i + 1}</td><td>${teamChip(t.num)} <span class="fine">${t.name}</span></td><td>${t.played ? (t.rp / t.played).toFixed(2) : "–"}</td><td>${t.w}-${t.l}-${t.t}</td><td>${t.played ? (t.pts / t.played).toFixed(1) : "–"}</td><td>${t.num === ME && t.simPlayed ? myValue().toFixed(1) + "*" : t.epa}</td></tr>`).join("")}</tbody></table></div><p class="fine">* your EPA from the matches you've played in the sim.</p>`;
+  if (CT.tab === "alliances") {
+    if (!COMP.alliances) return `<p class="sub">Alliance selection starts after qualifications. The top 8 teams are captains and pick partners in a serpentine order (1→8, then 8→1). Captains pick the best available robot by EPA.</p>`;
+    const al = COMP.alliances.map((a, i) => `<div class="alli-row${a.includes(ME) ? " mine" : ""}${COMP.phase === "selection" && selOrder() === i ? " cur" : ""}"><b>${i + 1}</b>${a.map((n) => teamChip(n)).join("")}</div>`).join("");
+    const avail = COMP.phase === "selection" ? `<h3>Available</h3><div class="tablewrap"><table class="ct"><thead><tr><th>Team</th><th>Rank</th><th>EPA</th><th></th></tr></thead><tbody>${available().map((t) => `<tr><td>${teamChip(t.num)} <span class="fine">${t.name}</span></td><td>${rankings().indexOf(t) + 1}</td><td>${teamValue(t.num).toFixed(1)}</td><td>${myTurn() ? `<button class="btn mini" data-act="pick" data-team="${t.num}" type="button">Pick</button>` : ""}</td></tr>`).join("")}</tbody></table></div>` : "";
+    return `<div class="alist">${al}</div>${avail}<div class="fine">${COMP.log.slice(-6).join(" · ")}</div>`;
+  }
+  if (!COMP.playoffs) return `<p class="sub">Double-elimination bracket for the 8 alliances, with a best-of-3 final.</p>`;
+  const card = (id) => { const m = COMP.playoffs.matches.find((x) => x.id === id), r = resolveSrc(m.rs), b = resolveSrc(m.bs), res = m.res, mine = [r, b].includes(myAlliance());
+    const side = (a, sc, win) => `<div class="pside${win ? " w" : ""}"><span>${a ? "A" + a : "–"}</span><span class="fine">${a ? allianceTeams(a).join(" ") : ""}</span><b>${sc ?? ""}</b></div>`;
+    return `<div class="pm${mine ? " mine" : ""}"><div class="lbl">${id}</div>${side(r, res && res.r, res && res.win === r)}${side(b, res && res.b, res && res.win === b)}</div>`; };
+  return `<div class="bracket"><div class="bcol"><div class="lbl">Round 1</div>${["M1", "M2", "M3", "M4"].map(card).join("")}</div><div class="bcol"><div class="lbl">Round 2</div>${["M7", "M8", "M5", "M6"].map(card).join("")}</div>
+    <div class="bcol"><div class="lbl">Round 3</div>${["M10", "M9"].map(card).join("")}</div><div class="bcol"><div class="lbl">Round 4</div>${["M11", "M12"].map(card).join("")}</div><div class="bcol"><div class="lbl">Round 5</div>${card("M13")}</div><div class="bcol"><div class="lbl">Finals</div>${["F1", "F2", "F3"].map(card).join("")}</div></div>`;
+}
+function showResult(L, r, b) {
+  openComp(); const rs = r.fuel + r.climb, bs = b.fuel + b.climb, mine = L.spectate ? null : (L.red.includes(ME) ? "red" : "blue");
+  const verdict = mine ? ((mine === "red" ? rs > bs : bs > rs) ? "You won" : rs === bs ? "Tie" : "You lost") : (rs > bs ? "Red wins" : bs > rs ? "Blue wins" : "Tie");
+  $("compResult").innerHTML = `<div class="lbl">${L.id} result</div><h3>${verdict} ${rs}–${bs}</h3><div class="fine">Red ${L.red.join(", ")}: ${r.fuel} fuel + ${r.climb} tower · Blue ${L.blue.join(", ")}: ${b.fuel} fuel + ${b.climb} tower${mine ? ` · you scored ${S.myFuel} fuel` : ""}</div><button class="btn" type="button" id="resClose">Close</button>`;
+  $("compResult").hidden = false; $("resClose").onclick = () => { $("compResult").hidden = true; };
+}
+$("comp").addEventListener("click", (e) => {
+  const t = e.target.closest("[data-act],[data-tab],[data-ev]"); if (!t) return;
+  if (t.dataset.tab) { CT.tab = t.dataset.tab; renderComp(); return; }
+  if (t.dataset.ev) { newComp(t.dataset.ev, +($("qper") ? $("qper").value : 8)); CT.tab = "matches"; renderComp(); return; }
+  const id = t.dataset.id, a = t.dataset.act;
+  const q = id && COMP && COMP.quals.find((x) => x.id === id), pm = id && COMP && COMP.playoffs && COMP.playoffs.matches.find((x) => x.id === id);
+  if (a === "resume") { COMP = cmpLoad(); renderComp(); }
+  else if (a === "newevent") { COMP = null; renderComp(); }
+  else if (a === "exit") { $("comp").hidden = true; enterMenu(); }
+  else if (a === "play" && q) startLive("qual", q, false);
+  else if (a === "watch" && q) startLive("qual", q, true);
+  else if (a === "sim" && q) { simQual(q); renderComp(); }
+  else if (a === "skipto") { for (const x of COMP.quals) { if (x.res) continue; if (isMine(x)) break; simQual(x); } renderComp(); }
+  else if (a === "simall") { for (const x of COMP.quals) if (!x.res) simQual(x); renderComp(); }
+  else if (a === "startsel") { startSelection(); CT.tab = "alliances"; renderComp(); }
+  else if (a === "nextpick") { doPick(aiPick()); if (COMP.phase === "playoffs") CT.tab = "playoffs"; renderComp(); }
+  else if (a === "allpicks") { while (COMP.phase === "selection" && !myTurn()) doPick(aiPick()); if (COMP.phase === "playoffs") CT.tab = "playoffs"; renderComp(); }
+  else if (a === "pick") { doPick(+t.dataset.team); if (COMP.phase === "playoffs") CT.tab = "playoffs"; renderComp(); }
+  else if (a === "pplay" && pm) startLive("playoff", pm, false);
+  else if (a === "pwatch" && pm) startLive("playoff", pm, true);
+  else if (a === "psim" && pm) { simPlayoff(pm); renderComp(); }
+  else if (a === "psimall") { let m; while ((m = nextPlayoff())) simPlayoff(m); renderComp(); }
+});
+$("comp").addEventListener("change", (e) => { if (e.target.id === "onlyMine") { CT.onlyMine = e.target.checked; renderComp(); } });
+
 // ================================================================== main loop
 let last = performance.now(), acc = 0;
 function frame(now) {
@@ -1343,14 +1680,14 @@ function frame(now) {
   if (S.loaded) {
     let vxl = 0, vzl = 0, w = 0, mdt = dt;
     if (S.view === "drive") {
-      if (!S.paused) { const inp = readInput(); acc += dt; while (acc >= STEP) { acc -= STEP; if (!tick(inp)) break; } } else { pollPadMenu(); mdt = 0; }
+      if (!S.paused) { const inp = readInput(); acc += dt * (S.spectate ? (S.timeScale || 1) : 1); let steps = 0; while (acc >= STEP && steps++ < 40) { acc -= STEP; if (!tick(inp)) break; } if (steps >= 40) acc = 0; } else { pollPadMenu(); mdt = 0; }
       robot.root.position.set(S.x, S.y, S.z); robot.root.rotation.set(S.pitch, S.yaw, S.roll, "YXZ");
       const c = Math.cos(S.yaw), s = Math.sin(S.yaw); vxl = S.vx * c - S.vz * s; vzl = S.vx * s + S.vz * c; w = S.w;
       const Mx = new THREE.Matrix4(), hide = new THREE.Matrix4().makeScale(0, 0, 0);
       const dec = Math.exp(-dt * 14);
       for (let i = 0; i < fuel.n; i++) { if (fuel.st[i] === 0) { const o = i * 3, a = fuel.sq[i] * FUEL_R; fuel.sq[i] *= dec; fuel.mesh.setMatrixAt(i, squashMatrix(fuel.pos[o], fuel.pos[o + 1], fuel.pos[o + 2], fuel.sqa[o] * a, fuel.sqa[o + 1] * a, fuel.sqa[o + 2] * a, Mx)); } else fuel.mesh.setMatrixAt(i, hide); }
       fuel.mesh.instanceMatrix.needsUpdate = true;
-      updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } hud(); drawInner(); drawBots();
+      updateDriveCamera(dt); if (S.shake > 0.002) { camera.position.x += (Math.random() - 0.5) * S.shake; camera.position.y += (Math.random() - 0.5) * S.shake; S.shake *= Math.exp(-dt * 10); } hud(); drawInner(); drawBots(); drawLeds(now);
     } else if (S.view === "show") {
       if (SV.chortle && !SV.cycle) { SV.chT = (SV.chT + dt) % 1.2; M.armT = SV.chT > 0.7 ? ARM.retract : ARM.carry; }
       stepCycle(dt); stepMech(dt);
@@ -1375,8 +1712,8 @@ requestAnimationFrame(frame);
     redHub = F.hubs[0].center[0] < 0 ? 0 : 1; blueHub = 1 - redHub; HUB.cx = Math.abs(F.hubs[0].center[0]); // red is the -x side in this field model
     initFuel(); hashInit(); setAlliance(S.alliance); startPose(); preload(8); buildShowUI(); M.arm = M.armT = RIG.armDeployDeg;
     robot.root.position.set(S.x, 0, S.z); robot.root.rotation.set(0, S.yaw, 0); updateDriveCamera(1);
-    S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow"].forEach((id) => $(id).disabled = false); $("goFree").focus();
-    window.__sim = { AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
+    S.loaded = true; $("load").hidden = true; ["goFree", "goTimed", "goShow", "goComp"].forEach((id) => $(id).disabled = false); $("goFree").focus();
+    window.__sim = { comp: () => COMP, newComp, simQual, startLive, nextQual, rankings, startSelection, doPick, aiPick, nextPlayoff, simPlayoff, AUref: () => AU, autoBegin, BOTS, sdS, hsStep, hsAdd, showCtx, stepMech, RIG: () => RIG, S, M, SV, HS, camera, controls, applyMaterials, fuel, robot, enterShow, runCycle, focusSub,
       run: (n, inp) => { inp = Object.assign({ mx: 0, my: 0, rot: 0, shoot: false, intake: false, outtake: false }, inp); for (let i = 0; i < n; i++) tick(inp); return { x: +S.x.toFixed(2), z: +S.z.toFixed(2), yaw: +S.yaw.toFixed(2), hop: S.hopper, score: S.score, total: S.total, d: +S.dist.toFixed(2), arm: +M.arm.toFixed(1), fly: +M.fly.toFixed(1), hood: +M.hood.toFixed(1), zone: S.inZone }; } };
   } catch (e) { $("loadTxt").textContent = "Could not load the simulator: " + e.message + ". Reload the page to try again."; console.error(e); }
 })();
