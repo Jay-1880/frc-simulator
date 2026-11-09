@@ -810,6 +810,14 @@ async function loadRobot() {
   robot.occ = { stat: buildSDF(H.occ.stat, H.occ.cell), ext: buildSDF(H.occ.ext, H.occ.cell), arm: buildSDF(H.occ.arm, H.occ.cell) };
   const modBy = new Map();
   const ordered = [...H.parts].sort((a, b) => (a.role === "wheel" ? -1 : 0) - (b.role === "wheel" ? -1 : 0));
+  // small hardware (bearings, spacers, standoffs, bolts) has no group in the CAD export, so it stayed behind when the intake or hopper
+  // extension moved. Give each piece the group of the moving part it sits on, unless it is inside a fixed part.
+  { const HW = /bearing|spacer|standoff|screw|bolt|nut|washer|bushing|collar|rivet|shaft|hex|insert|pin/i, inside = (c, o, pad) => c.every((v, k) => v >= o.min[k] - pad && v <= o.max[k] + pad);
+    const moving = ordered.filter((o) => o.group === "arm" || o.group === "ext" || o.group === "hood"), fixed = ordered.filter((o) => !o.group && !HW.test(o.name || ""));
+    for (const h of ordered) { if (h.group || !HW.test(h.name || "") || Math.max(...h.max.map((v, k) => v - h.min[k])) > 0.08) continue;
+      const c = h.min.map((v, k) => (v + h.max[k]) / 2), m = moving.find((o) => inside(c, o, 0.006)) || moving.find((o) => o.group === "ext" && inside(c, o, 0.03)); if (!m) continue;
+      const vol = (o) => (o.max[0] - o.min[0]) * (o.max[1] - o.min[1]) * (o.max[2] - o.min[2]), f = fixed.find((o) => inside(c, o, 0.002) && vol(o) < vol(m) * 4);
+      if (!f) h.group = m.group; } }
   ordered.forEach((h, idx) => {
     const q = new Uint16Array(data, h.vOff, h.vCount * 3); const pos = new Float32Array(h.vCount * 3);
     for (let i = 0; i < h.vCount * 3; i += 3) for (let k = 0; k < 3; k++) pos[i + k] = H.qmin[k] + q[i + k] * H.qscale[k] - h.pivot[k];
